@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>나의 일기장</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F2ED;
+  --paper: #FDFCF9;
+  --ink: #1C1A16;
+  --ink2: #4A4640;
+  --ink3: #8C877E;
+  --accent: #C4622D;
+  --accent2: #F0E0D0;
+  --line: #E0DBD3;
+  --shadow: rgba(28,26,22,0.07);
+  --ok-bg: #EAF3DE; --ok: #3B6D11;
+  --err-bg: #FCEBEB; --err: #A32D2D;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: 'Pretendard', sans-serif; background: var(--bg); color: var(--ink); }
+#app { height: 100vh; display: flex; flex-direction: column; }
+
+.topbar { background: var(--paper); border-bottom: 1px solid var(--line); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.topbar-brand { font-family: 'Nanum Myeongjo', serif; font-size: 18px; }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.tab-btn { padding: 6px 16px; border-radius: 20px; border: 0.5px solid transparent; background: transparent; cursor: pointer; font-size: 13px; color: var(--ink3); font-family: 'Pretendard', sans-serif; transition: all 0.15s; }
+.tab-btn.active { background: var(--accent2); color: var(--accent); border-color: var(--accent); font-weight: 500; }
+.tab-btn:hover:not(.active) { background: var(--bg); }
+.sync-indicator { font-size: 11px; color: var(--ink3); display: flex; align-items: center; gap: 5px; }
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #9FE1CB; }
+.sync-dot.syncing { background: #FAC775; animation: pulse 1s infinite; }
+.sync-dot.err { background: #F09595; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.content { flex: 1; overflow-y: auto; padding: 36px 40px; max-width: 780px; margin: 0 auto; width: 100%; }
+.panel { display: none; } .panel.active { display: block; }
+.panel-title { font-family: 'Nanum Myeongjo', serif; font-size: 26px; margin-bottom: 4px; }
+.panel-sub { font-size: 13px; color: var(--ink3); margin-bottom: 28px; }
+
+.card { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; margin-bottom: 14px; box-shadow: 0 1px 4px var(--shadow); }
+.card-label { font-size: 11px; color: var(--ink3); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 12px; }
+
+.mood-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.mood-btn { font-size: 22px; width: 46px; height: 46px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--bg); cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+.mood-btn:hover { transform: scale(1.1); border-color: var(--accent); }
+.mood-btn.selected { border-color: var(--accent); background: var(--accent2); transform: scale(1.15); box-shadow: 0 2px 8px rgba(196,98,45,0.2); }
+
+.tags-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { font-size: 12px; padding: 5px 14px; border-radius: 20px; border: 1px solid var(--line); cursor: pointer; color: var(--ink3); background: var(--bg); transition: all 0.12s; font-family: 'Pretendard', sans-serif; }
+.tag:hover { border-color: var(--accent); color: var(--accent); }
+.tag.selected { background: var(--accent2); color: var(--accent); border-color: var(--accent); font-weight: 500; }
+
+.diary-area { width: 100%; border: none; background: transparent; font-size: 15px; font-family: 'Nanum Myeongjo', serif; color: var(--ink); resize: none; line-height: 2.1; outline: none; min-height: 130px; }
+.diary-area::placeholder { color: var(--ink3); font-style: italic; }
+.area-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+
+.btn-primary { width: 100%; padding: 13px; border-radius: 10px; border: none; background: var(--accent); color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'Pretendard', sans-serif; transition: all 0.15s; }
+.btn-primary:hover { background: #b0551f; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(196,98,45,0.25); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { background: var(--ink3); cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-ghost { width: 100%; padding: 11px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--ink2); font-size: 14px; cursor: pointer; font-family: 'Pretendard', sans-serif; transition: all 0.15s; }
+.btn-ghost:hover { background: var(--bg); border-color: var(--accent); color: var(--accent); }
+.btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.notice { font-size: 13px; text-align: center; padding: 10px; min-height: 36px; border-radius: 8px; margin-top: 8px; }
+.notice.ok { background: var(--ok-bg); color: var(--ok); }
+.notice.err { background: var(--err-bg); color: var(--err); }
+
+.flashback-card { background: var(--accent2); border: 1px solid #D4956A; border-radius: 12px; padding: 18px 22px; margin-bottom: 18px; }
+.flashback-label { font-size: 11px; color: var(--accent); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px; }
+.flashback-text { font-size: 14px; font-family: 'Nanum Myeongjo', serif; color: var(--ink2); line-height: 2; white-space: pre-wrap; }
+
+.week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 20px; }
+.day-cell { border: 1px solid var(--line); border-radius: 10px; padding: 10px 4px; text-align: center; cursor: pointer; transition: all 0.12s; min-height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: var(--paper); }
+.day-cell:hover { background: var(--bg); border-color: var(--accent); }
+.day-cell.has-entry { border-color: #D4956A; }
+.day-cell.sel { background: var(--accent2); border-color: var(--accent); }
+.day-cell.today-cell { border-color: var(--accent); border-width: 2px; }
+.dc-name { font-size: 10px; color: var(--ink3); }
+.dc-num { font-size: 15px; font-weight: 600; color: var(--ink); }
+.dc-mood { font-size: 18px; }
+
+.entry-box { background: var(--bg); border-radius: 10px; padding: 16px 18px; font-size: 14px; font-family: 'Nanum Myeongjo', serif; color: var(--ink2); line-height: 2; min-height: 64px; white-space: pre-wrap; }
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.stat-card { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 14px; text-align: center; }
+.stat-val { font-size: 24px; font-weight: 600; color: var(--ink); }
+.stat-lbl { font-size: 11px; color: var(--ink3); margin-top: 3px; }
+.ai-box { background: var(--bg); border-radius: 10px; padding: 16px 18px; font-size: 14px; font-family: 'Nanum Myeongjo', serif; color: var(--ink2); line-height: 2; min-height: 80px; white-space: pre-wrap; }
+
+.entry-list { display: flex; flex-direction: column; gap: 10px; }
+.entry-item { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; transition: all 0.12s; }
+.entry-item:hover { border-color: var(--accent); }
+.ei-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.ei-date { font-size: 12px; color: var(--ink3); }
+.ei-mood { font-size: 18px; }
+.ei-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+.ei-tag { font-size: 11px; padding: 2px 9px; border-radius: 10px; background: var(--bg); color: var(--ink3); border: 1px solid var(--line); }
+.ei-text { font-size: 14px; font-family: 'Nanum Myeongjo', serif; color: var(--ink2); line-height: 1.8; }
+.empty-msg { text-align: center; padding: 60px 0; color: var(--ink3); font-size: 14px; line-height: 2.4; }
+.loading-msg { text-align: center; padding: 40px; color: var(--ink3); font-size: 13px; }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 10px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-brand">📔 나의 일기장</div>
+    <div class="topbar-right">
+      <button class="tab-btn active" onclick="switchTab('daily')" id="nav-daily">오늘 일기</button>
+      <button class="tab-btn" onclick="switchTab('weekly')" id="nav-weekly">주간 정리</button>
+      <button class="tab-btn" onclick="switchTab('all')" id="nav-all">전체 기록</button>
+      <div class="sync-indicator">
+        <div class="sync-dot" id="sync-dot"></div>
+        <span id="sync-label">구글 연동</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- 오늘 일기 -->
+    <div class="panel active" id="panel-daily">
+      <div class="panel-title">오늘의 일기</div>
+      <div class="panel-sub" id="today-label"></div>
+
+      <div id="flashback-card" class="flashback-card" style="display:none">
+        <div class="flashback-label">📅 1년 전 오늘</div>
+        <div class="flashback-text" id="flashback-text"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">오늘 기분</div>
+        <div class="mood-row">
+          <button class="mood-btn" data-mood="😄" onclick="selectMood(this)">😄</button>
+          <button class="mood-btn" data-mood="🙂" onclick="selectMood(this)">🙂</button>
+          <button class="mood-btn" data-mood="😐" onclick="selectMood(this)">😐</button>
+          <button class="mood-btn" data-mood="😔" onclick="selectMood(this)">😔</button>
+          <button class="mood-btn" data-mood="😤" onclick="selectMood(this)">😤</button>
+          <button class="mood-btn" data-mood="😴" onclick="selectMood(this)">😴</button>
+          <button class="mood-btn" data-mood="🥹" onclick="selectMood(this)">🥹</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">키워드 태그</div>
+        <div class="tags-row">
+          <button class="tag" onclick="toggleTag(this)">운동</button>
+          <button class="tag" onclick="toggleTag(this)">공부</button>
+          <button class="tag" onclick="toggleTag(this)">업무</button>
+          <button class="tag" onclick="toggleTag(this)">사람</button>
+          <button class="tag" onclick="toggleTag(this)">식사</button>
+          <button class="tag" onclick="toggleTag(this)">취미</button>
+          <button class="tag" onclick="toggleTag(this)">피로</button>
+          <button class="tag" onclick="toggleTag(this)">힐링</button>
+          <button class="tag" onclick="toggleTag(this)">외출</button>
+          <button class="tag" onclick="toggleTag(this)">집콕</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">오늘의 기록</div>
+        <textarea class="diary-area" id="diary-text" placeholder="오늘 있었던 일, 느낀 것들을 자유롭게 적어보세요..." oninput="updateChar()"></textarea>
+        <div class="area-footer">
+          <span style="font-size:11px;color:var(--ink3)">Ctrl+S 로 저장</span>
+          <span style="font-size:11px;color:var(--ink3)"><span id="char-count">0</span>자</span>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="save-btn" onclick="saveEntry()">구글에 저장하기</button>
+      <div class="notice" id="save-notice"></div>
+    </div>
+
+    <!-- 주간 정리 -->
+    <div class="panel" id="panel-weekly">
+      <div class="panel-title">주간 정리</div>
+      <div class="panel-sub" id="week-label"></div>
+      <div class="week-grid" id="week-grid"></div>
+      <div class="card">
+        <div class="card-label">선택한 날 일기</div>
+        <div class="entry-box" id="entry-detail-text">날짜를 클릭하면 일기가 표시됩니다.</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-val" id="stat-count">—</div><div class="stat-lbl">기록한 날</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-mood">—</div><div class="stat-lbl">주요 기분</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-tag">—</div><div class="stat-lbl">자주 쓴 태그</div></div>
+      </div>
+      <div class="card">
+        <div class="card-label">AI 주간 정리</div>
+        <div class="ai-box" id="ai-summary">버튼을 누르면 이번 주 일기를 따뜻하게 정리해드려요.</div>
+      </div>
+      <button class="btn-ghost" id="ai-btn" onclick="generateSummary()">이번 주 AI 정리 받기 ↗</button>
+    </div>
+
+    <!-- 전체 기록 -->
+    <div class="panel" id="panel-all">
+      <div class="panel-title">전체 기록</div>
+      <div class="panel-sub" id="all-sub"></div>
+      <div id="entry-list"><div class="loading-msg">불러오는 중...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbzqj-u1X8bHOQB0vR5n1HeJPGtbumAG5tupoOA7tIA4P838BgfJ8nDkFAXOLGrT1oVi/exec';
+const DAYS = ['일','월','화','수','목','금','토'];
+const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+
+let allEntries = {};
+let selectedMood = '';
+let selectedTags = [];
+
+function getToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function getWeekDates() {
+  const today = new Date(), dow = today.getDay();
+  return Array.from({length:7}, (_,i) => {
+    const d = new Date(today); d.setDate(today.getDate()-dow+i);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  });
+}
+function formatDate(dateStr) {
+  const d = new Date(dateStr+'T00:00:00');
+  return `${d.getFullYear()}년 ${MONTHS[d.getMonth()]} ${d.getDate()}일 (${DAYS[d.getDay()]})`;
+}
+
+function setSyncStatus(status) {
+  const dot = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  dot.className = 'sync-dot' + (status==='syncing'?' syncing':status==='err'?' err':'');
+  label.textContent = status==='syncing'?'저장 중...':status==='err'?'연결 오류':'구글 연동';
+}
+
+async function apiGet(params) {
+  const url = API + '?' + new URLSearchParams(params);
+  const res = await fetch(url);
+  return await res.json();
+}
+async function apiPost(body) {
+  const res = await fetch(API, {
+    method: 'POST',
+    body: JSON.stringify(body)
+  });
+  return await res.json();
+}
+
+async function init() {
+  const today = new Date();
+  document.getElementById('today-label').textContent = formatDate(getToday());
+  const dates = getWeekDates();
+  const first = new Date(dates[0]+'T00:00:00'), last = new Date(dates[6]+'T00:00:00');
+  document.getElementById('week-label').textContent = `${first.getMonth()+1}월 ${first.getDate()}일 — ${last.getMonth()+1}월 ${last.getDate()}일`;
+
+  setSyncStatus('syncing');
+  try {
+    const data = await apiGet({action:'getAll'});
+    if (data.entries) {
+      data.entries.forEach(e => { allEntries[e.date] = e; });
+    }
+    setSyncStatus('ok');
+  } catch(e) {
+    setSyncStatus('err');
+  }
+
+  // 오늘 기록 불러오기
+  const todayEntry = allEntries[getToday()];
+  if (todayEntry) {
+    if (todayEntry.mood) {
+      selectedMood = todayEntry.mood;
+      document.querySelectorAll('.mood-btn').forEach(b=>{ if(b.dataset.mood===todayEntry.mood) b.classList.add('selected'); });
+    }
+    if (todayEntry.tags && todayEntry.tags.length && todayEntry.tags[0]) {
+      selectedTags = [...todayEntry.tags];
+      document.querySelectorAll('.tag').forEach(t=>{ if(todayEntry.tags.includes(t.textContent)) t.classList.add('selected'); });
+    }
+    if (todayEntry.text) { document.getElementById('diary-text').value = todayEntry.text; updateChar(); }
+  }
+
+  // 1년 전 오늘
+  const d = new Date(); d.setFullYear(d.getFullYear()-1);
+  const lastYear = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const flashEntry = allEntries[lastYear];
+  if (flashEntry) {
+    let txt = '';
+    if (flashEntry.mood) txt += `기분: ${flashEntry.mood}`;
+    if (flashEntry.tags && flashEntry.tags.length && flashEntry.tags[0]) txt += `  ·  ${flashEntry.tags.join(' · ')}`;
+    if (flashEntry.text) txt += `\n\n${flashEntry.text}`;
+    if (txt.trim()) {
+      document.getElementById('flashback-text').textContent = txt.trim();
+      document.getElementById('flashback-card').style.display = 'block';
+    }
+  }
+}
+
+function selectMood(btn) {
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected'); selectedMood = btn.dataset.mood;
+}
+function toggleTag(btn) {
+  btn.classList.toggle('selected');
+  const t = btn.textContent;
+  selectedTags = selectedTags.includes(t) ? selectedTags.filter(x=>x!==t) : [...selectedTags, t];
+}
+function updateChar() {
+  document.getElementById('char-count').textContent = document.getElementById('diary-text').value.length;
+}
+
+async function saveEntry() {
+  const text = document.getElementById('diary-text').value.trim();
+  if (!selectedMood && !text && !selectedTags.length) { showNotice('기분, 태그, 메모 중 하나 이상 입력해주세요.', 'err'); return; }
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = '저장 중...';
+  setSyncStatus('syncing');
+
+  const entry = { action: 'save', date: getToday(), mood: selectedMood, tags: selectedTags, text };
+  try {
+    const res = await apiPost(entry);
+    if (res.ok) {
+      allEntries[getToday()] = entry;
+      setSyncStatus('ok');
+      showNotice('구글 시트에 저장되었어요 ✓', 'ok');
+    } else {
+      setSyncStatus('err');
+      showNotice('저장 실패. 다시 시도해주세요.', 'err');
+    }
+  } catch(e) {
+    setSyncStatus('err');
+    showNotice('연결 오류. 인터넷을 확인해주세요.', 'err');
+  }
+  btn.disabled = false; btn.textContent = '구글에 저장하기';
+}
+
+function showNotice(msg, type) {
+  const el = document.getElementById('save-notice');
+  el.textContent = msg; el.className = 'notice '+type;
+  setTimeout(()=>{ el.textContent=''; el.className='notice'; }, 3000);
+}
+
+function switchTab(tab) {
+  ['daily','weekly','all'].forEach(t => {
+    document.getElementById('panel-'+t).classList.toggle('active', t===tab);
+    document.getElementById('nav-'+t).classList.toggle('active', t===tab);
+  });
+  if (tab==='weekly') renderWeekly();
+  if (tab==='all') renderAll();
+}
+
+function renderWeekly() {
+  const dates = getWeekDates(), today = getToday();
+  const grid = document.getElementById('week-grid');
+  grid.innerHTML = '';
+  dates.forEach(dateStr => {
+    const d = new Date(dateStr+'T00:00:00'), e = allEntries[dateStr];
+    const cell = document.createElement('div');
+    cell.className = 'day-cell'+(e?' has-entry':'')+(dateStr===today?' today-cell':'');
+    cell.innerHTML = `<span class="dc-name">${DAYS[d.getDay()]}</span><span class="dc-num">${d.getDate()}</span><span class="dc-mood">${e&&e.mood?e.mood:'·'}</span>`;
+    cell.onclick = () => { document.querySelectorAll('.day-cell').forEach(c=>c.classList.remove('sel')); cell.classList.add('sel'); showWeekEntry(dateStr); };
+    grid.appendChild(cell);
+  });
+  const weekEntries = dates.map(d=>allEntries[d]).filter(Boolean);
+  document.getElementById('stat-count').textContent = weekEntries.length+'/7';
+  const moodMap={}, tagMap={};
+  weekEntries.forEach(e => {
+    if(e.mood) moodMap[e.mood]=(moodMap[e.mood]||0)+1;
+    if(e.tags) e.tags.filter(Boolean).forEach(t=>tagMap[t]=(tagMap[t]||0)+1);
+  });
+  const topMood = Object.entries(moodMap).sort((a,b)=>b[1]-a[1])[0];
+  const topTag = Object.entries(tagMap).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('stat-mood').textContent = topMood?topMood[0]:'—';
+  document.getElementById('stat-tag').textContent = topTag?topTag[0]:'—';
+}
+
+function showWeekEntry(dateStr) {
+  const e = allEntries[dateStr], box = document.getElementById('entry-detail-text');
+  if (!e) { box.textContent = '이 날은 기록이 없어요.'; return; }
+  let txt = formatDate(dateStr)+'\n';
+  if (e.mood) txt += `기분: ${e.mood}`;
+  if (e.tags && e.tags.filter(Boolean).length) txt += `  ·  ${e.tags.filter(Boolean).join(' · ')}`;
+  if (e.text) txt += `\n\n${e.text}`;
+  box.textContent = txt.trim();
+}
+
+async function generateSummary() {
+  const dates = getWeekDates();
+  const weekEntries = dates.map(d=>allEntries[d]).filter(Boolean);
+  const box = document.getElementById('ai-summary'), btn = document.getElementById('ai-btn');
+  if (!weekEntries.length) { box.textContent = '이번 주에 기록된 일기가 없어요.'; return; }
+  box.textContent = '정리 중...'; btn.disabled = true;
+  const entryText = weekEntries.map(e => {
+    const d = new Date(e.date+'T00:00:00');
+    let line = `${DAYS[d.getDay()]}요일`;
+    if (e.mood) line += ` 기분:${e.mood}`;
+    if (e.tags && e.tags.filter(Boolean).length) line += ` [${e.tags.filter(Boolean).join(',')}]`;
+    if (e.text) line += ` "${e.text}"`;
+    return line;
+  }).join('\n');
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500,
+        messages: [{ role: 'user', content: `이번 주 일기:\n\n${entryText}\n\n이 한 주를 따뜻하게 2~3문장으로 정리하고, 격려 한 마디 추가해주세요. 한국어로.` }]
+      })
+    });
+    const data = await res.json();
+    box.textContent = data.content?.filter(c=>c.type==='text').map(c=>c.text).join('') || '정리를 가져오지 못했어요.';
+  } catch(e) { box.textContent = '오류가 발생했어요.'; }
+  btn.disabled = false;
+}
+
+function renderAll() {
+  const sorted = Object.values(allEntries).sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('all-sub').textContent = `총 ${sorted.length}개의 기록`;
+  if (!sorted.length) {
+    document.getElementById('entry-list').innerHTML = '<div class="empty-msg">아직 기록이 없어요.<br>오늘 첫 일기를 써보세요 ✏️</div>'; return;
+  }
+  document.getElementById('entry-list').innerHTML = sorted.map(e => `
+    <div class="entry-item">
+      <div class="ei-header"><span class="ei-date">${formatDate(e.date)}</span><span class="ei-mood">${e.mood||''}</span></div>
+      ${e.tags&&e.tags.filter(Boolean).length?`<div class="ei-tags">${e.tags.filter(Boolean).map(t=>`<span class="ei-tag">${t}</span>`).join('')}</div>`:''}
+      ${e.text?`<div class="ei-text">${e.text.slice(0,150)}${e.text.length>150?'...':''}</div>`:''}
+    </div>`).join('');
+}
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey||e.metaKey) && e.key==='s') { e.preventDefault(); saveEntry(); }
+});
+
+init();
+</script>
+</body>
+</html>
