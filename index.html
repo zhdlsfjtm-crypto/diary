@@ -161,6 +161,36 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .asset-input{width:100%;border:none;background:transparent;font-size:20px;font-weight:600;color:var(--asset);outline:none;font-family:'Pretendard',sans-serif;}
 .asset-input::placeholder{color:#90C0E0;font-size:14px;font-weight:400;}
 .asset-unit{font-size:11px;color:var(--asset);margin-top:2px;}
+
+/* 자산 섹션 */
+.asset-section-card{background:var(--paper);border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px var(--shadow);}
+.asset-section-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;font-size:14px;font-weight:600;color:var(--ink);gap:8px;}
+.asset-section-header span:first-child{flex:1;}
+.section-arrow{font-size:11px;color:var(--ink3);transition:transform 0.2s;}
+.section-arrow.open{transform:rotate(180deg);}
+.asset-section-body{padding:0 16px 14px;display:none;}
+.asset-section-body.open{display:block;}
+.asset-item-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);}
+.asset-item-row:last-of-type{border-bottom:none;}
+.asset-item-name{flex:1;border:none;background:transparent;font-size:13px;font-family:'Pretendard',sans-serif;color:var(--ink);outline:none;}
+.asset-item-name::placeholder{color:var(--ink3);}
+.asset-item-val{width:80px;border:none;background:var(--bg);border-radius:8px;padding:6px 8px;font-size:14px;font-weight:600;color:var(--asset);outline:none;text-align:right;font-family:'Pretendard',sans-serif;}
+.asset-item-val.debt-val{color:var(--err);}
+.asset-item-val.income-val{color:var(--ok);}
+.asset-item-val.expense-val{color:var(--err);}
+.asset-item-unit{font-size:11px;color:var(--ink3);white-space:nowrap;}
+.asset-item-del{background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink3);padding:4px;line-height:1;}
+.add-item-btn{width:100%;padding:8px;border:1px dashed var(--line);border-radius:8px;background:transparent;font-size:12px;color:var(--ink3);cursor:pointer;font-family:'Pretendard',sans-serif;margin-top:8px;transition:all 0.15s;}
+.add-item-btn:active{background:var(--accent2);color:var(--accent);border-color:var(--accent);}
+
+/* 현금흐름 요약 */
+.cashflow-summary{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 3px var(--shadow);}
+.cf-item{display:flex;justify-content:space-between;align-items:center;padding:6px 0;}
+.cf-lbl{font-size:13px;color:var(--ink2);}
+.cf-val{font-size:14px;font-weight:600;}
+.cf-val.ok{color:var(--ok);}
+.cf-val.err{color:var(--err);}
+
 .principle-card{background:var(--core2);border:1px solid #C9AADC;border-radius:12px;padding:14px;margin-bottom:10px;}
 .p-lbl{font-size:10px;color:var(--core);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px;}
 .p-txt{width:100%;border:none;background:transparent;font-size:15px;font-family:'Nanum Myeongjo',serif;color:var(--core);resize:none;line-height:1.9;outline:none;}
@@ -353,11 +383,12 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       <button class="btn-ghost" id="ai-btn" onclick="generateSummary()">이번 주 AI 정리 받기 ↗</button>
     </div>
 
-    <!-- ③ 월간 — 캘린더 + 자산 -->
+    <!-- ③ 월간 — 캘린더 + 자산 상세 트래킹 -->
     <div class="panel" id="panel-monthly">
       <div class="panel-title">월간 기록</div>
       <div class="panel-sub" id="monthly-sub"></div>
 
+      <!-- 캘린더 -->
       <div class="cal-header">
         <button class="cal-nav" onclick="changeMonth(-1)">◀</button>
         <div class="cal-title" id="cal-title"></div>
@@ -365,40 +396,145 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       </div>
       <div class="cal-grid" id="cal-grid"></div>
 
-      <div class="divider"><div class="divider-line"></div><div class="divider-text">💰 이달의 숫자</div><div class="divider-line"></div></div>
+      <div class="divider"><div class="divider-line"></div><div class="divider-text">🏆 목표 진행률</div><div class="divider-line"></div></div>
 
+      <!-- 순자산 + 목표 -->
       <div class="net-card">
         <div class="net-lbl">순자산 (총자산 - 부채)</div>
         <div class="net-val" id="net-val">— 억원</div>
-        <div class="net-sub" id="net-sub">숫자를 입력하면 자동 계산돼요</div>
+        <div class="net-sub" id="net-sub">항목을 입력하면 자동 계산돼요</div>
       </div>
-
       <div class="goal-card">
         <div class="goal-row"><span class="goal-lbl">🎯 400억 목표 진행률</span><span class="goal-pct" id="goal-pct">0%</span></div>
         <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
         <div class="goal-sub" id="goal-sub">목표까지 400억 남았어요</div>
       </div>
 
-      <div class="asset-grid">
-        <div class="asset-card">
-          <div class="asset-lbl">총 자산</div>
-          <input class="asset-input" id="inp-asset" type="number" placeholder="0" oninput="calcNet()">
-          <div class="asset-unit">억원</div>
+      <!-- 전월 대비 -->
+      <div class="card" id="mom-card" style="display:none">
+        <div class="card-header"><span class="card-icon">📈</span><span class="card-title">전월 대비</span></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:120px;text-align:center;padding:10px;background:var(--bg);border-radius:10px;">
+            <div style="font-size:11px;color:var(--ink3);margin-bottom:4px">순자산 변화</div>
+            <div id="mom-net" style="font-size:18px;font-weight:700;color:var(--ok)">—</div>
+          </div>
+          <div style="flex:1;min-width:120px;text-align:center;padding:10px;background:var(--bg);border-radius:10px;">
+            <div style="font-size:11px;color:var(--ink3);margin-bottom:4px">목표 달성 예상</div>
+            <div id="mom-eta" style="font-size:14px;font-weight:600;color:var(--accent)">—</div>
+          </div>
         </div>
-        <div class="asset-card">
-          <div class="asset-lbl">부채</div>
-          <input class="asset-input" id="inp-debt" type="number" placeholder="0" oninput="calcNet()">
-          <div class="asset-unit">억원</div>
+      </div>
+
+      <div class="divider"><div class="divider-line"></div><div class="divider-text">🏠 자산 항목</div><div class="divider-line"></div></div>
+
+      <!-- 부동산 -->
+      <div class="asset-section-card">
+        <div class="asset-section-header" onclick="toggleSection('real-estate')">
+          <span>🏠 부동산</span>
+          <span id="real-estate-total" style="font-weight:600;color:var(--asset)">0 억</span>
+          <span class="section-arrow" id="real-estate-arrow">▼</span>
         </div>
-        <div class="asset-card">
-          <div class="asset-lbl">월 수입</div>
-          <input class="asset-input" id="inp-income" type="number" placeholder="0" oninput="saveMonthly()">
-          <div class="asset-unit">만원</div>
+        <div class="asset-section-body" id="real-estate-body">
+          <div id="real-estate-items"></div>
+          <button class="add-item-btn" onclick="addItem('real-estate','부동산')">+ 항목 추가</button>
         </div>
-        <div class="asset-card">
-          <div class="asset-lbl">월 지출</div>
-          <input class="asset-input" id="inp-expense" type="number" placeholder="0" oninput="saveMonthly()">
-          <div class="asset-unit">만원</div>
+      </div>
+
+      <!-- 금융자산 -->
+      <div class="asset-section-card">
+        <div class="asset-section-header" onclick="toggleSection('finance')">
+          <span>💹 금융자산</span>
+          <span id="finance-total" style="font-weight:600;color:var(--asset)">0 억</span>
+          <span class="section-arrow" id="finance-arrow">▼</span>
+        </div>
+        <div class="asset-section-body" id="finance-body">
+          <div id="finance-items"></div>
+          <button class="add-item-btn" onclick="addItem('finance','금융자산')">+ 항목 추가</button>
+        </div>
+      </div>
+
+      <!-- 법인자산 -->
+      <div class="asset-section-card">
+        <div class="asset-section-header" onclick="toggleSection('corp')">
+          <span>🏢 법인자산</span>
+          <span id="corp-total" style="font-weight:600;color:var(--asset)">0 억</span>
+          <span class="section-arrow" id="corp-arrow">▼</span>
+        </div>
+        <div class="asset-section-body" id="corp-body">
+          <div id="corp-items"></div>
+          <button class="add-item-btn" onclick="addItem('corp','법인자산')">+ 항목 추가</button>
+        </div>
+      </div>
+
+      <!-- 기타자산 -->
+      <div class="asset-section-card">
+        <div class="asset-section-header" onclick="toggleSection('etc-asset')">
+          <span>💎 기타 자산</span>
+          <span id="etc-asset-total" style="font-weight:600;color:var(--asset)">0 억</span>
+          <span class="section-arrow" id="etc-asset-arrow">▼</span>
+        </div>
+        <div class="asset-section-body" id="etc-asset-body">
+          <div id="etc-asset-items"></div>
+          <button class="add-item-btn" onclick="addItem('etc-asset','기타 자산')">+ 항목 추가</button>
+        </div>
+      </div>
+
+      <div class="divider"><div class="divider-line"></div><div class="divider-text">💸 부채 항목</div><div class="divider-line"></div></div>
+
+      <!-- 부채 -->
+      <div class="asset-section-card" style="border-color:#F09595;">
+        <div class="asset-section-header" onclick="toggleSection('debt')">
+          <span>💸 부채</span>
+          <span id="debt-total" style="font-weight:600;color:var(--err)">0 억</span>
+          <span class="section-arrow" id="debt-arrow">▼</span>
+        </div>
+        <div class="asset-section-body" id="debt-body">
+          <div id="debt-items"></div>
+          <button class="add-item-btn" onclick="addItem('debt','부채')">+ 항목 추가</button>
+        </div>
+      </div>
+
+      <div class="divider"><div class="divider-line"></div><div class="divider-text">💵 월 현금흐름</div><div class="divider-line"></div></div>
+
+      <!-- 수입 -->
+      <div class="asset-section-card">
+        <div class="asset-section-header" onclick="toggleSection('income')">
+          <span>📥 월 수입</span>
+          <span id="income-total" style="font-weight:600;color:var(--ok)">0 만원</span>
+          <span class="section-arrow" id="income-arrow">▼</span>
+        </div>
+        <div class="asset-section-body" id="income-body">
+          <div id="income-items"></div>
+          <button class="add-item-btn" onclick="addItem('income','수입')">+ 항목 추가</button>
+        </div>
+      </div>
+
+      <!-- 지출 -->
+      <div class="asset-section-card" style="border-color:#F09595;">
+        <div class="asset-section-header" onclick="toggleSection('expense')">
+          <span>📤 월 지출</span>
+          <span id="expense-total" style="font-weight:600;color:var(--err)">0 만원</span>
+          <span class="section-arrow" id="expense-arrow">▼</span>
+        </div>
+        <div class="asset-section-body" id="expense-body">
+          <div id="expense-items"></div>
+          <button class="add-item-btn" onclick="addItem('expense','지출')">+ 항목 추가</button>
+        </div>
+      </div>
+
+      <!-- 현금흐름 요약 -->
+      <div class="cashflow-summary" id="cashflow-summary">
+        <div class="cf-item">
+          <span class="cf-lbl">월 수입</span>
+          <span class="cf-val ok" id="cf-income">0 만원</span>
+        </div>
+        <div class="cf-item">
+          <span class="cf-lbl">월 지출</span>
+          <span class="cf-val err" id="cf-expense">0 만원</span>
+        </div>
+        <div class="cf-item" style="border-top:1px solid var(--line);padding-top:8px;margin-top:4px;">
+          <span class="cf-lbl" style="font-weight:600">월 순현금흐름</span>
+          <span class="cf-val" id="cf-net" style="font-weight:700;font-size:16px">0 만원</span>
         </div>
       </div>
 
@@ -678,8 +814,8 @@ async function saveEntry(){
 }
 
 function calcNet(){
-  const asset=parseFloat(document.getElementById('inp-asset').value)||0;
-  const debt=parseFloat(document.getElementById('inp-debt').value)||0;
+  const asset=parseFloat(document.getElementById('inp-asset')?.value)||0;
+  const debt=parseFloat(document.getElementById('inp-debt')?.value)||0;
   const net=asset-debt;
   document.getElementById('net-val').textContent=net.toFixed(1)+' 억원';
   const pct=Math.min((net/GOAL)*100,100);
@@ -689,7 +825,7 @@ function calcNet(){
   saveMonthly();
 }
 function saveMonthly(){
-  const data={asset:document.getElementById('inp-asset').value,debt:document.getElementById('inp-debt').value,income:document.getElementById('inp-income').value,expense:document.getElementById('inp-expense').value,principle:document.getElementById('monthly-principle').value};
+  const data={asset:document.getElementById('inp-asset')?.value,debt:document.getElementById('inp-debt')?.value,income:document.getElementById('inp-income')?.value,expense:document.getElementById('inp-expense')?.value,principle:document.getElementById('monthly-principle').value};
   localStorage.setItem(getMonthKey(),JSON.stringify(data));
 }
 function saveMonthlyData(){saveMonthly();showNotice('이달 기록 저장되었어요 ✓','ok','monthly-notice');}
@@ -705,7 +841,7 @@ function switchTab(tab){
     document.getElementById('nav-'+t).classList.toggle('active',t===tab);
   });
   if(tab==='weekly')renderWeekly();
-  if(tab==='monthly')renderCalendar();
+  if(tab==='monthly'){renderCalendar();initMonthly();}
   if(tab==='all')renderAll();
   document.querySelector('.content').scrollTop=0;
 }
@@ -803,6 +939,179 @@ function copyEntryDirect(e){currentModalEntry=e;copyEntry();currentModalEntry=nu
 function deleteEntryDirect(date){
   if(!confirm('이 일기를 삭제할까요?'))return;
   apiPost({action:'delete',date}).then(res=>{if(res.ok){delete allEntries[date];showToast('삭제되었어요');renderAll();}});
+}
+
+// ── 자산 트래킹 ──
+const SECTIONS={
+  'real-estate':{label:'부동산',unit:'억',type:'asset'},
+  'finance':{label:'금융자산',unit:'억',type:'asset'},
+  'corp':{label:'법인자산',unit:'억',type:'asset'},
+  'etc-asset':{label:'기타 자산',unit:'억',type:'asset'},
+  'debt':{label:'부채',unit:'억',type:'debt'},
+  'income':{label:'월 수입',unit:'만원',type:'income'},
+  'expense':{label:'월 지출',unit:'만원',type:'expense'}
+};
+
+let assetData={};
+
+function loadAssetData(){
+  const mk=getMonthKey();
+  assetData=JSON.parse(localStorage.getItem('asset_'+mk)||'{}');
+  Object.keys(SECTIONS).forEach(sec=>{
+    if(!assetData[sec])assetData[sec]=[];
+  });
+}
+
+function saveAssetData(){
+  const mk=getMonthKey();
+  localStorage.setItem('asset_'+mk,JSON.stringify(assetData));
+  // 이달의 원칙도 함께 저장
+  const principle=document.getElementById('monthly-principle')?.value||'';
+  localStorage.setItem('principle_'+mk,principle);
+  recalcAll();
+}
+
+function toggleSection(sec){
+  const body=document.getElementById(sec+'-body');
+  const arrow=document.getElementById(sec+'-arrow');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function addItem(sec, label){
+  assetData[sec]=assetData[sec]||[];
+  assetData[sec].push({name:'',value:0});
+  renderSection(sec);
+  saveAssetData();
+}
+
+function removeItem(sec, idx){
+  assetData[sec].splice(idx,1);
+  renderSection(sec);
+  saveAssetData();
+}
+
+function updateItem(sec, idx, field, val){
+  if(!assetData[sec])assetData[sec]=[];
+  if(!assetData[sec][idx])assetData[sec][idx]={name:'',value:0};
+  assetData[sec][idx][field]=field==='value'?(parseFloat(val)||0):val;
+  saveAssetData();
+}
+
+function renderSection(sec){
+  const container=document.getElementById(sec+'-items');
+  if(!container)return;
+  const items=assetData[sec]||[];
+  const s=SECTIONS[sec];
+  const valClass=s.type==='debt'?'debt-val':s.type==='income'?'income-val':s.type==='expense'?'expense-val':'';
+  container.innerHTML=items.map((item,i)=>`
+    <div class="asset-item-row">
+      <input class="asset-item-name" value="${item.name||''}" placeholder="항목명 (예: 여의도 아파트)" oninput="updateItem('${sec}',${i},'name',this.value)">
+      <input class="asset-item-val ${valClass}" type="number" value="${item.value||''}" placeholder="0" oninput="updateItem('${sec}',${i},'value',this.value)">
+      <span class="asset-item-unit">${s.unit}</span>
+      <button class="asset-item-del" onclick="removeItem('${sec}',${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function renderAllSections(){
+  Object.keys(SECTIONS).forEach(sec=>renderSection(sec));
+  recalcAll();
+}
+
+function recalcAll(){
+  let totalAsset=0,totalDebt=0,totalIncome=0,totalExpense=0;
+
+  ['real-estate','finance','corp','etc-asset'].forEach(sec=>{
+    const sum=(assetData[sec]||[]).reduce((a,b)=>a+(parseFloat(b.value)||0),0);
+    const el=document.getElementById(sec+'-total');
+    if(el)el.textContent=sum.toFixed(1)+' 억';
+    totalAsset+=sum;
+  });
+
+  const debtSum=(assetData['debt']||[]).reduce((a,b)=>a+(parseFloat(b.value)||0),0);
+  const debtEl=document.getElementById('debt-total');
+  if(debtEl)debtEl.textContent=debtSum.toFixed(1)+' 억';
+  totalDebt=debtSum;
+
+  const incomeSum=(assetData['income']||[]).reduce((a,b)=>a+(parseFloat(b.value)||0),0);
+  const incomeEl=document.getElementById('income-total');
+  if(incomeEl)incomeEl.textContent=incomeSum.toLocaleString()+' 만원';
+  totalIncome=incomeSum;
+
+  const expenseSum=(assetData['expense']||[]).reduce((a,b)=>a+(parseFloat(b.value)||0),0);
+  const expenseEl=document.getElementById('expense-total');
+  if(expenseEl)expenseEl.textContent=expenseSum.toLocaleString()+' 만원';
+  totalExpense=expenseSum;
+
+  // 순자산 계산
+  const net=totalAsset-totalDebt;
+  const netEl=document.getElementById('net-val');
+  if(netEl)netEl.textContent=net.toFixed(1)+' 억원';
+  const pct=Math.min((net/GOAL)*100,100);
+  const pctEl=document.getElementById('goal-pct');
+  if(pctEl)pctEl.textContent=pct.toFixed(1)+'%';
+  const fillEl=document.getElementById('prog-fill');
+  if(fillEl)fillEl.style.width=pct+'%';
+  const subEl=document.getElementById('goal-sub');
+  if(subEl)subEl.textContent=`목표 400억까지 ${Math.max(GOAL-net,0).toFixed(1)}억원 남았어요`;
+
+  // 현금흐름 요약
+  const cfIncome=document.getElementById('cf-income');
+  const cfExpense=document.getElementById('cf-expense');
+  const cfNet=document.getElementById('cf-net');
+  if(cfIncome)cfIncome.textContent=totalIncome.toLocaleString()+' 만원';
+  if(cfExpense)cfExpense.textContent=totalExpense.toLocaleString()+' 만원';
+  const cfNetVal=totalIncome-totalExpense;
+  if(cfNet){
+    cfNet.textContent=(cfNetVal>=0?'+':'')+cfNetVal.toLocaleString()+' 만원';
+    cfNet.style.color=cfNetVal>=0?'var(--ok)':'var(--err)';
+  }
+
+  // 전월 대비
+  const prevMk=getPrevMonthKey();
+  const prevData=JSON.parse(localStorage.getItem('asset_'+prevMk)||'null');
+  if(prevData){
+    const prevAsset=['real-estate','finance','corp','etc-asset'].reduce((a,sec)=>{
+      return a+(prevData[sec]||[]).reduce((b,item)=>b+(parseFloat(item.value)||0),0);
+    },0);
+    const prevDebt=(prevData['debt']||[]).reduce((a,b)=>a+(parseFloat(b.value)||0),0);
+    const prevNet=prevAsset-prevDebt;
+    const diff=net-prevNet;
+    const momCard=document.getElementById('mom-card');
+    if(momCard)momCard.style.display='block';
+    const momNet=document.getElementById('mom-net');
+    if(momNet){
+      momNet.textContent=(diff>=0?'+':'')+diff.toFixed(1)+' 억';
+      momNet.style.color=diff>=0?'var(--ok)':'var(--err)';
+    }
+    // 목표 달성 예상 시기
+    if(diff>0&&net<GOAL){
+      const monthsLeft=Math.ceil((GOAL-net)/diff);
+      const eta=new Date();eta.setMonth(eta.getMonth()+monthsLeft);
+      const momEta=document.getElementById('mom-eta');
+      if(momEta)momEta.textContent=`${eta.getFullYear()}년 ${eta.getMonth()+1}월 예상`;
+    }
+  }
+}
+
+function getPrevMonthKey(){
+  const d=new Date();d.setMonth(d.getMonth()-1);
+  return `asset_${d.getFullYear()}_${d.getMonth()+1}`;
+}
+
+function initMonthly(){
+  loadAssetData();
+  renderAllSections();
+  const mk=getMonthKey();
+  const principle=localStorage.getItem('principle_'+mk)||'';
+  const pEl=document.getElementById('monthly-principle');
+  if(pEl)pEl.value=principle;
+}
+
+function saveMonthlyData(){
+  saveAssetData();
+  showNotice('이달 기록 저장되었어요 ✓','ok','monthly-notice');
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
