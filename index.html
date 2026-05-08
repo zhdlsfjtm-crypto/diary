@@ -181,6 +181,23 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .asset-item-unit{font-size:11px;color:var(--ink3);white-space:nowrap;}
 .asset-item-del{background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink3);padding:4px;line-height:1;}
 .add-item-btn{width:100%;padding:8px;border:1px dashed var(--line);border-radius:8px;background:transparent;font-size:12px;color:var(--ink3);cursor:pointer;font-family:'Pretendard',sans-serif;margin-top:8px;transition:all 0.15s;}
+/* AI 분석 */
+.period-btns{display:flex;gap:6px;flex-wrap:wrap;}
+.period-btn{padding:7px 14px;border-radius:20px;border:1px solid var(--line);background:var(--bg);font-size:12px;color:var(--ink3);cursor:pointer;font-family:'Pretendard',sans-serif;transition:all 0.15s;}
+.period-btn.active{background:var(--accent2);color:var(--accent);border-color:var(--accent);font-weight:600;}
+.analysis-types{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.analysis-btn{display:flex;flex-direction:column;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);cursor:pointer;text-align:left;transition:all 0.15s;gap:2px;}
+.analysis-btn.active{border-color:var(--accent);background:var(--accent2);}
+.analysis-btn.active .ab-title{color:var(--accent);}
+.ab-icon{font-size:20px;margin-bottom:4px;}
+.ab-title{font-size:13px;font-weight:600;color:var(--ink);}
+.ab-desc{font-size:11px;color:var(--ink3);}
+.ai-result-card{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px var(--shadow);}
+.air-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);}
+.air-header span{font-size:14px;font-weight:600;color:var(--ink);}
+.air-copy{font-size:12px;padding:5px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);cursor:pointer;color:var(--ink3);font-family:'Pretendard',sans-serif;}
+.ai-result-text{padding:16px;font-size:14px;font-family:'Nanum Myeongjo',serif;color:var(--ink2);line-height:2.1;white-space:pre-wrap;min-height:100px;}
+
 .add-item-btn:active{background:var(--accent2);color:var(--accent);border-color:var(--accent);}
 
 /* 현금흐름 요약 */
@@ -247,6 +264,11 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .modal-action-row{display:flex;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
 .modal-action-btn{flex:1;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:13px;color:var(--ink2);font-family:'Pretendard',sans-serif;}
 .modal-action-btn.del{color:var(--err);}
+
+/* 수정 필드 */
+.edit-field-label{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;}
+.edit-field{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px;font-family:'Nanum Myeongjo',serif;color:var(--ink);background:var(--paper);outline:none;resize:none;line-height:1.9;transition:border 0.15s;}
+.edit-field:focus{border-color:var(--accent);}
 
 /* 하단 네비 */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:var(--paper);border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;padding-bottom:env(safe-area-inset-bottom);z-index:100;}
@@ -587,6 +609,80 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       <div class="entry-list" id="entry-list"></div>
     </div>
 
+    <!-- ⑥ AI 분석 -->
+    <div class="panel" id="panel-ai">
+      <div class="panel-title">AI 분석</div>
+      <div class="panel-sub">쌓인 일기를 AI가 읽고 분석해드려요</div>
+
+      <!-- 기간 선택 -->
+      <div class="card">
+        <div class="card-header"><span class="card-icon">📅</span><span class="card-title">분석 기간 선택</span></div>
+        <div class="period-btns">
+          <button class="period-btn active" data-days="30" onclick="selectPeriod(this)">최근 30일</button>
+          <button class="period-btn" data-days="60" onclick="selectPeriod(this)">최근 60일</button>
+          <button class="period-btn" data-days="90" onclick="selectPeriod(this)">최근 90일</button>
+          <button class="period-btn" data-days="0" onclick="selectPeriod(this)">전체</button>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--ink3)" id="period-info">기간을 선택하면 분석할 일기 수가 표시돼요</div>
+      </div>
+
+      <!-- 분석 유형 선택 -->
+      <div class="card">
+        <div class="card-header"><span class="card-icon">🔍</span><span class="card-title">무엇을 분석할까요?</span></div>
+        <div class="analysis-types">
+          <button class="analysis-btn active" data-type="overall" onclick="selectAnalysis(this)">
+            <span class="ab-icon">📊</span>
+            <span class="ab-title">종합 분석</span>
+            <span class="ab-desc">전반적인 패턴과 성장</span>
+          </button>
+          <button class="analysis-btn" data-type="good-bad" onclick="selectAnalysis(this)">
+            <span class="ab-icon">⚖️</span>
+            <span class="ab-title">잘한 것 vs 못한 것</span>
+            <span class="ab-desc">행동과 결정 평가</span>
+          </button>
+          <button class="analysis-btn" data-type="decision" onclick="selectAnalysis(this)">
+            <span class="ab-icon">🧠</span>
+            <span class="ab-title">의사결정 패턴</span>
+            <span class="ab-desc">결정의 반복 패턴</span>
+          </button>
+          <button class="analysis-btn" data-type="emotion" onclick="selectAnalysis(this)">
+            <span class="ab-icon">🌡️</span>
+            <span class="ab-title">감정 흐름</span>
+            <span class="ab-desc">기분 변화와 트리거</span>
+          </button>
+          <button class="analysis-btn" data-type="growth" onclick="selectAnalysis(this)">
+            <span class="ab-icon">🚀</span>
+            <span class="ab-title">성장 지표</span>
+            <span class="ab-desc">목표 대비 진행상황</span>
+          </button>
+          <button class="analysis-btn" data-type="advice" onclick="selectAnalysis(this)">
+            <span class="ab-icon">💡</span>
+            <span class="ab-title">조언 요청</span>
+            <span class="ab-desc">개선점과 다음 행동</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 추가 질문 -->
+      <div class="card">
+        <div class="card-header"><span class="card-icon">💬</span><span class="card-title">추가로 궁금한 것</span><span class="card-desc">선택사항</span></div>
+        <textarea class="txt txt-sm" id="ai-custom-q" rows="2" placeholder="예: 내가 반복하는 실수 패턴이 뭔지 알려줘 / 400억 목표 달성 가능성은?"></textarea>
+      </div>
+
+      <button class="btn-primary" id="ai-analyze-btn" onclick="runAnalysis()">AI 분석 시작 ↗</button>
+
+      <!-- 결과 -->
+      <div id="ai-result-wrap" style="display:none;margin-top:14px;">
+        <div class="ai-result-card">
+          <div class="air-header">
+            <span id="air-title">분석 결과</span>
+            <button class="air-copy" onclick="copyAnalysis()">복사</button>
+          </div>
+          <div class="ai-result-text" id="ai-result-text">분석 중...</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- 하단 네비 -->
@@ -603,8 +699,8 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
     <button class="nav-item" onclick="switchTab('quarterly')" id="nav-quarterly">
       <span class="nav-icon">🔄</span><span class="nav-label">분기</span>
     </button>
-    <button class="nav-item" onclick="switchTab('all')" id="nav-all">
-      <span class="nav-icon">📚</span><span class="nav-label">전체</span>
+    <button class="nav-item" onclick="switchTab('ai')" id="nav-ai">
+      <span class="nav-icon">🤖</span><span class="nav-label">AI분석</span>
     </button>
   </nav>
 </div>
@@ -645,8 +741,84 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
     </div>
     <div class="modal-action-row">
       <button class="modal-action-btn" onclick="copyEntry()">📋 복사</button>
+      <button class="modal-action-btn" onclick="openEditModal()">✏️ 수정</button>
       <button class="modal-action-btn del" onclick="deleteFromModal()">🗑️ 삭제</button>
     </div>
+  </div>
+</div>
+
+<!-- 수정 모달 -->
+<div class="modal-overlay" id="edit-modal" style="display:none" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal" style="max-height:92vh;">
+    <div class="modal-handle"></div>
+    <button class="modal-close" onclick="closeEditModal()">✕</button>
+    <div style="font-family:'Nanum Myeongjo',serif;font-size:17px;margin-bottom:16px;" id="edit-modal-date"></div>
+
+    <!-- 기분 -->
+    <div style="margin-bottom:14px;">
+      <div style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">기분</div>
+      <div class="mood-row" id="edit-mood-row">
+        <button class="mood-btn" data-mood="😄" onclick="selectEditMood(this)">😄</button>
+        <button class="mood-btn" data-mood="🙂" onclick="selectEditMood(this)">🙂</button>
+        <button class="mood-btn" data-mood="😐" onclick="selectEditMood(this)">😐</button>
+        <button class="mood-btn" data-mood="😔" onclick="selectEditMood(this)">😔</button>
+        <button class="mood-btn" data-mood="😤" onclick="selectEditMood(this)">😤</button>
+        <button class="mood-btn" data-mood="😴" onclick="selectEditMood(this)">😴</button>
+        <button class="mood-btn" data-mood="🥹" onclick="selectEditMood(this)">🥹</button>
+      </div>
+    </div>
+
+    <!-- 감정 한 줄 -->
+    <div style="margin-bottom:12px;">
+      <div class="edit-field-label">감정 한 줄</div>
+      <textarea class="edit-field" id="edit-emotion" rows="2" placeholder="오늘 감정을 한 줄로..."></textarea>
+    </div>
+
+    <!-- 핵심 한 줄 -->
+    <div style="margin-bottom:12px;background:var(--core2);border-radius:12px;padding:12px;">
+      <div class="edit-field-label" style="color:var(--core)">✨ 핵심 한 줄</div>
+      <textarea class="edit-field" id="edit-core" rows="2" placeholder="오늘을 한 문장으로..." style="color:var(--core);font-size:16px;"></textarea>
+    </div>
+
+    <!-- 있었던 일 -->
+    <div style="margin-bottom:12px;">
+      <div class="edit-field-label">📝 오늘 있었던 일</div>
+      <textarea class="edit-field" id="edit-text" rows="5" placeholder="오늘 있었던 일..."></textarea>
+    </div>
+
+    <!-- 결정 -->
+    <div style="margin-bottom:12px;background:var(--decision2);border-radius:12px;padding:12px;">
+      <div class="edit-field-label" style="color:var(--decision)">⚖️ 결정 — 무엇을</div>
+      <textarea class="edit-field" id="edit-decision-what" rows="2" placeholder="어떤 선택을 했나요?"></textarea>
+      <div class="edit-field-label" style="color:var(--decision);margin-top:8px;">이유</div>
+      <textarea class="edit-field" id="edit-decision-why" rows="2" placeholder="왜 그 선택을?"></textarea>
+    </div>
+
+    <!-- 실수/배움 -->
+    <div style="margin-bottom:12px;background:var(--mistake2);border-radius:12px;padding:12px;">
+      <div class="edit-field-label" style="color:var(--mistake)">🔍 실수 / 배움</div>
+      <textarea class="edit-field" id="edit-mistake" rows="2" placeholder="오늘 틀렸던 것, 배운 것..."></textarea>
+    </div>
+
+    <!-- 질문/답 -->
+    <div style="margin-bottom:12px;background:var(--q2);border-radius:12px;padding:12px;">
+      <div class="edit-field-label" style="color:var(--q)">❓ 질문</div>
+      <textarea class="edit-field" id="edit-question" rows="2" placeholder="오늘의 질문..."></textarea>
+      <div class="edit-field-label" style="color:var(--q);margin-top:8px;">나의 답</div>
+      <textarea class="edit-field" id="edit-answer" rows="2" placeholder="나의 답..."></textarea>
+    </div>
+
+    <!-- 영감 -->
+    <div style="margin-bottom:16px;background:#EAF3DE;border-radius:12px;padding:12px;">
+      <div class="edit-field-label" style="color:#3B6D11">💡 영감</div>
+      <textarea class="edit-field" id="edit-insight" rows="2" placeholder="오늘의 영감..."></textarea>
+    </div>
+
+    <div style="display:flex;gap:8px;">
+      <button class="btn-primary" onclick="saveEdit()" style="flex:2">저장하기</button>
+      <button class="btn-ghost" onclick="closeEditModal()" style="flex:1">취소</button>
+    </div>
+    <div class="notice" id="edit-notice" style="margin-top:8px;"></div>
   </div>
 </div>
 
@@ -782,6 +954,93 @@ function deleteFromModal(){
   apiPost({action:'delete',date}).then(res=>{if(res.ok){delete allEntries[date];showToast('삭제되었어요');renderAll();}});
 }
 
+// ── 수정 기능 ──
+let editMood='';
+
+function openEditModal(){
+  if(!currentModalEntry)return;
+  const e=currentModalEntry;
+  closeModal();
+
+  editMood=e.mood||'';
+  document.getElementById('edit-modal-date').textContent='✏️ '+formatDate(e.date)+' 수정';
+
+  // 기분
+  document.querySelectorAll('#edit-mood-row .mood-btn').forEach(b=>{
+    b.classList.toggle('selected',b.dataset.mood===editMood);
+  });
+
+  // 필드 채우기
+  const setVal=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val||'';};
+  setVal('edit-emotion',e.emotion);
+  setVal('edit-core',e.core);
+  setVal('edit-text',e.text);
+  setVal('edit-decision-what',e.decisionWhat);
+  setVal('edit-decision-why',e.decisionWhy);
+  setVal('edit-mistake',e.mistake);
+  setVal('edit-question',e.question);
+  setVal('edit-answer',e.answer);
+  setVal('edit-insight',e.insight);
+
+  document.getElementById('edit-modal').style.display='flex';
+}
+
+function closeEditModal(){
+  document.getElementById('edit-modal').style.display='none';
+}
+
+function selectEditMood(btn){
+  document.querySelectorAll('#edit-mood-row .mood-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  editMood=btn.dataset.mood;
+}
+
+async function saveEdit(){
+  if(!currentModalEntry&&!document.getElementById('edit-modal-date').textContent)return;
+
+  // 수정 중인 날짜 파악
+  const dateText=document.getElementById('edit-modal-date').textContent;
+  // currentModalEntry가 null일 수 있으니 기존 entries에서 날짜 찾기
+  const editingEntry=currentModalEntry||Object.values(allEntries).find(e=>dateText.includes(formatDate(e.date)));
+  if(!editingEntry){showNotice('오류가 발생했어요.','err','edit-notice');return;}
+
+  const gv=(id)=>document.getElementById(id)?.value?.trim()||'';
+  const entry={
+    action:'save',
+    date:editingEntry.date,
+    mood:editMood,
+    emotion:gv('edit-emotion'),
+    text:gv('edit-text'),
+    core:gv('edit-core'),
+    decisionWhat:gv('edit-decision-what'),
+    decisionWhy:gv('edit-decision-why'),
+    mistake:gv('edit-mistake'),
+    question:gv('edit-question'),
+    answer:gv('edit-answer'),
+    insight:gv('edit-insight')
+  };
+
+  setSyncStatus('syncing');
+  try{
+    const res=await apiPost(entry);
+    if(res.ok){
+      allEntries[entry.date]=entry;
+      setSyncStatus('ok');
+      showToast('수정되었어요 ✓');
+      closeEditModal();
+      // 현재 탭 새로고침
+      if(document.getElementById('panel-all').classList.contains('active'))renderAll();
+      if(document.getElementById('panel-weekly').classList.contains('active'))renderWeekly();
+    }else{
+      setSyncStatus('err');
+      showNotice('저장 실패. 다시 시도해주세요.','err','edit-notice');
+    }
+  }catch(err){
+    setSyncStatus('err');
+    showNotice('연결 오류','err','edit-notice');
+  }
+}
+
 function toggleExpand(btn,id){
   const sec=document.getElementById(id);
   sec.classList.toggle('open');
@@ -836,13 +1095,14 @@ function saveQuarterly(){
 }
 
 function switchTab(tab){
-  ['daily','weekly','monthly','quarterly','all'].forEach(t=>{
-    document.getElementById('panel-'+t).classList.toggle('active',t===tab);
-    document.getElementById('nav-'+t).classList.toggle('active',t===tab);
+  ['daily','weekly','monthly','quarterly','all','ai'].forEach(t=>{
+    document.getElementById('panel-'+t)?.classList.toggle('active',t===tab);
+    document.getElementById('nav-'+t)?.classList.toggle('active',t===tab);
   });
   if(tab==='weekly')renderWeekly();
   if(tab==='monthly'){renderCalendar();initMonthly();}
   if(tab==='all')renderAll();
+  if(tab==='ai')initAiPanel();
   document.querySelector('.content').scrollTop=0;
 }
 
@@ -1114,7 +1374,117 @@ function saveMonthlyData(){
   showNotice('이달 기록 저장되었어요 ✓','ok','monthly-notice');
 }
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+// ── AI 분석 ──
+let selectedDays=30, selectedAnalysisType='overall';
+
+function selectPeriod(btn){
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedDays=parseInt(btn.dataset.days);
+  updatePeriodInfo();
+}
+
+function selectAnalysis(btn){
+  document.querySelectorAll('.analysis-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedAnalysisType=btn.dataset.type;
+}
+
+function initAiPanel(){updatePeriodInfo();}
+
+function updatePeriodInfo(){
+  const entries=getEntriesForPeriod(selectedDays);
+  const el=document.getElementById('period-info');
+  if(el)el.textContent=`분석할 일기 ${entries.length}개 ${selectedDays===0?'(전체)':''}`;
+}
+
+function getEntriesForPeriod(days){
+  const all=Object.values(allEntries).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  if(days===0)return all;
+  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-days);
+  const cutoffStr=toDateStr(cutoff);
+  return all.filter(e=>String(e.date)>=cutoffStr);
+}
+
+function buildAnalysisPrompt(entries, type, customQ){
+  const diaryText=entries.map(e=>{
+    let txt=`[${formatDate(e.date)}]`;
+    if(e.core)txt+=`\n핵심: "${e.core}"`;
+    if(e.mood||e.emotion)txt+=`\n기분: ${e.mood||''} ${e.emotion||''}`;
+    if(e.text)txt+=`\n내용: ${e.text}`;
+    if(e.decisionWhat)txt+=`\n결정: ${e.decisionWhat} / 이유: ${e.decisionWhy||''}`;
+    if(e.mistake)txt+=`\n배움: ${e.mistake}`;
+    if(e.question||e.answer)txt+=`\nQ: ${e.question||''} → ${e.answer||''}`;
+    if(e.insight)txt+=`\n영감: ${e.insight}`;
+    return txt;
+  }).join('\n\n---\n\n');
+
+  const typePrompts={
+    'overall':`이 사람의 일기 전체를 읽고 종합적으로 분석해주세요.\n1. 전반적인 삶의 패턴\n2. 반복되는 주제나 고민\n3. 긍정적 변화와 성장\n4. 주의가 필요한 부분\n5. 한 줄 총평`,
+    'good-bad':`이 사람의 일기를 읽고 객관적으로 평가해주세요.\n\n✅ 잘한 것들\n- 좋은 결정, 성장한 부분, 일관된 행동들을 구체적으로\n\n❌ 아쉬운 것들\n- 반복된 실수, 개선이 필요한 부분, 놓친 기회들을 솔직하게\n\n📌 핵심 한 줄 피드백`,
+    'decision':`이 사람의 의사결정 패턴을 분석해주세요.\n1. 결정을 내리는 방식의 특징\n2. 좋은 결정의 공통점\n3. 아쉬운 결정의 공통점\n4. 반복되는 결정 오류\n5. 의사결정 개선을 위한 조언`,
+    'emotion':`이 사람의 감정 흐름을 분석해주세요.\n1. 전체적인 감정 변화 추이\n2. 기분이 좋았던 날들의 공통점\n3. 힘들었던 날들의 패턴\n4. 감정에 영향을 주는 주요 트리거\n5. 감정 관리를 위한 조언`,
+    'growth':`이 사람의 성장 지표를 분석해주세요.\n1. 명확하게 성장한 영역\n2. 아직 개선이 필요한 영역\n3. 핵심 한 줄들에서 보이는 사고의 변화\n4. 배움과 영감의 패턴\n5. 다음 단계를 위한 조언`,
+    'advice':`이 사람의 일기를 읽고 코치로서 조언해주세요.\n1. 지금 당장 바꿔야 할 것 (3가지)\n2. 계속 유지해야 할 것 (3가지)\n3. 앞으로 시도해볼 것 (3가지)\n4. 가장 중요한 한 가지 메시지`
+  };
+
+  let prompt=`다음은 한 사람의 일기 기록입니다. 총 ${entries.length}개, 기간: ${entries.length>0?formatDate(entries[entries.length-1].date)+' ~ '+formatDate(entries[0].date):'-'}.\n\n`;
+  prompt+=`=== 일기 내용 ===\n\n${diaryText}\n\n=== 분석 요청 ===\n\n${typePrompts[type]||typePrompts['overall']}`;
+  if(customQ)prompt+=`\n\n추가 질문: ${customQ}`;
+  prompt+=`\n\n한국어로 답해주세요. 구체적인 일기 내용을 인용하면서 분석해주세요.`;
+  return prompt;
+}
+
+async function runAnalysis(){
+  const entries=getEntriesForPeriod(selectedDays);
+  if(entries.length===0){showToast('분석할 일기가 없어요. 먼저 일기를 써주세요!');return;}
+
+  const btn=document.getElementById('ai-analyze-btn');
+  const resultWrap=document.getElementById('ai-result-wrap');
+  const resultText=document.getElementById('ai-result-text');
+  const airTitle=document.getElementById('air-title');
+
+  const typeLabels={
+    'overall':'📊 종합 분석','good-bad':'⚖️ 잘한 것 vs 못한 것',
+    'decision':'🧠 의사결정 패턴','emotion':'🌡️ 감정 흐름',
+    'growth':'🚀 성장 지표','advice':'💡 AI 조언'
+  };
+  if(airTitle)airTitle.textContent=typeLabels[selectedAnalysisType]||'분석 결과';
+
+  btn.disabled=true;btn.textContent='분석 중...';
+  resultWrap.style.display='block';
+  resultText.textContent='일기를 읽고 있어요...\n잠시만 기다려주세요.';
+  document.querySelector('.content').scrollTop=9999;
+
+  const customQ=document.getElementById('ai-custom-q')?.value?.trim()||'';
+  const prompt=buildAnalysisPrompt(entries,selectedAnalysisType,customQ);
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:2000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data=await res.json();
+    const text=data.content?.filter(c=>c.type==='text').map(c=>c.text).join('')||'분석을 가져오지 못했어요.';
+    resultText.textContent=text;
+  }catch(e){
+    resultText.textContent='오류가 발생했어요. 인터넷 연결을 확인해주세요.';
+  }
+  btn.disabled=false;btn.textContent='AI 분석 시작 ↗';
+  document.querySelector('.content').scrollTop=9999;
+}
+
+function copyAnalysis(){
+  const text=document.getElementById('ai-result-text')?.textContent||'';
+  navigator.clipboard.writeText(text).then(()=>showToast('복사되었어요 ✓')).catch(()=>showToast('복사 실패'));
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeEditModal();}});
 init();
 </script>
 </body>
