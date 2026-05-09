@@ -716,7 +716,9 @@ async function deleteFromModal(){
 
 function openEditModal(){
   if(!currentModalEntry)return;
-  const e=currentModalEntry;closeModal();
+  const e={...currentModalEntry}; // 먼저 복사
+  closeModal(); // 그 다음 닫기
+  currentModalEntry=e; // 복원
   editMood=e.mood||'';
   document.getElementById('edit-modal-date').textContent='✏️ '+formatDate(e.date)+' 수정';
   document.querySelectorAll('#edit-mood-row .mood-btn').forEach(b=>b.classList.toggle('selected',b.dataset.mood===editMood));
@@ -726,21 +728,43 @@ function openEditModal(){
   sv('edit-mistake',e.mistake);sv('edit-question',e.question);sv('edit-answer',e.answer);sv('edit-insight',e.insight);
   document.getElementById('edit-modal').style.display='flex';
 }
-function closeEditModal(){document.getElementById('edit-modal').style.display='none';}
+function closeEditModal(){document.getElementById('edit-modal').style.display='none';currentModalEntry=null;}
 function selectEditMood(btn){document.querySelectorAll('#edit-mood-row .mood-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');editMood=btn.dataset.mood;}
 
 async function saveEdit(){
-  if(!currentModalEntry)return;
-  const entry={...currentModalEntry,mood:editMood,emotion:g('edit-emotion'),text:g('edit-text'),core:g('edit-core'),decisionWhat:g('edit-decision-what'),decisionWhy:g('edit-decision-why'),mistake:g('edit-mistake'),question:g('edit-question'),answer:g('edit-answer'),insight:g('edit-insight')};
+  if(!currentModalEntry){showNotice('수정할 일기를 찾을 수 없어요.','err','edit-notice');return;}
+  const entry={
+    ...currentModalEntry,
+    mood:editMood,
+    emotion:g('edit-emotion'),
+    text:g('edit-text'),
+    core:g('edit-core'),
+    decisionWhat:g('edit-decision-what'),
+    decisionWhy:g('edit-decision-why'),
+    mistake:g('edit-mistake'),
+    question:g('edit-question'),
+    answer:g('edit-answer'),
+    insight:g('edit-insight')
+  };
+  const btn=document.querySelector('#edit-modal .btn-primary');
+  if(btn){btn.disabled=true;btn.textContent='저장 중...';}
   setSyncStatus('syncing');
   try{
     await sbUpsert(entryToRow(entry));
     allEntries[entry.date]=entry;
-    setSyncStatus('ok');showToast('수정되었어요 ✓');closeEditModal();
+    setSyncStatus('ok');
+    showToast('수정되었어요 ✓');
+    closeEditModal();
+    // 모든 탭 갱신
     renderAll();
-    if(document.getElementById('panel-weekly').classList.contains('active'))renderWeekly();
-    if(document.getElementById('panel-monthly').classList.contains('active'))renderCalendar();
-  }catch(e){setSyncStatus('err');showNotice('저장 실패: '+e.message,'err','edit-notice');}
+    renderWeekly();
+    renderCalendar();
+  }catch(err){
+    setSyncStatus('err');
+    showNotice('저장 실패: '+err.message,'err','edit-notice');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='저장하기';}
+  }
 }
 
 function selectMood(btn){document.querySelectorAll('#panel-daily .mood-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selectedMood=btn.dataset.mood;}
@@ -768,7 +792,8 @@ function switchTab(tab){
     document.getElementById('nav-'+t)?.classList.toggle('active',t===tab);
   });
   if(tab==='weekly')renderWeekly();
-  if(tab==='monthly'){renderCalendar();renderAllSections();}
+  if(tab==='monthly'){renderCalendar();loadMonthlyData();}
+  if(tab==='quarterly')loadQuarterlyData();
   if(tab==='all')renderAll();
   document.querySelector('.content').scrollTop=0;
 }
