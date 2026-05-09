@@ -810,7 +810,7 @@ async function saveEntry(){
     await sbRPC('upsert_diary',e2r(e));
     entries[d]=e;setSync('ok');
     notice('savenotice',d===td()?'저장되었어요 ✓':fd(d)+' 저장되었어요 ✓','ok');
-    dailyEdited=false; // 저장 후 편집 상태 리셋
+    dailyEdited=false;
     renderWeek();
   }catch(err){setSync('e');notice('savenotice','저장 실패: '+err.message,'err');}
   btn.disabled=false;btn.textContent=d===td()?'저장하기':fd(d)+' 저장';
@@ -1536,13 +1536,15 @@ if(window.visualViewport){
 }
 
 // ── 작성 중 탭 이동 경고 ──
-let dailyEdited=false; // 실제로 수정했을 때만 true
-document.addEventListener('DOMContentLoaded',()=>{
+let dailyEdited=false;
+
+function setupDailyEditListeners(){
   ['core','dtx','dwhat','dwhy','dmistake','dq','da','dins'].forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.addEventListener('input',()=>{dailyEdited=true;});
   });
-});
+}
+
 function hasUnsaved(){return dailyEdited;}
 
 const origGoTab=goTab;
@@ -1550,7 +1552,7 @@ window.goTab=function(t){
   if(t!=='daily'&&document.getElementById('pn-daily').classList.contains('on')&&hasUnsaved()){
     if(!confirm('작성 중인 내용이 있어요. 저장하지 않고 이동할까요?'))return;
   }
-  if(t==='daily')dailyEdited=false; // 오늘 탭으로 돌아올 때 리셋
+  dailyEdited=false;
   origGoTab(t);
 };
 
@@ -1559,7 +1561,9 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register('/sw.js').catch(()=>{});
 }
 
-init();
+init().then(()=>{
+  setupDailyEditListeners(); // init 완료 후 편집 감지 시작
+});
 </script>
 </body>
 </html>
