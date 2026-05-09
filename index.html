@@ -765,8 +765,8 @@ function toggleDP(){
   w.style.display=open?'none':'block';
   if(!open){const i=document.getElementById('dpinp');i.value=wDate||td();i.max=td();}
 }
-function onDP(v){if(!v)return;wDate=v;updDHeader();loadDay(v);document.getElementById('dpwrap').style.display='none';}
-function pickToday(){wDate=null;updDHeader();loadDay(td());document.getElementById('dpwrap').style.display='none';}
+function onDP(v){if(!v)return;wDate=v;updDHeader();loadDay(v);dailyJustSaved=true;document.getElementById('dpwrap').style.display='none';}
+function pickToday(){wDate=null;updDHeader();loadDay(td());dailyJustSaved=true;document.getElementById('dpwrap').style.display='none';}
 function updDHeader(){
   const d=wDate||td(),it=d===td();
   document.getElementById('dtitle').textContent=it?'오늘의 일기':fd(d)+' 일기';
@@ -787,8 +787,7 @@ function loadDay(ds){
       document.getElementById('xbtn').textContent='− 접기';
     }
   }
-  dailyEdited=false; // 불러온 후 편집 상태 리셋 (오탐 방지)
-  // 불러온 내용을 기준점으로 설정 → 수정 없이 탭 이동 시 경고 안 뜸
+  dailyJustSaved=true; // 불러온 후 리셋
   setTimeout(()=>{lastSavedContent=getCurrentContent();},0);
 }
 function openFlashback(){if(fbEntry)openV(fbEntry);}
@@ -811,7 +810,7 @@ async function saveEntry(){
   try{
     await sbRPC('upsert_diary',e2r(e));
     entries[d]=e;setSync('ok');
-    lastSavedContent=getCurrentContent(); // 저장 후 기준점 업데이트
+    dailyJustSaved=true; // 저장 완료
     notice('savenotice',d===td()?'저장되었어요 ✓':fd(d)+' 저장되었어요 ✓','ok');
     renderWeek();
   }catch(err){setSync('e');notice('savenotice','저장 실패: '+err.message,'err');}
@@ -1554,26 +1553,21 @@ if(window.visualViewport){
 }
 
 // ── 작성 중 탭 이동 경고 ──
-let lastSavedContent=''; // 마지막 저장 시점의 내용
+let dailyJustSaved=true; // 시작 시 true, 타이핑하면 false, 저장하면 true
 
-function getCurrentContent(){
-  return (document.getElementById('core')?.value||'').trim()+
-         (document.getElementById('dtx')?.value||'').trim();
-}
-
-function setupDailyEditListeners(){} // 더 이상 필요 없음
-
-function hasUnsaved(){
-  const current=getCurrentContent();
-  // 내용이 있고 마지막 저장 내용과 다를 때만 경고
-  return current.length>0 && current!==lastSavedContent;
+function setupDailyEditListeners(){
+  ['core','dtx','dwhat','dwhy','dmistake','dq','da','dins'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.addEventListener('input',()=>{dailyJustSaved=false;});
+  });
 }
 
 const origGoTab=goTab;
 window.goTab=function(t){
-  if(t!=='daily'&&document.getElementById('pn-daily').classList.contains('on')&&hasUnsaved()){
-    if(!confirm('작성 중인 내용이 있어요. 저장하지 않고 이동할까요?'))return;
+  if(t!=='daily'&&document.getElementById('pn-daily').classList.contains('on')&&!dailyJustSaved){
+    if(!confirm('저장하지 않은 내용이 있어요. 이동할까요?'))return;
   }
+  if(t==='daily')dailyJustSaved=true; // 오늘 탭 진입 시 리셋
   origGoTab(t);
 };
 
