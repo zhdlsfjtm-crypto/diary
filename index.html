@@ -443,7 +443,8 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
           <span style="display:flex;align-items:center;font-size:13px;color:var(--ink3);">만원</span>
         </div>
         <input type="text" id="l-memo" class="linp" placeholder="메모 (선택)" style="font-size:13px;margin-bottom:10px;">
-        <button class="bp" onclick="addLedger()">추가하기</button>
+        <button class="bp" id="ledger-add-btn" onclick="addLedger()">추가하기</button>
+        <button class="bg" id="ledger-cancel-btn" onclick="cancelEditLedger()" style="display:none;margin-top:8px;">수정 취소</button>
         <div class="notice" id="lnotice"></div>
       </div>
 
@@ -754,7 +755,7 @@ async function saveE(){
   try{
     await sbRPC('upsert_diary',e2r(e));
     entries[e.date]=e;setSync('ok');toast('수정되었어요 ✓');closeE();
-    renderAll();renderWeek();renderCal();
+    renderAll();renderWeek();
   }catch(err){setSync('e');notice('enotice','저장 실패: '+err.message,'err');}
   btn.disabled=false;btn.textContent='저장하기';
 }
@@ -868,18 +869,23 @@ const CATS_EX=['식비','교통','주거','보험','세금','의료','문화','�
 const CAT_COLORS={급여:'#3B6D11',사업수입:'#2D5A8C',투자수익:'#6B3FA0',임대수입:'#8C4A2D',기타수입:'#2D6B5A',식비:'#C4622D',교통:'#8C4A2D',주거:'#1A5C8C',보험:'#6B3FA0',세금:'#A32D2D',의료:'#2D6B5A',문화:'#2D5A8C',쇼핑:'#C4622D',교육:'#3B6D11',기타지출:'#8C877E'};
 
 let ledgerY, ledgerM, ledgerType='expense', ledgerData=[], budgets={}, editingLedger=null;
-let snapAsset=0, snapDebt=0, mPrinciple='';
+let snapAsset=0, snapDebt=0, ledgerInited=false;
 
 function initLedger(){
-  const now=new Date();ledgerY=now.getFullYear();ledgerM=now.getMonth();
+  if(!ledgerInited){
+    // 최초 1회만 날짜/타입 초기화
+    const now=new Date();ledgerY=now.getFullYear();ledgerM=now.getMonth();
+    document.getElementById('l-date').value=td();
+    setType('expense');
+    ledgerInited=true;
+  }
   updLedgerHeader();
-  document.getElementById('l-date').value=td();
   updCatSelect();
   loadLedgerData();
 }
 function chLedgerMo(d){
   ledgerM+=d;if(ledgerM>11){ledgerM=0;ledgerY++;}if(ledgerM<0){ledgerM=11;ledgerY--;}
-  updLedgerHeader();updCatSelect();loadLedgerData();
+  updLedgerHeader();loadLedgerData();
 }
 function lmk(){return `m_${ledgerY}_${ledgerM+1}`;}
 function updLedgerHeader(){
@@ -893,62 +899,65 @@ function setType(t){
   updCatSelect();
 }
 function updCatSelect(){
-  const sel=document.getElementById('l-cat');
+  const sel=document.getElementById('l-cat');if(!sel)return;
   const cats=ledgerType==='income'?CATS_IN:CATS_EX;
   sel.innerHTML=cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  if(editingLedger){
+    const cur=ledgerData.find(r=>r.id===editingLedger);
+    if(cur)sel.value=cur.category;
+  }
 }
 
 async function loadLedgerData(){
   const key=lmk();
   try{
-    // 가계부 내역
-    const rows=await sbGet(`ledger_entries?month_key=eq.${key}&select=*&order=entry_date.desc,created_at.desc`);
+    const [rows,brows]=await Promise.all([
+      sbGet(`ledger_entries?month_key=eq.${key}&select=*&order=entry_date.desc,created_at.desc`),
+      sbGet(`monthly_budget?month_key=eq.${key}&select=*`)
+    ]);
     ledgerData=rows||[];
-    // 예산/자산 스냅샷
-    const brows=await sbGet(`monthly_budget?month_key=eq.${key}&select=*`);
     if(brows&&brows.length>0){
-      budgets=brows[0].budgets||{};
-      snapAsset=brows[0].total_asset||0;
-      snapDebt=brows[0].total_debt||0;
-      mPrinciple=brows[0].principle||'';
-      document.getElementById('snap-asset').value=snapAsset||'';
-      document.getElementById('snap-debt').value=snapDebt||'';
-      const el=document.getElementById('mprinciple');if(el)el.value=mPrinciple;
+      const b=brows[0];
+      budgets=b.budgets||{};
+      snapAsset=b.total_asset||0;
+      snapDebt=b.total_debt||0;
+      const sa=document.getElementById('snap-asset');if(sa)sa.value=snapAsset||'';
+      const sd=document.getElementById('snap-debt');if(sd)sd.value=snapDebt||'';
+      const mp=document.getElementById('mprinciple');if(mp&&b.principle)mp.value=b.principle;
     }else{budgets={};snapAsset=0;snapDebt=0;}
     calcNet();renderLedger();renderCatBars();renderBudgetInputs();
   }catch(err){console.error('가계부 로드 실패',err);}
 }
 
 function calcNet(){
-  const a=parseFloat(document.getElementById('snap-asset').value)||0;
-  const d=parseFloat(document.getElementById('snap-debt').value)||0;
+  const a=parseFloat(document.getElementById('snap-asset')?.value)||0;
+  const d=parseFloat(document.getElementById('snap-debt')?.value)||0;
   const net=a-d;snapAsset=a;snapDebt=d;
-  document.getElementById('snap-net').textContent=net.toFixed(1);
-  document.getElementById('netval').textContent=net.toFixed(1)+' 억원';
+  const nv=document.getElementById('snap-net');if(nv)nv.textContent=net.toFixed(1);
+  const nv2=document.getElementById('netval');if(nv2)nv2.textContent=net.toFixed(1)+' 억원';
   const pct=Math.min((net/GOAL)*100,100);
-  document.getElementById('gpct').textContent=pct.toFixed(1)+'%';
-  document.getElementById('pfill').style.width=pct+'%';
-  document.getElementById('gsub').textContent=`목표 400억까지 ${Math.max(GOAL-net,0).toFixed(1)}억원 남았어요`;
+  const pe=document.getElementById('gpct');if(pe)pe.textContent=pct.toFixed(1)+'%';
+  const fe=document.getElementById('pfill');if(fe)fe.style.width=pct+'%';
+  const se=document.getElementById('gsub');if(se)se.textContent=`목표 400억까지 ${Math.max(GOAL-net,0).toFixed(1)}억원 남았어요`;
 }
 
 function renderLedger(){
   const totalIn=ledgerData.filter(r=>r.type==='income').reduce((a,b)=>a+b.amount,0);
   const totalEx=ledgerData.filter(r=>r.type==='expense').reduce((a,b)=>a+b.amount,0);
   const net=totalIn-totalEx;
-  document.getElementById('sum-income').textContent=totalIn.toLocaleString();
-  document.getElementById('sum-expense').textContent=totalEx.toLocaleString();
+  const si=document.getElementById('sum-income');if(si)si.textContent=totalIn.toLocaleString();
+  const se=document.getElementById('sum-expense');if(se)se.textContent=totalEx.toLocaleString();
   const sn=document.getElementById('sum-net');
-  sn.textContent=(net>=0?'+':'')+net.toLocaleString();
-  sn.style.color=net>=0?'var(--ok)':'var(--err)';
-  document.getElementById('ledger-count').textContent=`${ledgerData.length}건`;
-  const list=document.getElementById('ledger-list');
+  if(sn){sn.textContent=(net>=0?'+':'')+net.toLocaleString();sn.style.color=net>=0?'var(--ok)':'var(--err)';}
+  const lc=document.getElementById('ledger-count');if(lc)lc.textContent=`${ledgerData.length}건`;
+  const list=document.getElementById('ledger-list');if(!list)return;
   if(!ledgerData.length){list.innerHTML='<div style="text-align:center;padding:20px;color:var(--ink3);font-size:13px;">이달 내역이 없어요</div>';return;}
   list.innerHTML=ledgerData.map((r,i)=>`
-    <div class="ledger-item">
+    <div class="ledger-item${editingLedger===r.id?' editing':''}">
       <div class="ledger-dot ${r.type==='income'?'in':'ex'}"></div>
       <div class="ledger-info">
         <div class="ledger-cat">${r.category} · <span class="ledger-date">${r.entry_date}</span></div>
-        <div class="ledger-memo">${r.memo||r.category}</div>
+        <div class="ledger-memo">${(r.memo||r.category).replace(/</g,'&lt;')}</div>
       </div>
       <div class="ledger-amt ${r.type==='income'?'in':'ex'}">${r.type==='income'?'+':'-'}${r.amount.toLocaleString()}</div>
       <div class="ledger-actions">
@@ -964,7 +973,7 @@ function renderCatBars(){
   exData.forEach(r=>{catTotals[r.category]=(catTotals[r.category]||0)+r.amount;});
   const sorted=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
   const maxVal=sorted[0]?.[1]||1;
-  const bars=document.getElementById('cat-bars');
+  const bars=document.getElementById('cat-bars');if(!bars)return;
   if(!sorted.length){bars.innerHTML='<div style="text-align:center;padding:12px;color:var(--ink3);font-size:13px;">지출 내역이 없어요</div>';return;}
   bars.innerHTML=sorted.map(([cat,amt])=>{
     const budget=budgets[cat]||0;
@@ -983,7 +992,8 @@ function renderCatBars(){
 
 function renderBudgetInputs(){
   const all=[...CATS_IN,...CATS_EX];
-  document.getElementById('budget-inputs').innerHTML=all.map(cat=>`
+  const el=document.getElementById('budget-inputs');if(!el)return;
+  el.innerHTML=all.map(cat=>`
     <div class="budget-inp-row">
       <span style="font-size:13px;">${cat}</span>
       <input type="number" class="budget-inp" value="${budgets[cat]||''}" placeholder="0" oninput="updBudget('${cat}',this.value)">
@@ -991,8 +1001,9 @@ function renderBudgetInputs(){
 }
 function updBudget(cat,v){budgets[cat]=parseInt(v)||0;renderCatBars();}
 function toggleBudgetEdit(){
-  const el=document.getElementById('budget-edit');
-  el.style.display=el.style.display==='none'?'block':'none';
+  const el=document.getElementById('budget-edit');if(!el)return;
+  const open=el.style.display==='none'||el.style.display==='';
+  el.style.display=open?'block':'none';
 }
 
 async function addLedger(){
@@ -1003,17 +1014,13 @@ async function addLedger(){
   if(!amount){notice('lnotice','금액을 입력해주세요.','err');return;}
 
   if(editingLedger){
-    // 수정 모드
     try{
       await sbFetchDirect(`ledger_entries?id=eq.${editingLedger}`,{
         method:'PATCH',
         body:JSON.stringify({entry_date:date,type:ledgerType,category:cat,amount,memo,month_key:lmk()})
       });
       toast('수정되었어요 ✓');
-      editingLedger=null;
-      document.getElementById('l-amount').value='';
-      document.getElementById('l-memo').value='';
-      document.querySelector('.bp[onclick="addLedger()"]').textContent='추가하기';
+      cancelEditLedger();
       await loadLedgerData();
     }catch(err){notice('lnotice','수정 실패: '+err.message,'err');}
     return;
@@ -1036,17 +1043,36 @@ function editLedger(i){
   editingLedger=r.id;
   setType(r.type);
   document.getElementById('l-date').value=r.entry_date;
-  document.getElementById('l-cat').value=r.category;
+  setTimeout(()=>{const sel=document.getElementById('l-cat');if(sel)sel.value=r.category;},50);
   document.getElementById('l-amount').value=r.amount;
   document.getElementById('l-memo').value=r.memo||'';
-  document.querySelector('.bp[onclick="addLedger()"]').textContent='수정 저장';
-  document.getElementById('scr').scrollTo({top:999,behavior:'smooth'});
+  // 버튼 텍스트 변경 + 취소 버튼 표시
+  const addBtn=document.getElementById('ledger-add-btn');
+  const cancelBtn=document.getElementById('ledger-cancel-btn');
+  if(addBtn)addBtn.textContent='수정 저장';
+  if(cancelBtn)cancelBtn.style.display='block';
+  renderLedger(); // 수정 중인 항목 하이라이트
+  document.getElementById('scr').scrollTo({top:document.getElementById('ledger-list').offsetTop-100,behavior:'smooth'});
+}
+
+function cancelEditLedger(){
+  editingLedger=null;
+  document.getElementById('l-amount').value='';
+  document.getElementById('l-memo').value='';
+  document.getElementById('l-date').value=td();
+  setType('expense');
+  const addBtn=document.getElementById('ledger-add-btn');
+  const cancelBtn=document.getElementById('ledger-cancel-btn');
+  if(addBtn)addBtn.textContent='추가하기';
+  if(cancelBtn)cancelBtn.style.display='none';
+  renderLedger();
 }
 
 async function delLedger(id){
   if(!confirm('이 내역을 삭제할까요?'))return;
   try{
     await sbDel('ledger_entries?id=eq.'+id);
+    if(editingLedger===id)cancelEditLedger();
     toast('삭제되었어요 ✓');
     await loadLedgerData();
   }catch(err){toast('삭제 실패: '+err.message);}
@@ -1059,7 +1085,7 @@ async function saveMonthly(){
       p_month_key:lmk(),p_budgets:budgets,
       p_net_asset:snapAsset-snapDebt,p_total_asset:snapAsset,p_total_debt:snapDebt
     });
-    // 원칙은 별도 저장 (monthly_budget 테이블에 principle 컬럼 없으면 로컬)
+    // principle은 monthly_budget에 컬럼이 없으므로 localStorage 보조 사용
     localStorage.setItem('principle_'+lmk(),p);
     notice('mnotice','저장되었어요 ✓','ok');
   }catch(err){notice('mnotice','저장 실패: '+err.message,'err');}
@@ -1067,7 +1093,7 @@ async function saveMonthly(){
 
 async function loadMonthlyData(){initLedger();}
 
-// sbFetchDirect — POST/PATCH for ledger (not RPC)
+// sbFetchDirect — POST/PATCH for ledger
 async function sbFetchDirect(path,opt={}){
   const r=await fetch(SBU+'/rest/v1/'+path,{
     method:opt.method||'POST',
