@@ -771,28 +771,20 @@ async function genSummary(){
     return l;
   }).join('\n\n');
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
+    const res=await fetch('/ai-proxy',{
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:400,
         messages:[{role:'user',content:`이번 주 일기:\n\n${txt}\n\n핵심 한 줄과 결정, 배움을 중심으로 따뜻하게 3문장으로 정리하고, 다음 주를 위한 격려 한 마디 추가해주세요. 한국어로.`}]
       })
     });
-    if(!res.ok){
-      const err=await res.text();
-      box.textContent='AI 연결에 실패했어요. 잠시 후 다시 시도해주세요.\n('+err+')';
-      btn.disabled=false;return;
-    }
+    if(!res.ok){const err=await res.text();box.textContent='오류: '+err;btn.disabled=false;return;}
     const data=await res.json();
     box.textContent=data.content?.filter(c=>c.type==='text').map(c=>c.text).join('')||'정리를 가져오지 못했어요.';
   }catch(e){
-    box.textContent='AI 연결 오류가 발생했어요.\n인터넷 연결을 확인해주세요.';
+    box.textContent='연결 오류가 발생했어요.\n잠시 후 다시 시도해주세요.';
     console.error(e);
   }
   btn.disabled=false;
