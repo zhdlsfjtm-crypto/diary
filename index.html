@@ -295,26 +295,12 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       </div>
 
       <div class="card">
-        <div class="card-header"><span class="card-icon">🌡️</span><span class="card-title">오늘의 기분</span></div>
-        <div class="mood-row">
-          <button class="mood-btn" data-mood="😄" onclick="selectMood(this)">😄</button>
-          <button class="mood-btn" data-mood="🙂" onclick="selectMood(this)">🙂</button>
-          <button class="mood-btn" data-mood="😐" onclick="selectMood(this)">😐</button>
-          <button class="mood-btn" data-mood="😔" onclick="selectMood(this)">😔</button>
-          <button class="mood-btn" data-mood="😤" onclick="selectMood(this)">😤</button>
-          <button class="mood-btn" data-mood="😴" onclick="selectMood(this)">😴</button>
-          <button class="mood-btn" data-mood="🥹" onclick="selectMood(this)">🥹</button>
-        </div>
-        <textarea class="emotion-input" id="emotion-text" rows="2" placeholder="감정을 한 줄로 — 명확해졌다, 무겁다, 찜찜하다..."></textarea>
-      </div>
-
-      <div class="card">
         <div class="card-header"><span class="card-icon">📝</span><span class="card-title">오늘 있었던 일</span><span class="card-desc">맥락 중심으로</span></div>
-        <textarea class="txt" id="diary-text" rows="5" placeholder="오늘 있었던 일을 적어보세요..." oninput="updateChar()"></textarea>
+        <textarea class="txt" id="diary-text" rows="6" placeholder="오늘 있었던 일을 적어보세요..." oninput="updateChar()"></textarea>
         <div class="area-foot"><span class="char-count"><span id="char-count">0</span>자</span></div>
       </div>
 
-      <button class="expand-toggle" onclick="toggleExpand(this,'expand-more')">+ 더 쓰기 — 결정 · 배움 · 질문 · 영감</button>
+      <button class="expand-toggle" id="expand-btn" onclick="toggleExpand()">+ 더 쓰기 — 결정 · 배움 · 질문 · 영감</button>
       <div class="expand-section" id="expand-more">
         <div class="decision-card">
           <div class="card-header" style="margin-bottom:10px"><span class="card-icon">⚖️</span><span class="card-title" style="color:var(--decision)">오늘의 결정</span><span class="card-desc" style="color:#C4956A">달리오 방식</span></div>
@@ -777,12 +763,18 @@ async function saveEdit(){
 
 function selectMood(btn){document.querySelectorAll('#panel-daily .mood-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selectedMood=btn.dataset.mood;}
 function updateChar(){document.getElementById('char-count').textContent=document.getElementById('diary-text').value.length;}
-function toggleExpand(btn,id){const sec=document.getElementById(id);sec.classList.toggle('open');btn.textContent=sec.classList.contains('open')?'− 접기':'+ 더 쓰기 — 결정 · 배움 · 질문 · 영감';}
+function toggleExpand(){
+  const sec=document.getElementById('expand-more');
+  const btn=document.getElementById('expand-btn');
+  const isOpen=sec.classList.contains('open');
+  sec.classList.toggle('open',!isOpen);
+  btn.textContent=isOpen?'+ 더 쓰기 — 결정 · 배움 · 질문 · 영감':'− 접기';
+}
 
 async function saveEntry(){
   const targetDate=writingDate||getToday();
   const core=g('core-text'),text=g('diary-text'),emotion=g('emotion-text');
-  if(!selectedMood&&!core&&!text&&!emotion){showNotice('핵심 한 줄이라도 입력해주세요.','err','save-notice');return;}
+  if(!core&&!text&&!emotion){showNotice('핵심 한 줄이나 내용을 입력해주세요.','err','save-notice');return;}
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='저장 중...';setSyncStatus('syncing');
   const entry={date:targetDate,mood:selectedMood,emotion,text,core,decisionWhat:g('decision-what'),decisionWhy:g('decision-why'),mistake:g('mistake-text'),question:g('question-text'),answer:g('answer-text'),insight:g('insight-text'),tags:[]};
   try{
@@ -798,10 +790,15 @@ async function saveEntry(){
 }
 
 function switchTab(tab){
-  ['daily','weekly','monthly','quarterly','all'].forEach(t=>{
-    document.getElementById('panel-'+t)?.classList.toggle('active',t===tab);
-    document.getElementById('nav-'+t)?.classList.toggle('active',t===tab);
-  });
+  // 모든 패널/네비 비활성화
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  // 선택한 탭 활성화
+  const panel=document.getElementById('panel-'+tab);
+  const nav=document.getElementById('nav-'+tab);
+  if(panel)panel.classList.add('active');
+  if(nav)nav.classList.add('active');
+  // 탭별 데이터 로드
   if(tab==='weekly')renderWeekly();
   if(tab==='monthly'){renderCalendar();loadMonthlyData();}
   if(tab==='quarterly')loadQuarterlyData();
