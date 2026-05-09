@@ -531,8 +531,8 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 <script>
 // ══════════════════════════════════════
 // ⚙️ Supabase 설정 — 아래 두 줄만 교체하세요
-const SUPABASE_URL = 'https://aeopocvdsfiuhdyutwdb.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_sC1ZGLuPueCzy4o7A3pxtw_CDndcFXV';
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY = 'YOUR_SUPABASE_PUBLISHABLE_KEY';
 // ══════════════════════════════════════
 
 const DAYS=['일','월','화','수','목','금','토'];
@@ -612,14 +612,9 @@ async function init(){
     document.getElementById('flashback-card').style.display='block';
   }
 
-  // 월별/분기 복원
-  const mk=getMonthKey(),md=JSON.parse(localStorage.getItem('asset_'+mk)||'{}');
-  assetData=md;Object.keys(SECTIONS).forEach(sec=>{if(!assetData[sec])assetData[sec]=[];});
-  renderAllSections();
-  const principle=localStorage.getItem('principle_'+mk)||'';
-  if(document.getElementById('monthly-principle'))document.getElementById('monthly-principle').value=principle;
-  const qk=getQuarterKey(),qd=JSON.parse(localStorage.getItem(qk)||'{}');
-  ['before','after','mistakes','principles'].forEach(k=>{const el=document.getElementById('q-'+k);if(el&&qd[k])el.value=qd[k];});
+  // 월별/분기 복원 (Supabase - 모든 기기 연동)
+  await loadMonthlyData();
+  await loadQuarterlyData();
 }
 
 function rowToEntry(r){
@@ -904,9 +899,91 @@ function recalcAll(){
   const cfNet=document.getElementById('cf-net');const cfNetVal=totalIncome-totalExpense;
   if(cfNet){cfNet.textContent=(cfNetVal>=0?'+':'')+cfNetVal.toLocaleString()+' 만원';cfNet.style.color=cfNetVal>=0?'var(--ok)':'var(--err)';}
 }
-function saveAssetData(){localStorage.setItem('asset_'+getMonthKey(),JSON.stringify(assetData));recalcAll();}
-function saveMonthlyData(){saveAssetData();const principle=document.getElementById('monthly-principle')?.value||'';localStorage.setItem('principle_'+getMonthKey(),principle);showNotice('이달 기록 저장되었어요 ✓','ok','monthly-notice');}
-function saveQuarterly(){const data={before:document.getElementById('q-before').value,after:document.getElementById('q-after').value,mistakes:document.getElementById('q-mistakes').value,principles:document.getElementById('q-principles').value};localStorage.setItem(getQuarterKey(),JSON.stringify(data));showNotice('분기 회고 저장되었어요 ✓','ok','quarterly-notice');}
+// 자동 저장 (항목 변경 시)
+let saveAssetTimer=null;
+function saveAssetData(){
+  recalcAll();
+  clearTimeout(saveAssetTimer);
+  saveAssetTimer=setTimeout(()=>_saveMonthlyToSb(),1000);
+}
+
+async function _saveMonthlyToSb(){
+  const principle=document.getElementById('monthly-principle')?.value||'';
+  const mk=getMonthKey();
+  try{
+    await fetch(`${SUPABASE_URL}/rest/v1/monthly_assets`,{
+      method:'POST',
+      headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({month_key:mk,asset_data:assetData,principle,updated_at:new Date().toISOString()})
+    });
+  }catch(e){console.error('월별 저장 실패',e);}
+}
+
+async function saveMonthlyData(){
+  await _saveMonthlyToSb();
+  showNotice('이달 기록 저장되었어요 ✓','ok','monthly-notice');
+}
+
+async function loadMonthlyData(){
+  const mk=getMonthKey();
+  try{
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/monthly_assets?month_key=eq.${mk}&select=*`,{
+      headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`}
+    });
+    const rows=await res.json();
+    if(rows&&rows.length>0){
+      const row=rows[0];
+      assetData=row.asset_data||{};
+      Object.keys(SECTIONS).forEach(sec=>{if(!assetData[sec])assetData[sec]=[];});
+      renderAllSections();
+      const el=document.getElementById('monthly-principle');
+      if(el&&row.principle)el.value=row.principle;
+    }else{
+      Object.keys(SECTIONS).forEach(sec=>{if(!assetData[sec])assetData[sec]=[];});
+      renderAllSections();
+    }
+  }catch(e){
+    console.error('월별 로드 실패',e);
+    Object.keys(SECTIONS).forEach(sec=>{if(!assetData[sec])assetData[sec]=[];});
+    renderAllSections();
+  }
+}
+
+async function saveQuarterly(){
+  const qk=getQuarterKey();
+  const data={
+    quarter_key:qk,
+    before_text:document.getElementById('q-before').value,
+    after_text:document.getElementById('q-after').value,
+    mistakes:document.getElementById('q-mistakes').value,
+    principles:document.getElementById('q-principles').value,
+    updated_at:new Date().toISOString()
+  };
+  try{
+    await fetch(`${SUPABASE_URL}/rest/v1/quarterly_notes`,{
+      method:'POST',
+      headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify(data)
+    });
+    showNotice('분기 회고 저장되었어요 ✓','ok','quarterly-notice');
+  }catch(e){showNotice('저장 실패','err','quarterly-notice');}
+}
+
+async function loadQuarterlyData(){
+  const qk=getQuarterKey();
+  try{
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/quarterly_notes?quarter_key=eq.${qk}&select=*`,{
+      headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`}
+    });
+    const rows=await res.json();
+    if(rows&&rows.length>0){
+      const row=rows[0];
+      const sv=(id,val)=>{const el=document.getElementById(id);if(el&&val)el.value=val;};
+      sv('q-before',row.before_text);sv('q-after',row.after_text);
+      sv('q-mistakes',row.mistakes);sv('q-principles',row.principles);
+    }
+  }catch(e){console.error('분기 로드 실패',e);}
+}
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeEditModal();}});
 init();
