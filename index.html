@@ -486,13 +486,65 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       <div class="elist" id="elist"></div>
     </div>
 
+    <!-- 목표 -->
+    <div class="pn" id="pn-goals">
+      <div class="ptitle">목표 관리</div>
+      <div class="psub" id="gsub2"></div>
+
+      <!-- 400억 연결 -->
+      <div style="background:linear-gradient(135deg,#1A5C8C,#6B3FA0);border-radius:14px;padding:16px;margin-bottom:12px;color:#fff;text-align:center;">
+        <div style="font-size:11px;opacity:.8;margin-bottom:4px;">🎯 최종 목표</div>
+        <div style="font-size:24px;font-weight:700;">400억 순자산</div>
+        <div style="font-size:11px;opacity:.7;margin-top:4px;">40살까지 · 달리오 원칙 기반</div>
+      </div>
+
+      <!-- 연간 목표 -->
+      <div class="card">
+        <div class="ch"><span class="ci">🏆</span><span class="ct">올해 목표</span><span class="cd" id="yr-pct">0% 달성</span></div>
+        <div id="yr-goals-list"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <input type="text" id="yr-inp" class="linp" placeholder="올해 목표 추가..." style="font-size:14px;flex:1;">
+          <button onclick="addGoal('yr')" style="padding:10px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:18px;">+</button>
+        </div>
+      </div>
+
+      <!-- 월간 목표 -->
+      <div class="card">
+        <div class="ch"><span class="ci">📅</span><span class="ct">이번 달 목표</span><span class="cd" id="mo-pct">0% 달성</span></div>
+        <div id="mo-goals-list"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <input type="text" id="mo-inp" class="linp" placeholder="이번 달 목표 추가..." style="font-size:14px;flex:1;">
+          <button onclick="addGoal('mo')" style="padding:10px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:18px;">+</button>
+        </div>
+      </div>
+
+      <!-- 주간 목표 -->
+      <div class="card">
+        <div class="ch"><span class="ci">⚡</span><span class="ct">이번 주 목표</span><span class="cd" id="wk-pct">0% 달성</span></div>
+        <div id="wk-goals-list"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <input type="text" id="wk-inp" class="linp" placeholder="이번 주 목표 추가..." style="font-size:14px;flex:1;">
+          <button onclick="addGoal('wk')" style="padding:10px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:18px;">+</button>
+        </div>
+      </div>
+
+      <!-- 회고 -->
+      <div class="pcard">
+        <div class="plbl">📝 목표 회고 — 못 한 이유 / 다음 주 집중</div>
+        <textarea class="ptx" id="goal-retro" rows="3" placeholder="달성 못 한 목표의 이유와 다음에 할 것..."></textarea>
+      </div>
+
+      <button class="bp" onclick="saveGoals()">목표 저장</button>
+      <div class="notice" id="gnotice"></div>
+    </div>
+
   </div>
 
   <nav class="bnav">
     <button class="nb on" id="nb-daily" onclick="goTab('daily')"><span class="ni">✏️</span><span class="nl">오늘</span></button>
     <button class="nb" id="nb-weekly" onclick="goTab('weekly')"><span class="ni">📅</span><span class="nl">주간</span></button>
     <button class="nb" id="nb-monthly" onclick="goTab('monthly')"><span class="ni">💰</span><span class="nl">월간</span></button>
-    <button class="nb" id="nb-quarterly" onclick="goTab('quarterly')"><span class="ni">🔄</span><span class="nl">분기</span></button>
+    <button class="nb" id="nb-goals" onclick="goTab('goals')"><span class="ni">🎯</span><span class="nl">목표</span></button>
     <button class="nb" id="nb-all" onclick="goTab('all')"><span class="ni">📚</span><span class="nl">전체</span></button>
   </nav>
 </div>
@@ -552,7 +604,7 @@ const SECS={re:{u:'억',c:'av-a'},fi:{u:'억',c:'av-a'},co:{u:'억',c:'av-a'},et
 
 // ── 상태 ──
 let entries={}, vEntry=null, eEntry=null, wDate=null, calY, calM, aData={}, fbEntry=null;
-let tabs=['daily','weekly','monthly','quarterly','all'];
+let tabs=['daily','weekly','monthly','goals','all'];
 
 // ── Supabase API ──
 const H={'Content-Type':'application/json',apikey:SBK,Authorization:'Bearer '+SBK};
@@ -697,7 +749,7 @@ function goTab(t){
   document.getElementById('scr').scrollTop=0;
   if(t==='weekly')renderWeek();
   if(t==='monthly')initLedger();
-  if(t==='quarterly')loadQuarterlyData();
+  if(t==='goals')loadGoals();
   if(t==='all')renderAll();
 }
 
@@ -1102,6 +1154,111 @@ async function sbFetchDirect(path,opt={}){
   });
   if(!r.ok)throw new Error(await r.text());
   return true;
+}
+
+// ── 목표 ──
+let goalsData={yr:[],mo:[],wk:[]};
+
+function goalKey(){
+  const now=new Date();
+  const yr=now.getFullYear();
+  const mo=now.getMonth()+1;
+  const wd=now.getDay();
+  const weekStart=new Date(now);weekStart.setDate(now.getDate()-wd);
+  const wk=`${weekStart.getFullYear()}${p2(weekStart.getMonth()+1)}${p2(weekStart.getDate())}`;
+  return `goals_${yr}_${mo}_${wk}`;
+}
+
+async function loadGoals(){
+  const now=new Date();
+  document.getElementById('gsub2').textContent=`${now.getFullYear()}년 ${MOS[now.getMonth()]} · ${Math.ceil((now.getMonth()+1)/3)}분기`;
+  try{
+    const rows=await sbGet(`goals?goal_key=eq.${goalKey()}&select=*`);
+    if(rows&&rows.length>0){
+      const r=rows[0];
+      goalsData={
+        yr:r.year_goals||[],
+        mo:r.month_goals||[],
+        wk:r.week_goals||[]
+      };
+      const retro=document.getElementById('goal-retro');
+      if(retro)retro.value=r.retrospect||'';
+    }else{
+      goalsData={yr:[],mo:[],wk:[]};
+    }
+    renderGoals();
+  }catch(err){console.error('목표 로드 실패',err);}
+}
+
+function renderGoals(){
+  renderGoalList('yr');
+  renderGoalList('mo');
+  renderGoalList('wk');
+}
+
+function renderGoalList(type){
+  const list=document.getElementById(type+'-goals-list');if(!list)return;
+  const items=goalsData[type]||[];
+  const done=items.filter(g=>g.done).length;
+  const pct=items.length?Math.round((done/items.length)*100):0;
+  const pctEl=document.getElementById(type+'-pct');
+  if(pctEl)pctEl.textContent=`${pct}% 달성`;
+
+  if(!items.length){
+    list.innerHTML='<div style="text-align:center;padding:14px;color:var(--ink3);font-size:13px;">목표를 추가해보세요</div>';
+    return;
+  }
+  list.innerHTML=items.map((g,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);">
+      <div onclick="toggleGoal('${type}',${i})" style="width:22px;height:22px;border-radius:50%;border:2px solid ${g.done?'var(--ok)':'var(--line)'};background:${g.done?'var(--ok)':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+        ${g.done?'<span style="color:#fff;font-size:12px;">✓</span>':''}
+      </div>
+      <span style="flex:1;font-size:14px;font-family:\'Nanum Myeongjo\',serif;color:var(--ink);text-decoration:${g.done?'line-through':'none'};opacity:${g.done?'.5':'1'};">${g.text.replace(/</g,'&lt;')}</span>
+      <button onclick="delGoal('${type}',${i})" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink3);padding:4px;">×</button>
+    </div>`).join('');
+}
+
+function addGoal(type){
+  const inp=document.getElementById(type+'-inp');
+  const text=inp?.value?.trim();
+  if(!text)return;
+  goalsData[type]=goalsData[type]||[];
+  goalsData[type].push({text,done:false});
+  inp.value='';
+  renderGoalList(type);
+}
+
+function toggleGoal(type,i){
+  goalsData[type][i].done=!goalsData[type][i].done;
+  renderGoalList(type);
+}
+
+function delGoal(type,i){
+  goalsData[type].splice(i,1);
+  renderGoalList(type);
+}
+
+// Enter 키로 추가
+['yr','mo','wk'].forEach(type=>{
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&document.activeElement?.id===type+'-inp'){
+      addGoal(type);
+    }
+  });
+});
+
+async function saveGoals(){
+  const retro=document.getElementById('goal-retro')?.value||'';
+  try{
+    await sbRPC('upsert_goals',{
+      p_goal_key:goalKey(),
+      p_year_goals:goalsData.yr,
+      p_month_goals:goalsData.mo,
+      p_week_goals:goalsData.wk,
+      p_retrospect:retro
+    });
+    notice('gnotice','목표 저장되었어요 ✓','ok');
+  }catch(err){notice('gnotice','저장 실패: '+err.message,'err');}
 }
 
 // ── 분기 ──
