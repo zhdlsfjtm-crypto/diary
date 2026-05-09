@@ -221,8 +221,8 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 /* 하단 네비 */
 .bnav{position:fixed;bottom:0;left:0;right:0;height:var(--nh);background:var(--paper);border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;padding-bottom:env(safe-area-inset-bottom);z-index:100;}
 .nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:none;background:transparent;cursor:pointer;}
-.nb .ni{font-size:20px;color:var(--ink3);}
-.nb .nl{font-size:10px;color:var(--ink3);font-family:'Pretendard',sans-serif;}
+.nb .ni{font-size:18px;color:var(--ink3);}
+.nb .nl{font-size:9px;color:var(--ink3);font-family:'Pretendard',sans-serif;}
 .nb.on .ni{color:var(--accent);}
 .nb.on .nl{color:var(--accent);font-weight:600;}
 
@@ -545,6 +545,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
     <button class="nb" id="nb-weekly" onclick="goTab('weekly')"><span class="ni">📅</span><span class="nl">주간</span></button>
     <button class="nb" id="nb-monthly" onclick="goTab('monthly')"><span class="ni">💰</span><span class="nl">월간</span></button>
     <button class="nb" id="nb-goals" onclick="goTab('goals')"><span class="ni">🎯</span><span class="nl">목표</span></button>
+    <button class="nb" id="nb-quarterly" onclick="goTab('quarterly')"><span class="ni">🔄</span><span class="nl">분기</span></button>
     <button class="nb" id="nb-all" onclick="goTab('all')"><span class="ni">📚</span><span class="nl">전체</span></button>
   </nav>
 </div>
@@ -604,7 +605,7 @@ const SECS={re:{u:'억',c:'av-a'},fi:{u:'억',c:'av-a'},co:{u:'억',c:'av-a'},et
 
 // ── 상태 ──
 let entries={}, vEntry=null, eEntry=null, wDate=null, calY, calM, aData={}, fbEntry=null;
-let tabs=['daily','weekly','monthly','goals','all'];
+let tabs=['daily','weekly','monthly','goals','quarterly','all'];
 
 // ── Supabase API ──
 const H={'Content-Type':'application/json',apikey:SBK,Authorization:'Bearer '+SBK};
@@ -655,15 +656,17 @@ async function init(){
   const now=new Date();calY=now.getFullYear();calM=now.getMonth();
   const q=Math.ceil((now.getMonth()+1)/3);
   document.getElementById('dsub').textContent=fd(td());
-  document.getElementById('msub').textContent=`${now.getFullYear()}년 ${MOS[now.getMonth()]} 자산 트래킹`;
-  document.getElementById('qsub').textContent=`${now.getFullYear()}년 ${q}분기 회고`;
+  document.getElementById('msub').textContent=`${now.getFullYear()}년 ${MOS[now.getMonth()]} 가계부`;
   const wd=wdates();
   const f=new Date(wd[0]+'T00:00:00'),l=new Date(wd[6]+'T00:00:00');
   document.getElementById('wsub').textContent=`${f.getMonth()+1}월 ${f.getDate()}일 — ${l.getMonth()+1}월 ${l.getDate()}일`;
 
   setSync('s');
   try{
-    const rows=await sbGet('diary_entries?select=*&order=date.desc');
+    // 최근 180일만 로드 (성능 최적화)
+    const cutoff=new Date();cutoff.setDate(cutoff.getDate()-180);
+    const cutoffStr=fmtD(cutoff);
+    const rows=await sbGet(`diary_entries?select=*&date=gte.${cutoffStr}&order=date.desc`);
     rows.forEach(r=>{entries[r.date]=r2e(r);});
     setSync('ok');
   }catch(err){setSync('e');console.error('초기화 실패',err);}
@@ -672,7 +675,15 @@ async function init(){
 
   // 1년 전
   const ly=new Date();ly.setFullYear(ly.getFullYear()-1);
-  const lys=fmtD(ly);fbEntry=entries[lys]||null;
+  const lys=fmtD(ly);
+  // 1년 전 데이터는 별도 조회 (180일 범위 밖일 수 있음)
+  if(!entries[lys]){
+    try{
+      const lyRows=await sbGet(`diary_entries?select=*&date=eq.${lys}`);
+      if(lyRows&&lyRows.length>0)entries[lys]=r2e(lyRows[0]);
+    }catch(e){}
+  }
+  fbEntry=entries[lys]||null;
   if(fbEntry){
     document.getElementById('fbdate').textContent=fd(lys);
     if(fbEntry.core)document.getElementById('fbcore').textContent=`"${fbEntry.core}"`;
@@ -743,14 +754,17 @@ async function saveEntry(){
 // ── 탭 전환 ──
 function goTab(t){
   tabs.forEach(x=>{
-    document.getElementById('pn-'+x).classList.toggle('on',x===t);
-    document.getElementById('nb-'+x).classList.toggle('on',x===t);
+    const pn=document.getElementById('pn-'+x);
+    const nb=document.getElementById('nb-'+x);
+    if(pn)pn.classList.toggle('on',x===t);
+    if(nb)nb.classList.toggle('on',x===t);
   });
   document.getElementById('scr').scrollTop=0;
   if(t==='weekly')renderWeek();
   if(t==='monthly')initLedger();
   if(t==='goals')loadGoals();
-  if(t==='all')renderAll();
+  if(t==='quarterly')loadQuarterlyData();
+  if(t==='all'){allPage=1;renderAll();}
 }
 
 // ── 상세 팝업 ──
@@ -813,31 +827,78 @@ async function saveE(){
   btn.disabled=false;btn.textContent='저장하기';
 }
 
-// ── 전체 기록 ──
-let elist=[];
+// ── 전체 기록 (페이지네이션 + 검색) ──
+let elist=[], allPage=1, allSearch='', PAGE_SIZE=20;
+
 function renderAll(){
   const sorted=Object.values(entries).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-  elist=sorted;
-  document.getElementById('asub').textContent=`총 ${sorted.length}개의 기록`;
-  if(!sorted.length){document.getElementById('elist').innerHTML='<div class="empty">아직 기록이 없어요.<br>오늘 핵심 한 줄부터 써보세요 ✏️</div>';return;}
-  document.getElementById('elist').innerHTML=sorted.map((e,i)=>`
-    <div class="eitem">
+  // 검색 필터
+  const filtered=allSearch?sorted.filter(e=>
+    (e.core||'').includes(allSearch)||
+    (e.text||'').includes(allSearch)||
+    (e.date||'').includes(allSearch)||
+    (e.dWhat||'').includes(allSearch)||
+    (e.mistake||'').includes(allSearch)
+  ):sorted;
+
+  elist=filtered;
+  document.getElementById('asub').textContent=`총 ${Object.keys(entries).length}개의 기록${allSearch?` (검색결과 ${filtered.length}개)`:''}`;
+
+  // 검색창
+  const searchHTML=`<div style="margin-bottom:12px;position:relative;">
+    <input type="text" id="all-search" class="linp" placeholder="🔍 날짜, 키워드로 검색..." value="${allSearch.replace(/"/g,'&quot;')}" oninput="onSearch(this.value)" style="font-size:14px;padding-right:36px;">
+    ${allSearch?`<button onclick="clearSearch()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink3);">✕</button>`:''}
+  </div>`;
+
+  if(!filtered.length){
+    document.getElementById('elist').innerHTML=searchHTML+'<div class="empty">'+
+      (allSearch?'검색 결과가 없어요.':'아직 기록이 없어요.<br>오늘 핵심 한 줄부터 써보세요 ✏️')+'</div>';
+    return;
+  }
+
+  // 페이지네이션
+  const totalPages=Math.ceil(filtered.length/PAGE_SIZE);
+  const start=(allPage-1)*PAGE_SIZE, end=Math.min(start+PAGE_SIZE,filtered.length);
+  const pageItems=filtered.slice(start,end);
+
+  const listHTML=pageItems.map((e,i)=>{
+    const idx=start+i;
+    return `<div class="eitem">
       <div class="eih">
-        <div class="eil" onclick="openV(elist[${i}])">
+        <div class="eil" onclick="openV(elist[${idx}])">
           <span class="eidate">${fd(e.date)}</span>
           <span class="eimood">${e.mood||''}</span>
         </div>
         <div class="eia">
-          <button class="eibtn" onclick="event.stopPropagation();cpE(${i})">📋</button>
-          <button class="eibtn" onclick="event.stopPropagation();openE(elist[${i}])">✏️</button>
+          <button class="eibtn" onclick="event.stopPropagation();cpE(${idx})">📋</button>
+          <button class="eibtn" onclick="event.stopPropagation();openE(elist[${idx}])">✏️</button>
           <button class="eibtn del" onclick="event.stopPropagation();delE('${e.date}')">🗑️</button>
         </div>
       </div>
-      ${e.core?`<div class="eicore" onclick="openV(elist[${i}])">"${e.core.replace(/</g,'&lt;')}"</div>`:''}
+      ${e.core?`<div class="eicore" onclick="openV(elist[${idx}])">"${e.core.replace(/</g,'&lt;')}"</div>`:''}
       ${e.emotion?`<div style="font-size:12px;color:var(--ink3);font-style:italic;margin-bottom:4px;">${e.emotion.replace(/</g,'&lt;')}</div>`:''}
-      ${e.text?`<div class="eitx" onclick="openV(elist[${i}])">${e.text.replace(/</g,'&lt;')}</div><div class="eimore" onclick="openV(elist[${i}])">전체 보기 →</div>`:''}
+      ${e.text?`<div class="eitx" onclick="openV(elist[${idx}])">${e.text.replace(/</g,'&lt;')}</div><div class="eimore" onclick="openV(elist[${idx}])">전체 보기 →</div>`:''}
       ${e.dWhat?`<div class="eidec">⚖️ ${e.dWhat.replace(/</g,'&lt;')}</div>`:''}
-    </div>`).join('');
+    </div>`;
+  }).join('');
+
+  // 페이지 버튼
+  const pageHTML=totalPages>1?`<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;">
+    <button onclick="changePage(-1)" ${allPage<=1?'disabled':''} style="padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--bg);cursor:pointer;color:var(--ink2);font-size:14px;">◀</button>
+    <span style="font-size:13px;color:var(--ink3);">${allPage} / ${totalPages}</span>
+    <button onclick="changePage(1)" ${allPage>=totalPages?'disabled':''} style="padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--bg);cursor:pointer;color:var(--ink2);font-size:14px;">▶</button>
+  </div>`:'';
+
+  document.getElementById('elist').innerHTML=searchHTML+`<div class="elist">${listHTML}</div>`+pageHTML;
+}
+
+function onSearch(v){allSearch=v;allPage=1;renderAll();}
+function clearSearch(){allSearch='';allPage=1;renderAll();}
+function changePage(d){
+  const total=Math.ceil(elist.length/PAGE_SIZE);
+  allPage=Math.max(1,Math.min(allPage+d,total));
+  renderAll();
+  document.getElementById('scr').scrollTop=0;
 }
 function cpE(i){vEntry=elist[i];copyV();vEntry=null;}
 async function delE(date){
@@ -1159,21 +1220,33 @@ async function sbFetchDirect(path,opt={}){
 // ── 목표 ──
 let goalsData={yr:[],mo:[],wk:[]};
 
-function goalKey(){
+function goalKeys(){
   const now=new Date();
   const yr=now.getFullYear();
   const mo=now.getMonth()+1;
   const wd=now.getDay();
   const weekStart=new Date(now);weekStart.setDate(now.getDate()-wd);
   const wk=`${weekStart.getFullYear()}${p2(weekStart.getMonth()+1)}${p2(weekStart.getDate())}`;
-  return `goals_${yr}_${mo}_${wk}`;
+  return {
+    yr:`goals_yr_${yr}`,        // 연간 — 연도 기준
+    mo:`goals_mo_${yr}_${mo}`,  // 월간 — 월 기준
+    wk:`goals_wk_${wk}`,        // 주간 — 주 기준
+    main:`goals_${yr}_${mo}_${wk}` // 저장용 통합키
+  };
+}
+
+let goalsAutoSaveTimer=null;
+function schedGoalSave(){
+  clearTimeout(goalsAutoSaveTimer);
+  goalsAutoSaveTimer=setTimeout(saveGoals,1500);
 }
 
 async function loadGoals(){
   const now=new Date();
   document.getElementById('gsub2').textContent=`${now.getFullYear()}년 ${MOS[now.getMonth()]} · ${Math.ceil((now.getMonth()+1)/3)}분기`;
+  const keys=goalKeys();
   try{
-    const rows=await sbGet(`goals?goal_key=eq.${goalKey()}&select=*`);
+    const rows=await sbGet(`goals?goal_key=eq.${keys.main}&select=*`);
     if(rows&&rows.length>0){
       const r=rows[0];
       goalsData={
@@ -1214,7 +1287,7 @@ function renderGoalList(type){
         ${g.done?'<span style="color:#fff;font-size:12px;">✓</span>':''}
       </div>
       <span style="flex:1;font-size:14px;font-family:\'Nanum Myeongjo\',serif;color:var(--ink);text-decoration:${g.done?'line-through':'none'};opacity:${g.done?'.5':'1'};">${g.text.replace(/</g,'&lt;')}</span>
-      <button onclick="delGoal('${type}',${i})" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink3);padding:4px;">×</button>
+      <button onclick="delGoal('${type}',${i})" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink3);padding:4px;">×</button>
     </div>`).join('');
 }
 
@@ -1226,16 +1299,19 @@ function addGoal(type){
   goalsData[type].push({text,done:false});
   inp.value='';
   renderGoalList(type);
+  schedGoalSave();
 }
 
 function toggleGoal(type,i){
   goalsData[type][i].done=!goalsData[type][i].done;
   renderGoalList(type);
+  schedGoalSave(); // 체크 시 자동 저장
 }
 
 function delGoal(type,i){
   goalsData[type].splice(i,1);
   renderGoalList(type);
+  schedGoalSave();
 }
 
 // Enter 키로 추가
@@ -1249,9 +1325,10 @@ function delGoal(type,i){
 
 async function saveGoals(){
   const retro=document.getElementById('goal-retro')?.value||'';
+  const keys=goalKeys();
   try{
     await sbRPC('upsert_goals',{
-      p_goal_key:goalKey(),
+      p_goal_key:keys.main,
       p_year_goals:goalsData.yr,
       p_month_goals:goalsData.mo,
       p_week_goals:goalsData.wk,
