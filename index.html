@@ -1552,9 +1552,11 @@ if(window.visualViewport){
 // ── 탭 이동 경고 제거 (저장 버튼으로 충분) ──
 function setupDailyEditListeners(){} // 사용 안 함
 
-// ── PWA Service Worker ──
+// ── PWA Service Worker 비활성화 (캐시 문제 방지) ──
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  navigator.serviceWorker.getRegistrations().then(regs=>{
+    regs.forEach(r=>r.unregister());
+  });
 }
 
 init().then(()=>{
