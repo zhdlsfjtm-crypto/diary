@@ -654,14 +654,22 @@ const SECS={re:{u:'억',c:'av-a'},fi:{u:'억',c:'av-a'},co:{u:'억',c:'av-a'},et
 // ── 상태 ──
 let entries={}, vEntry=null, eEntry=null, wDate=null, calY, calM, aData={}, fbEntry=null;
 let tabs=['daily','weekly','monthly','goals','quarterly','all'];
+let goalsData={yr:[],mo:[],wk:[]}; // renderGoalWidgets보다 먼저 선언
 
 // ── Supabase API ──
 const H={'Content-Type':'application/json',apikey:SBK,Authorization:'Bearer '+SBK};
 
-async function sbGet(path){
-  const r=await fetch(SBU+'/rest/v1/'+path,{headers:H});
-  if(!r.ok)throw new Error(await r.text());
-  return r.json();
+async function sbGet(path,retries=2){
+  for(let i=0;i<=retries;i++){
+    try{
+      const r=await fetch(SBU+'/rest/v1/'+path,{headers:H});
+      if(!r.ok)throw new Error(await r.text());
+      return r.json();
+    }catch(err){
+      if(i===retries)throw err;
+      await new Promise(r=>setTimeout(r,800*(i+1)));
+    }
+  }
 }
 async function sbRPC(fn,body){
   const r=await fetch(SBU+'/rest/v1/rpc/'+fn,{method:'POST',headers:H,body:JSON.stringify(body)});
@@ -711,10 +719,13 @@ async function init(){
 
   setSync('s');
   try{
-    // 최근 180일만 로드 (성능 최적화)
+    // 최근 180일만 로드 + 전체 개수 병렬 조회
     const cutoff=new Date();cutoff.setDate(cutoff.getDate()-180);
     const cutoffStr=fmtD(cutoff);
-    const rows=await sbGet(`diary_entries?select=*&date=gte.${cutoffStr}&order=date.desc`);
+    const [rows]=await Promise.all([
+      sbGet(`diary_entries?select=*&date=gte.${cutoffStr}&order=date.desc`),
+      fetchTotalCount()
+    ]);
     rows.forEach(r=>{entries[r.date]=r2e(r);});
     setSync('ok');
   }catch(err){setSync('e');console.error('초기화 실패',err);}
@@ -739,9 +750,12 @@ async function init(){
     document.getElementById('fbcard').style.display='block';
   }
 
-  await loadMonthlyData();
-  await loadQuarterlyData();
-  await loadGoals(); // 앱 시작 시 목표 미리 로드 → 오늘 탭 위젯 표시
+  // 병렬 로드 (성능 최적화)
+  await Promise.all([
+    loadMonthlyData(),
+    loadQuarterlyData(),
+    loadGoals()
+  ]);
 }
 
 // ── 날짜 선택 ──
@@ -795,6 +809,7 @@ async function saveEntry(){
     await sbRPC('upsert_diary',e2r(e));
     entries[d]=e;setSync('ok');
     notice('savenotice',d===td()?'저장되었어요 ✓':fd(d)+' 저장되었어요 ✓','ok');
+    dailyEdited=false; // 저장 후 편집 상태 리셋
     renderWeek();
   }catch(err){setSync('e');notice('savenotice','저장 실패: '+err.message,'err');}
   btn.disabled=false;btn.textContent=d===td()?'저장하기':fd(d)+' 저장';
@@ -876,39 +891,66 @@ async function saveE(){
   btn.disabled=false;btn.textContent='저장하기';
 }
 
-// ── 전체 기록 (페이지네이션 + 검색) ──
+// ── 전체 기록 (DB 기반 페이지네이션 + 검색) ──
 let elist=[], allPage=1, allSearch='', PAGE_SIZE=20;
+let totalEntryCount=0, searchFromDB=false;
 
-function renderAll(){
-  const sorted=Object.values(entries).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-  // 검색 필터
-  const filtered=allSearch?sorted.filter(e=>
-    (e.core||'').includes(allSearch)||
-    (e.text||'').includes(allSearch)||
-    (e.date||'').includes(allSearch)||
-    (e.dWhat||'').includes(allSearch)||
-    (e.mistake||'').includes(allSearch)
-  ):sorted;
+async function fetchTotalCount(){
+  try{
+    const r=await fetch(SBU+'/rest/v1/diary_entries?select=date',{
+      headers:{...H,'Prefer':'count=exact','Range':'0-0'}
+    });
+    const count=r.headers.get('Content-Range');
+    if(count)totalEntryCount=parseInt(count.split('/')[1])||0;
+  }catch(e){}
+}
 
-  elist=filtered;
-  document.getElementById('asub').textContent=`총 ${Object.keys(entries).length}개의 기록${allSearch?` (검색결과 ${filtered.length}개)`:''}`;
+async function renderAll(){
+  const listEl=document.getElementById('elist');
+  const subEl=document.getElementById('asub');
 
-  // 검색창
+  // 검색창 먼저 렌더
   const searchHTML=`<div style="margin-bottom:12px;position:relative;">
     <input type="text" id="all-search" class="linp" placeholder="🔍 날짜, 키워드로 검색..." value="${allSearch.replace(/"/g,'&quot;')}" oninput="onSearch(this.value)" style="font-size:14px;padding-right:36px;">
     ${allSearch?`<button onclick="clearSearch()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink3);">✕</button>`:''}
   </div>`;
 
-  if(!filtered.length){
-    document.getElementById('elist').innerHTML=searchHTML+'<div class="empty">'+
-      (allSearch?'검색 결과가 없어요.':'아직 기록이 없어요.<br>오늘 핵심 한 줄부터 써보세요 ✏️')+'</div>';
+  if(allSearch&&allSearch.length>=1){
+    // 검색어 있으면 DB에서 직접 조회 (10년치 전체 검색)
+    listEl.innerHTML=searchHTML+'<div style="text-align:center;padding:20px;color:var(--ink3);">검색 중...</div>';
+    try{
+      const enc=encodeURIComponent(allSearch);
+      const [r1,r2,r3]=await Promise.all([
+        sbGet(`diary_entries?select=*&core=ilike.*${enc}*&order=date.desc&limit=50`),
+        sbGet(`diary_entries?select=*&text=ilike.*${enc}*&order=date.desc&limit=50`),
+        sbGet(`diary_entries?select=*&date=ilike.*${enc}*&order=date.desc&limit=50`)
+      ]);
+      // 중복 제거
+      const seen=new Set();
+      const merged=[...r1,...r2,...r3].filter(r=>{if(seen.has(r.date))return false;seen.add(r.date);return true;});
+      merged.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+      elist=merged.map(r=>r2e(r));
+      if(subEl)subEl.textContent=`검색 결과 ${elist.length}개 (전체 ${totalEntryCount}개 중)`;
+      if(!elist.length){listEl.innerHTML=searchHTML+'<div class="empty">검색 결과가 없어요.</div>';return;}
+      renderEntryList(searchHTML);
+    }catch(err){listEl.innerHTML=searchHTML+'<div class="empty">검색 오류가 발생했어요.</div>';}
     return;
   }
 
-  // 페이지네이션
-  const totalPages=Math.ceil(filtered.length/PAGE_SIZE);
-  const start=(allPage-1)*PAGE_SIZE, end=Math.min(start+PAGE_SIZE,filtered.length);
-  const pageItems=filtered.slice(start,end);
+  // 검색 없으면 메모리 데이터 + DB 페이지네이션
+  const sorted=Object.values(entries).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  elist=sorted;
+  const displayCount=totalEntryCount>sorted.length?totalEntryCount:sorted.length;
+  if(subEl)subEl.textContent=`총 ${displayCount}개의 기록 (최근 180일 표시 중)`;
+  if(!sorted.length){listEl.innerHTML=searchHTML+'<div class="empty">아직 기록이 없어요.<br>오늘 핵심 한 줄부터 써보세요 ✏️</div>';return;}
+  renderEntryList(searchHTML);
+}
+
+function renderEntryList(searchHTML){
+  const listEl=document.getElementById('elist');
+  const totalPages=Math.ceil(elist.length/PAGE_SIZE);
+  const start=(allPage-1)*PAGE_SIZE,end=Math.min(start+PAGE_SIZE,elist.length);
+  const pageItems=elist.slice(start,end);
 
   const listHTML=pageItems.map((e,i)=>{
     const idx=start+i;
@@ -931,22 +973,28 @@ function renderAll(){
     </div>`;
   }).join('');
 
-  // 페이지 버튼
   const pageHTML=totalPages>1?`<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;">
     <button onclick="changePage(-1)" ${allPage<=1?'disabled':''} style="padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--bg);cursor:pointer;color:var(--ink2);font-size:14px;">◀</button>
     <span style="font-size:13px;color:var(--ink3);">${allPage} / ${totalPages}</span>
     <button onclick="changePage(1)" ${allPage>=totalPages?'disabled':''} style="padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--bg);cursor:pointer;color:var(--ink2);font-size:14px;">▶</button>
   </div>`:'';
 
-  document.getElementById('elist').innerHTML=searchHTML+`<div class="elist">${listHTML}</div>`+pageHTML;
+  listEl.innerHTML=searchHTML+`<div class="elist">${listHTML}</div>`+pageHTML;
 }
 
-function onSearch(v){allSearch=v;allPage=1;renderAll();}
+let searchTimer=null;
+function onSearch(v){
+  allSearch=v;allPage=1;
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(()=>renderAll(),300); // 300ms 디바운스
+}
 function clearSearch(){allSearch='';allPage=1;renderAll();}
 function changePage(d){
   const total=Math.ceil(elist.length/PAGE_SIZE);
   allPage=Math.max(1,Math.min(allPage+d,total));
-  renderAll();
+  renderEntryList(`<div style="margin-bottom:12px;position:relative;">
+    <input type="text" id="all-search" class="linp" placeholder="🔍 날짜, 키워드로 검색..." value="${allSearch.replace(/"/g,'&quot;')}" oninput="onSearch(this.value)" style="font-size:14px;padding-right:36px;">
+  </div>`);
   document.getElementById('scr').scrollTop=0;
 }
 function cpE(i){vEntry=elist[i];copyV();vEntry=null;}
@@ -1007,23 +1055,6 @@ async function genAI(){
     box.textContent=data.content?.filter(c=>c.type==='text').map(c=>c.text).join('')||'정리를 가져오지 못했어요.';
   }catch(err){box.textContent='연결 오류가 발생했어요. 잠시 후 다시 시도해주세요.';console.error(err);}
   btn.disabled=false;
-}
-
-// ── 캘린더 ──
-function chMo(d){calM+=d;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}renderCal();}
-function renderCal(){
-  document.getElementById('caltitle').textContent=`${calY}년 ${MOS[calM]}`;
-  const g=document.getElementById('calgrid');g.innerHTML='';
-  DAYS.forEach(d=>{const e=document.createElement('div');e.className='caldn';e.textContent=d;g.appendChild(e);});
-  const first=new Date(calY,calM,1).getDay(),days=new Date(calY,calM+1,0).getDate(),today=td();
-  for(let i=0;i<first;i++){const e=document.createElement('div');e.className='calc empty';g.appendChild(e);}
-  for(let day=1;day<=days;day++){
-    const ds=`${calY}-${p2(calM+1)}-${p2(day)}`,e=entries[ds];
-    const cell=document.createElement('div');cell.className='calc'+(e?' has':'')+(ds===today?' td':'');
-    let h=`<div class="cnum">${day}</div>`;
-    if(e){if(e.mood)h+=`<div class="cmood">${e.mood}</div>`;if(e.core)h+=`<div class="ccore">${e.core}</div>`;cell.onclick=()=>openV(e);}
-    cell.innerHTML=h;g.appendChild(cell);
-  }
 }
 
 // ── 가계부 ──
@@ -1355,24 +1386,28 @@ function schedGoalSave(){
 
 async function loadGoals(){
   const now=new Date();
-  document.getElementById('gsub2').textContent=`${now.getFullYear()}년 ${MOS[now.getMonth()]} · ${Math.ceil((now.getMonth()+1)/3)}분기`;
+  const gsub=document.getElementById('gsub2');
+  if(gsub)gsub.textContent=`${now.getFullYear()}년 ${MOS[now.getMonth()]} · ${Math.ceil((now.getMonth()+1)/3)}분기`;
   const keys=goalKeys();
   try{
-    const rows=await sbGet(`goals?goal_key=eq.${keys.main}&select=*`);
-    if(rows&&rows.length>0){
-      const r=rows[0];
-      goalsData={
-        yr:r.year_goals||[],
-        mo:r.month_goals||[],
-        wk:r.week_goals||[]
-      };
+    // 연간 목표(yr키)와 월간+주간(main키) 병렬 로드
+    const [mainRows,yrRows]=await Promise.all([
+      sbGet(`goals?goal_key=eq.${keys.main}&select=*`),
+      sbGet(`goals?goal_key=eq.${keys.yr}&select=*`)
+    ]);
+    if(mainRows&&mainRows.length>0){
+      const r=mainRows[0];
+      goalsData.mo=r.month_goals||[];
+      goalsData.wk=r.week_goals||[];
       const retro=document.getElementById('goal-retro');
       if(retro)retro.value=r.retrospect||'';
-    }else{
-      goalsData={yr:[],mo:[],wk:[]};
-    }
+    }else{goalsData.mo=[];goalsData.wk=[];}
+    // 연간 목표는 yr 전용 키에서 로드 → 주가 바뀌어도 유지
+    if(yrRows&&yrRows.length>0){
+      goalsData.yr=yrRows[0].year_goals||[];
+    }else{goalsData.yr=[];}
     renderGoals();
-    renderGoalWidgets(); // 다른 탭 위젯도 업데이트
+    renderGoalWidgets();
   }catch(err){console.error('목표 로드 실패',err);}
 }
 
@@ -1443,13 +1478,23 @@ async function saveGoals(){
   const retro=document.getElementById('goal-retro')?.value||'';
   const keys=goalKeys();
   try{
-    await sbRPC('upsert_goals',{
-      p_goal_key:keys.main,
-      p_year_goals:goalsData.yr,
-      p_month_goals:goalsData.mo,
-      p_week_goals:goalsData.wk,
-      p_retrospect:retro
-    });
+    // 연간 목표는 yr 전용 키, 월간+주간은 main 키에 저장
+    await Promise.all([
+      sbRPC('upsert_goals',{
+        p_goal_key:keys.main,
+        p_year_goals:[],
+        p_month_goals:goalsData.mo,
+        p_week_goals:goalsData.wk,
+        p_retrospect:retro
+      }),
+      sbRPC('upsert_goals',{
+        p_goal_key:keys.yr,
+        p_year_goals:goalsData.yr,
+        p_month_goals:[],
+        p_week_goals:[],
+        p_retrospect:''
+      })
+    ]);
     notice('gnotice','목표 저장되었어요 ✓','ok');
   }catch(err){notice('gnotice','저장 실패: '+err.message,'err');}
 }
@@ -1480,31 +1525,25 @@ if(window.visualViewport){
 }
 
 // ── 작성 중 탭 이동 경고 ──
-function hasUnsaved(){
-  const core=document.getElementById('core')?.value||'';
-  const dtx=document.getElementById('dtx')?.value||'';
-  return (core||dtx).trim().length>0;
-}
+let dailyEdited=false; // 실제로 수정했을 때만 true
+document.addEventListener('DOMContentLoaded',()=>{
+  ['core','dtx','dwhat','dwhy','dmistake','dq','da','dins'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.addEventListener('input',()=>{dailyEdited=true;});
+  });
+});
+function hasUnsaved(){return dailyEdited;}
+
 const origGoTab=goTab;
 window.goTab=function(t){
   if(t!=='daily'&&document.getElementById('pn-daily').classList.contains('on')&&hasUnsaved()){
     if(!confirm('작성 중인 내용이 있어요. 저장하지 않고 이동할까요?'))return;
   }
+  if(t==='daily')dailyEdited=false; // 오늘 탭으로 돌아올 때 리셋
   origGoTab(t);
 };
 
-// ── Supabase 재시도 래퍼 ──
-async function sbGetRetry(path,retries=2){
-  for(let i=0;i<=retries;i++){
-    try{return await sbGet(path);}
-    catch(err){
-      if(i===retries)throw err;
-      await new Promise(r=>setTimeout(r,1000*(i+1)));
-    }
-  }
-}
-
-// ── PWA Service Worker (오프라인 캐시) ──
+// ── PWA Service Worker ──
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('/sw.js').catch(()=>{});
 }
