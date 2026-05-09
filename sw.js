@@ -1,39 +1,28 @@
-const CACHE='diary-v2';
-const ASSETS=['/','/index.html'];
+const CACHE='diary-v3';
 
 self.addEventListener('install',e=>{
-  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
   self.skipWaiting();
 });
 
 self.addEventListener('activate',e=>{
-  e.waitUntil(caches.keys().then(keys=>
-    Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))
-  ));
+  // 모든 이전 캐시 삭제
+  e.waitUntil(
+    caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k))))
+  );
   self.clients.claim();
 });
 
+// 항상 네트워크 우선 — 캐시 문제 완전 방지
 self.addEventListener('fetch',e=>{
   const url=e.request.url;
-  // chrome-extension, Supabase, Anthropic API 캐시 안 함
   if(url.startsWith('chrome-extension')||
      url.includes('supabase.co')||
      url.includes('anthropic.com')||
      e.request.method!=='GET'){
     return;
   }
+  // 네트워크 실패 시에만 캐시 사용
   e.respondWith(
-    caches.match(e.request).then(cached=>{
-      if(cached)return cached;
-      return fetch(e.request).then(res=>{
-        if(res&&res.status===200){
-          const clone=res.clone();
-          caches.open(CACHE).then(c=>{
-            try{c.put(e.request,clone);}catch(err){}
-          });
-        }
-        return res;
-      }).catch(()=>caches.match('/index.html'));
-    })
+    fetch(e.request).catch(()=>caches.match(e.request))
   );
 });
