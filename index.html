@@ -474,7 +474,21 @@ async function sbFetch(path,opt={}){
   return res.json();
 }
 async function sbAll(){return sbFetch('diary_entries?select=*&order=date.desc');}
-async function sbUpsert(d){return sbFetch('diary_entries',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(d)});}
+async function sbUpsert(d){
+  const res=await fetch(SB_URL+'/rest/v1/diary_entries',{
+    method:'POST',
+    headers:{
+      apikey:SB_KEY,
+      Authorization:'Bearer '+SB_KEY,
+      'Content-Type':'application/json',
+      'Prefer':'resolution=merge-duplicates,return=minimal',
+      'X-Upsert':'true'
+    },
+    body:JSON.stringify(d)
+  });
+  if(!res.ok){const t=await res.text();throw new Error(t);}
+  return true;
+}
 async function sbDel(date){return sbFetch('diary_entries?date=eq.'+date,{method:'DELETE'});}
 async function sbMonthGet(k){return sbFetch('monthly_assets?month_key=eq.'+k+'&select=*');}
 async function sbMonthSave(d){return sbFetch('monthly_assets',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(d)});}
@@ -713,38 +727,74 @@ function renderWeekly(){
     const d=new Date(ds+'T00:00:00'),e=allEntries[ds];
     const cell=document.createElement('div');
     cell.className='day-cell'+(e?' has-entry':'')+(ds===td?' today-cell':'');
-    cell.innerHTML=`<span class="dc-name">${DAYS[d.getDay()]}</span><span class="dc-num">${d.getDate()}</span><span class="dc-mood">${e?.mood||'·'}</span>${e?.core?`<span class="dc-core">${e.core}</span>`:''}`;
+    // 기분 대신 핵심한줄 첫 단어 또는 기록 여부 표시
+    const indicator=e?(e.core?'✍️':'📝'):'';
+    cell.innerHTML=`<span class="dc-name">${DAYS[d.getDay()]}</span><span class="dc-num">${d.getDate()}</span><span class="dc-mood">${indicator}</span>${e?.core?`<span class="dc-core">${e.core}</span>`:''}`;
     cell.onclick=()=>{document.querySelectorAll('.day-cell').forEach(c=>c.classList.remove('sel'));cell.classList.add('sel');showWeekEntry(ds);};
     grid.appendChild(cell);
   });
   const we=dates.map(d=>allEntries[d]).filter(Boolean);
   document.getElementById('stat-count').textContent=we.length+'/7';
-  const mm={};we.forEach(e=>{if(e.mood)mm[e.mood]=(mm[e.mood]||0)+1;});
-  const tm=Object.entries(mm).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById('stat-mood').textContent=tm?tm[0]:'—';
-  document.getElementById('stat-decision').textContent=we.filter(e=>e.decisionWhat).length+'건';
+  // 이번 주 결정 건수
+  const decisions=we.filter(e=>e.decisionWhat).length;
+  document.getElementById('stat-mood').textContent=decisions+'건';
+  document.getElementById('stat-decision').textContent=we.filter(e=>e.mistake).length+'건';
+  // stat 라벨 업데이트
+  document.querySelectorAll('.stat-lbl')[1].textContent='결정';
+  document.querySelectorAll('.stat-lbl')[2].textContent='배움';
 }
 function showWeekEntry(ds){
   const e=allEntries[ds],box=document.getElementById('week-detail');
   if(!e){box.textContent='이 날은 기록이 없어요.';return;}
   let t='';
-  if(e.core)t+=`"${e.core}"\n\n`;
+  if(e.core)t+=`✨ "${e.core}"\n\n`;
   if(e.text)t+=e.text;
-  if(e.decisionWhat)t+=`\n\n⚖️ ${e.decisionWhat}`;
+  if(e.decisionWhat)t+=`\n\n⚖️ 결정: ${e.decisionWhat}`;
+  if(e.decisionWhy)t+=`\n이유: ${e.decisionWhy}`;
   if(e.mistake)t+=`\n\n🔍 ${e.mistake}`;
+  if(e.question)t+=`\n\n❓ ${e.question}\n→ ${e.answer||''}`;
+  if(e.insight)t+=`\n\n💡 ${e.insight}`;
   box.textContent=t.trim();
 }
 async function genSummary(){
   const dates=weekDates(),we=dates.map(d=>allEntries[d]).filter(Boolean);
   const box=document.getElementById('ai-summary'),btn=document.getElementById('ai-btn');
   if(!we.length){box.textContent='이번 주에 기록된 일기가 없어요.';return;}
-  box.textContent='정리 중...';btn.disabled=true;
-  const txt=we.map(e=>{const d=new Date(e.date+'T00:00:00');let l=`[${DAYS[d.getDay()]}]`;if(e.core)l+=` 핵심:"${e.core}"`;if(e.decisionWhat)l+=`\n결정:${e.decisionWhat}`;if(e.mistake)l+=`\n배움:${e.mistake}`;if(e.text)l+=`\n${e.text}`;return l;}).join('\n\n');
+  box.textContent='AI가 이번 주를 정리 중이에요...\n잠시만 기다려주세요.';btn.disabled=true;
+  const txt=we.map(e=>{
+    const d=new Date(e.date+'T00:00:00');
+    let l=`[${d.getMonth()+1}/${d.getDate()} ${DAYS[d.getDay()]}요일]`;
+    if(e.core)l+=` 핵심: "${e.core}"`;
+    if(e.decisionWhat)l+=`\n결정: ${e.decisionWhat}`;
+    if(e.mistake)l+=`\n배움: ${e.mistake}`;
+    if(e.text)l+=`\n${e.text.slice(0,200)}`;
+    return l;
+  }).join('\n\n');
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:`이번 주 일기:\n\n${txt}\n\n핵심 한 줄과 결정, 배움을 중심으로 따뜻하게 3문장으로 정리하고, 다음 주를 위한 격려 한 마디 추가해주세요. 한국어로.`}]})});
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:400,
+        messages:[{role:'user',content:`이번 주 일기:\n\n${txt}\n\n핵심 한 줄과 결정, 배움을 중심으로 따뜻하게 3문장으로 정리하고, 다음 주를 위한 격려 한 마디 추가해주세요. 한국어로.`}]
+      })
+    });
+    if(!res.ok){
+      const err=await res.text();
+      box.textContent='AI 연결에 실패했어요. 잠시 후 다시 시도해주세요.\n('+err+')';
+      btn.disabled=false;return;
+    }
     const data=await res.json();
     box.textContent=data.content?.filter(c=>c.type==='text').map(c=>c.text).join('')||'정리를 가져오지 못했어요.';
-  }catch(e){box.textContent='오류가 발생했어요.';}
+  }catch(e){
+    box.textContent='AI 연결 오류가 발생했어요.\n인터넷 연결을 확인해주세요.';
+    console.error(e);
+  }
   btn.disabled=false;
 }
 
