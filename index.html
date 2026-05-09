@@ -256,7 +256,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 <div id="app">
   <div class="topbar">
     <div class="topbar-brand">📔 나의 일기장</div>
-    <div class="sync-indicator">
+    <div class="sync-indicator" id="sync-indicator">
       <div class="sync-dot" id="sync-dot"></div>
       <span id="sync-label">연결 중...</span>
     </div>
@@ -573,7 +573,10 @@ async function sbDelete(date){
 
 function setSyncStatus(s){
   document.getElementById('sync-dot').className='sync-dot'+(s==='syncing'?' syncing':s==='err'?' err':'');
-  document.getElementById('sync-label').textContent=s==='syncing'?'저장 중...':s==='err'?'연결 오류':'연결됨';
+  document.getElementById('sync-label').textContent=s==='syncing'?'저장 중...':s==='err'?'연결 오류 (탭하여 재시도)':'연결됨';
+  const indicator=document.getElementById('sync-indicator');
+  if(indicator)indicator.onclick=s==='err'?()=>location.reload():null;
+  if(indicator)indicator.style.cursor=s==='err'?'pointer':'default';
 }
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 function showNotice(msg,type,id){const el=document.getElementById(id);if(!el)return;el.textContent=msg;el.className='notice '+type;setTimeout(()=>{el.textContent='';el.className='notice';},3000);}
@@ -787,6 +790,9 @@ async function saveEntry(){
     allEntries[targetDate]=entry;
     setSyncStatus('ok');
     showNotice(targetDate===getToday()?'저장되었어요 ✓':formatDate(targetDate)+' 저장되었어요 ✓','ok','save-notice');
+    // 저장 후 모든 탭 갱신
+    renderWeekly();
+    renderCalendar();
   }catch(e){setSyncStatus('err');showNotice('저장 실패: '+e.message,'err','save-notice');}
   btn.disabled=false;btn.textContent=targetDate===getToday()?'저장하기':formatDate(targetDate)+' 저장';
 }
@@ -866,27 +872,44 @@ function renderAll(){
   const sorted=Object.values(allEntries).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   document.getElementById('all-sub').textContent=`총 ${sorted.length}개의 기록`;
   if(!sorted.length){document.getElementById('entry-list').innerHTML='<div class="empty-msg">아직 기록이 없어요.<br>오늘 핵심 한 줄부터 써보세요 ✏️</div>';return;}
-  document.getElementById('entry-list').innerHTML=sorted.map(e=>`
-    <div class="entry-item">
+  document.getElementById('entry-list').innerHTML=sorted.map((e,idx)=>{
+    // JSON 특수문자 안전하게 처리 — data-idx 방식으로 변경
+    const safeEmotion=e.emotion?`<div style="font-size:12px;color:var(--ink3);font-style:italic;margin-bottom:4px;">${e.emotion.replace(/</g,'&lt;')}</div>`:'';
+    const safeCore=e.core?`<div class="ei-core" data-idx="${idx}" onclick="openModalByIdx(this.dataset.idx)">"${e.core.replace(/</g,'&lt;')}"</div>`:'';
+    const safeText=e.text?`<div class="ei-text" data-idx="${idx}" onclick="openModalByIdx(this.dataset.idx)">${e.text.replace(/</g,'&lt;')}</div><div class="ei-more" data-idx="${idx}" onclick="openModalByIdx(this.dataset.idx)">전체 보기 →</div>`:'';
+    const safeDecision=e.decisionWhat?`<div class="ei-decision">⚖️ ${e.decisionWhat.replace(/</g,'&lt;')}</div>`:'';
+    return `<div class="entry-item">
       <div class="ei-header">
-        <div class="ei-left" onclick='openModal(${JSON.stringify(e).replace(/'/g,"&#39;")})'>
+        <div class="ei-left" data-idx="${idx}" onclick="openModalByIdx(this.dataset.idx)">
           <span class="ei-date">${formatDate(e.date)}</span>
           <span class="ei-mood">${e.mood||''}</span>
         </div>
         <div class="ei-actions">
-          <button class="ei-btn" onclick='copyEntryDirect(${JSON.stringify(e).replace(/'/g,"&#39;")})'>📋</button>
-          <button class="ei-btn" onclick='openEditModalDirect(${JSON.stringify(e).replace(/'/g,"&#39;")})'>✏️</button>
+          <button class="ei-btn" data-idx="${idx}" onclick="copyByIdx(this.dataset.idx)">📋</button>
+          <button class="ei-btn" data-idx="${idx}" onclick="editByIdx(this.dataset.idx)">✏️</button>
           <button class="ei-btn del" onclick="deleteEntryDirect('${e.date}')">🗑️</button>
         </div>
       </div>
-      ${e.core?`<div class="ei-core" onclick='openModal(${JSON.stringify(e).replace(/'/g,"&#39;")})'>"${e.core}"</div>`:''}
-      ${e.emotion?`<div style="font-size:12px;color:var(--ink3);font-style:italic;margin-bottom:4px;">${e.emotion}</div>`:''}
-      ${e.text?`<div class="ei-text" onclick='openModal(${JSON.stringify(e).replace(/'/g,"&#39;")})'>${e.text.replace(/</g,'&lt;')}</div><div class="ei-more">전체 보기 →</div>`:''}
-      ${e.decisionWhat?`<div class="ei-decision">⚖️ ${e.decisionWhat.replace(/</g,'&lt;')}</div>`:''}
-    </div>`).join('');
+      ${safeCore}${safeEmotion}${safeText}${safeDecision}
+    </div>`;
+  }).join('');
+  // 인덱스 맵 저장
+  window._entryList=sorted;
 }
-function copyEntryDirect(e){currentModalEntry=e;copyEntry();currentModalEntry=null;}
-function openEditModalDirect(e){currentModalEntry=e;openEditModal();}
+function openModalByIdx(idx){openModal(window._entryList[parseInt(idx)]);}
+function copyByIdx(idx){currentModalEntry=window._entryList[parseInt(idx)];copyEntry();currentModalEntry=null;}
+function editByIdx(idx){openEditModalDirect(window._entryList[parseInt(idx)]);}
+  // 상세 모달 없이 바로 수정 모달 열기
+  currentModalEntry=e;
+  editMood=e.mood||'';
+  document.getElementById('edit-modal-date').textContent='✏️ '+formatDate(e.date)+' 수정';
+  document.querySelectorAll('#edit-mood-row .mood-btn').forEach(b=>b.classList.toggle('selected',b.dataset.mood===editMood));
+  const sv=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val||'';};
+  sv('edit-emotion',e.emotion);sv('edit-core',e.core);sv('edit-text',e.text);
+  sv('edit-decision-what',e.decisionWhat);sv('edit-decision-why',e.decisionWhy);
+  sv('edit-mistake',e.mistake);sv('edit-question',e.question);sv('edit-answer',e.answer);sv('edit-insight',e.insight);
+  document.getElementById('edit-modal').style.display='flex';
+}
 async function deleteEntryDirect(date){
   if(!confirm(`${formatDate(date)} 일기를 삭제할까요?`))return;
   try{
@@ -894,7 +917,8 @@ async function deleteEntryDirect(date){
     delete allEntries[date];
     showToast('삭제되었어요 ✓');
     renderAll();
-    if(document.getElementById('panel-weekly').classList.contains('active'))renderWeekly();
+    renderWeekly();
+    renderCalendar(); // 캘린더도 갱신
   }catch(e){showToast('삭제 실패: '+e.message);}
 }
 
@@ -903,7 +927,7 @@ const SECTIONS={'real-estate':{unit:'억',type:'asset'},'finance':{unit:'억',ty
 let assetData={};
 function toggleSection(sec){const body=document.getElementById(sec+'-body');const arrow=document.getElementById(sec+'-arrow');body.classList.toggle('open');arrow.classList.toggle('open');}
 function addItem(sec){assetData[sec]=assetData[sec]||[];assetData[sec].push({name:'',value:0});renderSection(sec);saveAssetData();}
-function removeItem(sec,idx){assetData[sec].splice(idx,1);renderSection(sec);saveAssetData();}
+function removeItem(sec,idx){assetData[sec].splice(idx,1);renderSection(sec);_saveMonthlyToSb();recalcAll();} // 즉시 저장
 function updateItem(sec,idx,field,val){if(!assetData[sec])assetData[sec]=[];if(!assetData[sec][idx])assetData[sec][idx]={name:'',value:0};assetData[sec][idx][field]=field==='value'?(parseFloat(val)||0):val;saveAssetData();}
 function renderSection(sec){
   const container=document.getElementById(sec+'-items');if(!container)return;
@@ -1016,6 +1040,17 @@ async function loadQuarterlyData(){
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeEditModal();}});
+
+// 모바일 키보드 올라올 때 뷰포트 처리
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize',()=>{
+    const modal=document.getElementById('edit-modal');
+    if(modal&&modal.style.display==='flex'){
+      modal.style.maxHeight=window.visualViewport.height+'px';
+    }
+  });
+}
+
 init();
 </script>
 </body>
