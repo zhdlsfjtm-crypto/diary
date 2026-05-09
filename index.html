@@ -267,6 +267,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .ledger-actions{display:flex;gap:4px;flex-shrink:0;}
 .ledit{font-size:12px;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;color:var(--ink3);}
 .ledit.del{color:var(--err);}
+.ledger-item.editing{background:var(--a2);border-radius:8px;padding:8px;margin:-4px;}
 </style>
 </head>
 <body>
@@ -682,7 +683,7 @@ async function saveEntry(){
     await sbRPC('upsert_diary',e2r(e));
     entries[d]=e;setSync('ok');
     notice('savenotice',d===td()?'저장되었어요 ✓':fd(d)+' 저장되었어요 ✓','ok');
-    renderCal();renderWeek();
+    renderWeek();
   }catch(err){setSync('e');notice('savenotice','저장 실패: '+err.message,'err');}
   btn.disabled=false;btn.textContent=d===td()?'저장하기':fd(d)+' 저장';
 }
@@ -734,7 +735,7 @@ async function delV(){
   if(!vEntry)return;
   if(!confirm(`${fd(vEntry.date)} 일기를 삭제할까요?`))return;
   const d=vEntry.date;closeV();
-  try{await sbDel('diary_entries?date=eq.'+d);delete entries[d];toast('삭제되었어요 ✓');renderAll();renderWeek();renderCal();}
+  try{await sbDel('diary_entries?date=eq.'+d);delete entries[d];toast('삭제되었어요 ✓');renderAll();renderWeek();}
   catch(err){toast('삭제 실패: '+err.message);}
 }
 
@@ -789,7 +790,7 @@ function renderAll(){
 function cpE(i){vEntry=elist[i];copyV();vEntry=null;}
 async function delE(date){
   if(!confirm(`${fd(date)} 일기를 삭제할까요?`))return;
-  try{await sbDel('diary_entries?date=eq.'+date);delete entries[date];toast('삭제되었어요 ✓');renderAll();renderWeek();renderCal();}
+  try{await sbDel('diary_entries?date=eq.'+date);delete entries[date];toast('삭제되었어요 ✓');renderAll();renderWeek();}
   catch(err){toast('삭제 실패: '+err.message);}
 }
 
@@ -923,7 +924,7 @@ async function loadLedgerData(){
       snapDebt=b.total_debt||0;
       const sa=document.getElementById('snap-asset');if(sa)sa.value=snapAsset||'';
       const sd=document.getElementById('snap-debt');if(sd)sd.value=snapDebt||'';
-      const mp=document.getElementById('mprinciple');if(mp&&b.principle)mp.value=b.principle;
+      const mp=document.getElementById('mprinciple');if(mp)mp.value=b.principle||'';
     }else{budgets={};snapAsset=0;snapDebt=0;}
     calcNet();renderLedger();renderCatBars();renderBudgetInputs();
   }catch(err){console.error('가계부 로드 실패',err);}
@@ -1083,10 +1084,9 @@ async function saveMonthly(){
   try{
     await sbRPC('upsert_monthly_budget',{
       p_month_key:lmk(),p_budgets:budgets,
-      p_net_asset:snapAsset-snapDebt,p_total_asset:snapAsset,p_total_debt:snapDebt
+      p_net_asset:snapAsset-snapDebt,p_total_asset:snapAsset,p_total_debt:snapDebt,
+      p_principle:p
     });
-    // principle은 monthly_budget에 컬럼이 없으므로 localStorage 보조 사용
-    localStorage.setItem('principle_'+lmk(),p);
     notice('mnotice','저장되었어요 ✓','ok');
   }catch(err){notice('mnotice','저장 실패: '+err.message,'err');}
 }
