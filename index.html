@@ -470,6 +470,8 @@ const SBH={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'applicat
 async function sbFetch(path,opt={}){
   const res=await fetch(SB_URL+'/rest/v1/'+path,{headers:{...SBH,...(opt.headers||{})},method:opt.method||'GET',body:opt.body});
   if(!res.ok){const t=await res.text();throw new Error(t);}
+  // DELETE나 PATCH는 body가 없을 수 있음
+  if(opt.method==='DELETE'||opt.method==='PATCH')return true;
   if(opt.method&&opt.method!=='GET')return true;
   return res.json();
 }
@@ -479,22 +481,45 @@ async function sbUpsert(d){
     method:'POST',
     headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'},
     body:JSON.stringify({
-      p_date:d.date, p_mood:d.mood||'', p_emotion:d.emotion||'',
-      p_text:d.text||'', p_core:d.core||'',
-      p_question:d.question||'', p_answer:d.answer||'',
-      p_insight:d.insight||'', p_decision_what:d.decision_what||'',
-      p_decision_why:d.decision_why||'', p_mistake:d.mistake||'',
+      p_date:d.date,p_mood:d.mood||'',p_emotion:d.emotion||'',
+      p_text:d.text||'',p_core:d.core||'',
+      p_question:d.question||'',p_answer:d.answer||'',
+      p_insight:d.insight||'',p_decision_what:d.decision_what||'',
+      p_decision_why:d.decision_why||'',p_mistake:d.mistake||'',
       p_tags:d.tags||''
     })
   });
   if(!res.ok){const t=await res.text();throw new Error(t);}
   return true;
 }
-async function sbDel(date){return sbFetch('diary_entries?date=eq.'+date,{method:'DELETE'});}
+async function sbDel(date){
+  const res=await fetch(SB_URL+'/rest/v1/diary_entries?date=eq.'+date,{
+    method:'DELETE',
+    headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}
+  });
+  if(!res.ok){const t=await res.text();throw new Error(t);}
+  return true;
+}
 async function sbMonthGet(k){return sbFetch('monthly_assets?month_key=eq.'+k+'&select=*');}
-async function sbMonthSave(d){return sbFetch('monthly_assets',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(d)});}
+async function sbMonthSave(d){
+  const res=await fetch(SB_URL+'/rest/v1/rpc/upsert_monthly',{
+    method:'POST',
+    headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify({p_month_key:d.month_key,p_asset_data:d.asset_data,p_principle:d.principle||''})
+  });
+  if(!res.ok){const t=await res.text();throw new Error(t);}
+  return true;
+}
 async function sbQGet(k){return sbFetch('quarterly_notes?quarter_key=eq.'+k+'&select=*');}
-async function sbQSave(d){return sbFetch('quarterly_notes',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(d)});}
+async function sbQSave(d){
+  const res=await fetch(SB_URL+'/rest/v1/rpc/upsert_quarterly',{
+    method:'POST',
+    headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify({p_quarter_key:d.quarter_key,p_before_text:d.before_text||'',p_after_text:d.after_text||'',p_mistakes:d.mistakes||'',p_principles:d.principles||''})
+  });
+  if(!res.ok){const t=await res.text();throw new Error(t);}
+  return true;
+}
 
 // ── 유틸 ──
 function today(){const d=new Date();return fmt(d);}
@@ -518,6 +543,10 @@ function updateChar(){document.getElementById('char-count').textContent=document
 
 // ── 탭 전환 ──
 function goTab(tab){
+  // 월간 탭에서 나갈 때 즉시 저장
+  if(document.getElementById('panel-monthly').classList.contains('active')&&tab!=='monthly'){
+    saveAssetNow();
+  }
   ['daily','weekly','monthly','quarterly','all'].forEach(t=>{
     document.getElementById('panel-'+t).classList.toggle('active',t===tab);
     document.getElementById('nav-'+t).classList.toggle('active',t===tab);
@@ -840,13 +869,22 @@ function recalc(){
   if(cn){cn.textContent=(nf>=0?'+':'')+nf.toLocaleString()+' 만원';cn.style.color=nf>=0?'var(--ok)':'var(--err)';}
 }
 let assetTimer=null;
-function saveAsset(){recalc();clearTimeout(assetTimer);assetTimer=setTimeout(saveAssetNow,1000);}
-async function saveAssetNow(){
-  const p=document.getElementById('monthly-principle')?.value||'';
-  try{await sbMonthSave({month_key:monthKey(),asset_data:assetData,principle:p,updated_at:new Date().toISOString()});}
-  catch(e){console.error('자산 저장 실패',e);}
+function saveAsset(){
+  recalc();
+  clearTimeout(assetTimer);
+  assetTimer=setTimeout(saveAssetNow,800);
 }
-async function saveMonthly(){await saveAssetNow();showNotice('이달 기록 저장되었어요 ✓','ok','monthly-notice');}
+async function saveAssetNow(){
+  clearTimeout(assetTimer);
+  const p=document.getElementById('monthly-principle')?.value||'';
+  try{
+    await sbMonthSave({month_key:monthKey(),asset_data:assetData,principle:p});
+  }catch(e){console.error('자산 저장 실패',e);}
+}
+async function saveMonthly(){
+  await saveAssetNow();
+  showNotice('이달 기록 저장되었어요 ✓','ok','monthly-notice');
+}
 async function loadMonthly(){
   try{
     const rows=await sbMonthGet(monthKey());
