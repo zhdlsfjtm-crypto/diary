@@ -788,6 +788,8 @@ function loadDay(ds){
     }
   }
   dailyEdited=false; // 불러온 후 편집 상태 리셋 (오탐 방지)
+  // 불러온 내용을 기준점으로 설정 → 수정 없이 탭 이동 시 경고 안 뜸
+  setTimeout(()=>{lastSavedContent=getCurrentContent();},0);
 }
 function openFlashback(){if(fbEntry)openV(fbEntry);}
 
@@ -809,8 +811,8 @@ async function saveEntry(){
   try{
     await sbRPC('upsert_diary',e2r(e));
     entries[d]=e;setSync('ok');
+    lastSavedContent=getCurrentContent(); // 저장 후 기준점 업데이트
     notice('savenotice',d===td()?'저장되었어요 ✓':fd(d)+' 저장되었어요 ✓','ok');
-    dailyEdited=false;
     renderWeek();
   }catch(err){setSync('e');notice('savenotice','저장 실패: '+err.message,'err');}
   btn.disabled=false;btn.textContent=d===td()?'저장하기':fd(d)+' 저장';
@@ -826,7 +828,16 @@ function goTab(t){
   });
   document.getElementById('scr').scrollTop=0;
   if(t==='weekly')renderWeek();
-  if(t==='monthly')initLedger();
+  if(t==='monthly'){
+    // 원칙 입력 중인 내용 임시 보존
+    const mp=document.getElementById('mprinciple');
+    const tempPrinciple=mp?.value||'';
+    initLedger();
+    // 로드 후 입력 중이던 원칙 복원 (저장 전 내용 유지)
+    if(tempPrinciple&&tempPrinciple!==savedPrinciple){
+      setTimeout(()=>{const el=document.getElementById('mprinciple');if(el)el.value=tempPrinciple;},300);
+    }
+  }
   if(t==='goals')loadGoals();
   if(t==='quarterly')loadQuarterlyData();
   if(t==='all'){allPage=1;renderAll();}
@@ -1103,6 +1114,8 @@ function updCatSelect(){
   }
 }
 
+let savedPrinciple=''; // 저장된 원칙 메모리에도 유지
+
 async function loadLedgerData(){
   const key=lmk();
   try{
@@ -1118,9 +1131,13 @@ async function loadLedgerData(){
       snapDebt=b.total_debt||0;
       const sa=document.getElementById('snap-asset');if(sa)sa.value=snapAsset||'';
       const sd=document.getElementById('snap-debt');if(sd)sd.value=snapDebt||'';
+      savedPrinciple=b.principle||'';
       const mp=document.getElementById('mprinciple');
-      if(mp&&!mp.matches(':focus'))mp.value=b.principle||'';
-    }else{budgets={};snapAsset=0;snapDebt=0;}
+      if(mp)mp.value=savedPrinciple; // 항상 DB 값으로 복원
+    }else{
+      budgets={};snapAsset=0;snapDebt=0;savedPrinciple='';
+      const mp=document.getElementById('mprinciple');if(mp)mp.value='';
+    }
     calcNet();renderLedger();renderCatBars();renderBudgetInputs();
   }catch(err){console.error('가계부 로드 실패',err);}
 }
@@ -1288,6 +1305,7 @@ async function saveMonthly(){
       p_principle:p
     });
     notice('mnotice','저장되었어요 ✓','ok');
+    savedPrinciple=p; // 저장 성공 후 기준점 업데이트
   }catch(err){
     console.error('월간 저장 실패',err);
     notice('mnotice','저장 실패: '+err.message,'err');
@@ -1536,23 +1554,26 @@ if(window.visualViewport){
 }
 
 // ── 작성 중 탭 이동 경고 ──
-let dailyEdited=false;
+let lastSavedContent=''; // 마지막 저장 시점의 내용
 
-function setupDailyEditListeners(){
-  ['core','dtx','dwhat','dwhy','dmistake','dq','da','dins'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el)el.addEventListener('input',()=>{dailyEdited=true;});
-  });
+function getCurrentContent(){
+  return (document.getElementById('core')?.value||'').trim()+
+         (document.getElementById('dtx')?.value||'').trim();
 }
 
-function hasUnsaved(){return dailyEdited;}
+function setupDailyEditListeners(){} // 더 이상 필요 없음
+
+function hasUnsaved(){
+  const current=getCurrentContent();
+  // 내용이 있고 마지막 저장 내용과 다를 때만 경고
+  return current.length>0 && current!==lastSavedContent;
+}
 
 const origGoTab=goTab;
 window.goTab=function(t){
   if(t!=='daily'&&document.getElementById('pn-daily').classList.contains('on')&&hasUnsaved()){
     if(!confirm('작성 중인 내용이 있어요. 저장하지 않고 이동할까요?'))return;
   }
-  dailyEdited=false;
   origGoTab(t);
 };
 
