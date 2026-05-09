@@ -229,6 +229,44 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 /* 토스트 */
 .toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:rgba(28,26,22,.85);color:#fff;font-size:13px;padding:10px 18px;border-radius:20px;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;}
 .toast.on{opacity:1;}
+
+/* 가계부 */
+.snap-inp{width:100%;border:none;border-bottom:2px solid var(--line);background:transparent;font-size:18px;font-weight:700;color:var(--asset);outline:none;text-align:center;padding:4px 0;font-family:'Pretendard',sans-serif;}
+.snap-inp:focus{border-color:var(--accent);}
+.sum-card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center;}
+.sum-card.income{background:#EAF3DE;border-color:#A8D080;}
+.sum-card.expense{background:var(--err-bg);border-color:#F09595;}
+.sum-lbl{font-size:10px;color:var(--ink3);margin-bottom:4px;}
+.sum-val{font-size:20px;font-weight:700;color:var(--ink);}
+.sum-card.income .sum-val{color:var(--ok);}
+.sum-card.expense .sum-val{color:var(--err);}
+.sum-unit{font-size:10px;color:var(--ink3);}
+.type-btn{width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);font-size:14px;font-weight:600;cursor:pointer;font-family:'Pretendard',sans-serif;color:var(--ink3);transition:all .15s;}
+.type-btn.on{border-color:var(--accent);background:var(--a2);color:var(--accent);}
+.linp{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-family:'Pretendard',sans-serif;color:var(--ink);background:var(--bg);outline:none;}
+.linp:focus{border-color:var(--accent);}
+.cat-bar-row{margin-bottom:10px;}
+.cat-bar-name{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;}
+.cat-bar-track{height:8px;background:var(--line);border-radius:4px;overflow:hidden;}
+.cat-bar-fill{height:100%;border-radius:4px;transition:width .4s;}
+.budget-inp-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);}
+.budget-inp-row:last-child{border-bottom:none;}
+.budget-inp{width:80px;border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:13px;font-weight:600;color:var(--asset);outline:none;text-align:right;font-family:'Pretendard',sans-serif;background:var(--bg);}
+.ledger-item{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);}
+.ledger-item:last-child{border-bottom:none;}
+.ledger-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ledger-dot.in{background:var(--ok);}
+.ledger-dot.ex{background:var(--err);}
+.ledger-info{flex:1;min-width:0;}
+.ledger-cat{font-size:11px;color:var(--ink3);}
+.ledger-memo{font-size:13px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ledger-date{font-size:10px;color:var(--ink3);}
+.ledger-amt{font-size:15px;font-weight:700;white-space:nowrap;}
+.ledger-amt.in{color:var(--ok);}
+.ledger-amt.ex{color:var(--err);}
+.ledger-actions{display:flex;gap:4px;flex-shrink:0;}
+.ledit{font-size:12px;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;color:var(--ink3);}
+.ledit.del{color:var(--err);}
 </style>
 </head>
 <body>
@@ -331,39 +369,93 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 
     <!-- 월간 -->
     <div class="pn" id="pn-monthly">
-      <div class="ptitle">월간 기록</div>
+      <div class="ptitle">월간 가계부</div>
       <div class="psub" id="msub"></div>
-      <div class="calh">
-        <button class="calnav" onclick="chMo(-1)">◀</button>
-        <div class="caltitle" id="caltitle"></div>
-        <button class="calnav" onclick="chMo(1)">▶</button>
+
+      <!-- 월 이동 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <button class="calnav" onclick="chLedgerMo(-1)">◀</button>
+        <div style="font-family:'Nanum Myeongjo',serif;font-size:20px;" id="ledger-title"></div>
+        <button class="calnav" onclick="chLedgerMo(1)">▶</button>
       </div>
-      <div class="calgrid" id="calgrid"></div>
-      <div class="divr"><div class="divrl"></div><div class="divrt">🏆 목표 진행률</div><div class="divrl"></div></div>
-      <div class="netcard"><div class="netlbl">순자산 (총자산 - 부채)</div><div class="netval" id="netval">— 억원</div><div class="netsub">항목 입력 시 자동 계산</div></div>
+
+      <!-- 순자산 + 목표 -->
+      <div class="netcard">
+        <div class="netlbl">순자산 (총자산 - 부채)</div>
+        <div class="netval" id="netval">— 억원</div>
+        <div class="netsub" id="netsub">아래에서 자산 입력</div>
+      </div>
       <div class="goalcard">
         <div class="goalrow"><span class="goallbl">🎯 400억 목표 진행률</span><span class="goalpct" id="gpct">0%</span></div>
         <div class="pbar"><div class="pfill" id="pfill" style="width:0%"></div></div>
         <div class="goalsub" id="gsub">목표까지 400억 남았어요</div>
       </div>
-      <div class="divr"><div class="divrl"></div><div class="divrt">🏠 자산</div><div class="divrl"></div></div>
-      <div class="asec"><div class="asec-h" onclick="toggleSec('re')"><span>🏠 부동산</span><span id="re-t" style="color:var(--asset);font-weight:600;">0 억</span><span class="arr" id="re-a">▼</span></div><div class="asec-b" id="re-b"><div id="re-i"></div><button class="addbtn" onclick="addItem('re')">+ 항목 추가</button></div></div>
-      <div class="asec"><div class="asec-h" onclick="toggleSec('fi')"><span>💹 금융자산</span><span id="fi-t" style="color:var(--asset);font-weight:600;">0 억</span><span class="arr" id="fi-a">▼</span></div><div class="asec-b" id="fi-b"><div id="fi-i"></div><button class="addbtn" onclick="addItem('fi')">+ 항목 추가</button></div></div>
-      <div class="asec"><div class="asec-h" onclick="toggleSec('co')"><span>🏢 법인자산</span><span id="co-t" style="color:var(--asset);font-weight:600;">0 억</span><span class="arr" id="co-a">▼</span></div><div class="asec-b" id="co-b"><div id="co-i"></div><button class="addbtn" onclick="addItem('co')">+ 항목 추가</button></div></div>
-      <div class="asec"><div class="asec-h" onclick="toggleSec('et')"><span>💎 기타 자산</span><span id="et-t" style="color:var(--asset);font-weight:600;">0 억</span><span class="arr" id="et-a">▼</span></div><div class="asec-b" id="et-b"><div id="et-i"></div><button class="addbtn" onclick="addItem('et')">+ 항목 추가</button></div></div>
-      <div class="divr"><div class="divrl"></div><div class="divrt">💸 부채</div><div class="divrl"></div></div>
-      <div class="asec" style="border-color:#F09595;"><div class="asec-h" onclick="toggleSec('de')"><span>💸 부채</span><span id="de-t" style="color:var(--err);font-weight:600;">0 억</span><span class="arr" id="de-a">▼</span></div><div class="asec-b" id="de-b"><div id="de-i"></div><button class="addbtn" onclick="addItem('de')">+ 항목 추가</button></div></div>
-      <div class="divr"><div class="divrl"></div><div class="divrt">💵 현금흐름</div><div class="divrl"></div></div>
-      <div class="asec"><div class="asec-h" onclick="toggleSec('in')"><span>📥 월 수입</span><span id="in-t" style="color:var(--ok);font-weight:600;">0 만원</span><span class="arr" id="in-a">▼</span></div><div class="asec-b" id="in-b"><div id="in-i"></div><button class="addbtn" onclick="addItem('in')">+ 항목 추가</button></div></div>
-      <div class="asec" style="border-color:#F09595;"><div class="asec-h" onclick="toggleSec('ex')"><span>📤 월 지출</span><span id="ex-t" style="color:var(--err);font-weight:600;">0 만원</span><span class="arr" id="ex-a">▼</span></div><div class="asec-b" id="ex-b"><div id="ex-i"></div><button class="addbtn" onclick="addItem('ex')">+ 항목 추가</button></div></div>
-      <div class="cfcard">
-        <div class="cfrow"><span class="cflbl">월 수입</span><span class="cfval" id="cfin" style="color:var(--ok);">0 만원</span></div>
-        <div class="cfrow"><span class="cflbl">월 지출</span><span class="cfval" id="cfex" style="color:var(--err);">0 만원</span></div>
-        <div class="cfrow" style="border-top:1px solid var(--line);padding-top:8px;margin-top:4px;"><span class="cflbl" style="font-weight:600;">월 순현금흐름</span><span class="cfval" id="cfnet" style="font-size:16px;font-weight:700;">0 만원</span></div>
+
+      <!-- 자산 스냅샷 (간소화) -->
+      <div class="card" style="margin-bottom:10px;">
+        <div class="ch"><span class="ci">💎</span><span class="ct">이달 자산 스냅샷</span><span class="cd">월말 기준</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+          <div style="text-align:center;">
+            <div style="font-size:10px;color:var(--ink3);margin-bottom:4px;">총 자산 (억)</div>
+            <input type="number" id="snap-asset" class="snap-inp" placeholder="0" oninput="calcNet()">
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:10px;color:var(--ink3);margin-bottom:4px;">부채 (억)</div>
+            <input type="number" id="snap-debt" class="snap-inp av-d" placeholder="0" oninput="calcNet()">
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:10px;color:var(--ok);margin-bottom:4px;font-weight:600;">순자산 (억)</div>
+            <div id="snap-net" style="font-size:18px;font-weight:700;color:var(--asset);">0</div>
+          </div>
+        </div>
       </div>
-      <div class="divr"><div class="divrl"></div><div class="divrt">📌 이달의 원칙</div><div class="divrl"></div></div>
-      <div class="pcard"><div class="plbl">이달 경험에서 추출한 나만의 원칙</div><textarea class="ptx" id="mprinciple" rows="3" placeholder="이달 가장 중요하게 깨달은 원칙 한 가지..."></textarea></div>
-      <button class="bp" onclick="saveMonthly()">이달 기록 저장</button>
+
+      <!-- 이달 요약 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div class="sum-card income"><div class="sum-lbl">총 수입</div><div class="sum-val" id="sum-income">0</div><div class="sum-unit">만원</div></div>
+        <div class="sum-card expense"><div class="sum-lbl">총 지출</div><div class="sum-val" id="sum-expense">0</div><div class="sum-unit">만원</div></div>
+        <div class="sum-card"><div class="sum-lbl">순현금</div><div class="sum-val" id="sum-net">0</div><div class="sum-unit">만원</div></div>
+      </div>
+
+      <!-- 예산 대비 -->
+      <div class="card">
+        <div class="ch"><span class="ci">📊</span><span class="ct">카테고리별 지출</span><span class="cd" style="cursor:pointer;color:var(--accent);" onclick="toggleBudgetEdit()">예산 설정</span></div>
+        <div id="budget-edit" style="display:none;margin-bottom:12px;padding:12px;background:var(--bg);border-radius:10px;">
+          <div style="font-size:11px;color:var(--ink3);margin-bottom:8px;">월 예산 설정 (만원)</div>
+          <div id="budget-inputs"></div>
+        </div>
+        <div id="cat-bars"></div>
+      </div>
+
+      <!-- 내역 추가 -->
+      <div class="card">
+        <div class="ch"><span class="ci">➕</span><span class="ct">내역 추가</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <button class="type-btn on" id="tbtn-in" onclick="setType('income')">💰 수입</button>
+          <button class="type-btn" id="tbtn-ex" onclick="setType('expense')">💸 지출</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <input type="date" id="l-date" class="linp" style="font-size:13px;">
+          <select id="l-cat" class="linp" style="font-size:13px;"></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px;">
+          <input type="number" id="l-amount" class="linp" placeholder="금액 (만원)" style="font-size:15px;font-weight:600;">
+          <span style="display:flex;align-items:center;font-size:13px;color:var(--ink3);">만원</span>
+        </div>
+        <input type="text" id="l-memo" class="linp" placeholder="메모 (선택)" style="font-size:13px;margin-bottom:10px;">
+        <button class="bp" onclick="addLedger()">추가하기</button>
+        <div class="notice" id="lnotice"></div>
+      </div>
+
+      <!-- 내역 목록 -->
+      <div class="card">
+        <div class="ch"><span class="ci">📋</span><span class="ct">이달 내역</span><span class="cd" id="ledger-count"></span></div>
+        <div id="ledger-list"></div>
+      </div>
+
+      <!-- 이달 원칙 -->
+      <div class="pcard"><div class="plbl">이달의 원칙</div><textarea class="ptx" id="mprinciple" rows="2" placeholder="이달 가장 중요하게 깨달은 원칙..."></textarea></div>
+      <button class="bp" onclick="saveMonthly()">이달 저장</button>
       <div class="notice" id="mnotice"></div>
     </div>
 
@@ -596,15 +688,13 @@ async function saveEntry(){
 
 // ── 탭 전환 ──
 function goTab(t){
-  // 월간 탭 나갈 때 즉시 저장
-  if(document.getElementById('pn-monthly').classList.contains('on')&&t!=='monthly')saveMonthlyNow();
   tabs.forEach(x=>{
     document.getElementById('pn-'+x).classList.toggle('on',x===t);
     document.getElementById('nb-'+x).classList.toggle('on',x===t);
   });
   document.getElementById('scr').scrollTop=0;
   if(t==='weekly')renderWeek();
-  if(t==='monthly'){renderCal();loadMonthlyData();}
+  if(t==='monthly')initLedger();
   if(t==='quarterly')loadQuarterlyData();
   if(t==='all')renderAll();
 }
@@ -772,56 +862,220 @@ function renderCal(){
   }
 }
 
-// ── 자산 ──
-function toggleSec(k){
-  document.getElementById(k+'-b').classList.toggle('on');
-  document.getElementById(k+'-a').classList.toggle('on');
+// ── 가계부 ──
+const CATS_IN=['급여','사업수입','투자수익','임대수입','기타수입'];
+const CATS_EX=['식비','교통','주거','보험','세금','의료','문화','쇼핑','교육','기타지출'];
+const CAT_COLORS={급여:'#3B6D11',사업수입:'#2D5A8C',투자수익:'#6B3FA0',임대수입:'#8C4A2D',기타수입:'#2D6B5A',식비:'#C4622D',교통:'#8C4A2D',주거:'#1A5C8C',보험:'#6B3FA0',세금:'#A32D2D',의료:'#2D6B5A',문화:'#2D5A8C',쇼핑:'#C4622D',교육:'#3B6D11',기타지출:'#8C877E'};
+
+let ledgerY, ledgerM, ledgerType='expense', ledgerData=[], budgets={}, editingLedger=null;
+let snapAsset=0, snapDebt=0, mPrinciple='';
+
+function initLedger(){
+  const now=new Date();ledgerY=now.getFullYear();ledgerM=now.getMonth();
+  updLedgerHeader();
+  document.getElementById('l-date').value=td();
+  updCatSelect();
+  loadLedgerData();
 }
-function addItem(k){aData[k]=aData[k]||[];aData[k].push({n:'',v:0});renderSec(k);schedSave();}
-function delItem(k,i){aData[k].splice(i,1);renderSec(k);saveMonthlyNow();}
-function updItem(k,i,f,v){aData[k]=aData[k]||[];aData[k][i]=aData[k][i]||{n:'',v:0};aData[k][i][f]=f==='v'?(parseFloat(v)||0):v;schedSave();}
-function renderSec(k){
-  const c=document.getElementById(k+'-i');if(!c)return;
-  const s=SECS[k];
-  c.innerHTML=(aData[k]||[]).map((item,i)=>`<div class="airow"><input class="ainame" value="${(item.n||'').replace(/"/g,'&quot;')}" placeholder="항목명" oninput="updItem('${k}',${i},'n',this.value)"><input class="aival ${s.c}" type="number" value="${item.v||''}" placeholder="0" oninput="updItem('${k}',${i},'v',this.value)"><span class="aiunit">${s.u}</span><button class="aidel" onclick="delItem('${k}',${i})">×</button></div>`).join('');
+function chLedgerMo(d){
+  ledgerM+=d;if(ledgerM>11){ledgerM=0;ledgerY++;}if(ledgerM<0){ledgerM=11;ledgerY--;}
+  updLedgerHeader();updCatSelect();loadLedgerData();
 }
-function renderAllSecs(){Object.keys(SECS).forEach(k=>renderSec(k));recalc();}
-function recalc(){
-  let ta=0,td2=0,ti=0,te=0;
-  ['re','fi','co','et'].forEach(k=>{const s=(aData[k]||[]).reduce((a,b)=>a+(b.v||0),0);const el=document.getElementById(k+'-t');if(el)el.textContent=s.toFixed(1)+' 억';ta+=s;});
-  const ds=(aData['de']||[]).reduce((a,b)=>a+(b.v||0),0);const del=document.getElementById('de-t');if(del)del.textContent=ds.toFixed(1)+' 억';td2=ds;
-  const is=(aData['in']||[]).reduce((a,b)=>a+(b.v||0),0);const iel=document.getElementById('in-t');if(iel)iel.textContent=is.toLocaleString()+' 만원';ti=is;
-  const es=(aData['ex']||[]).reduce((a,b)=>a+(b.v||0),0);const eel=document.getElementById('ex-t');if(eel)eel.textContent=es.toLocaleString()+' 만원';te=es;
-  const net=ta-td2;
-  const nv=document.getElementById('netval');if(nv)nv.textContent=net.toFixed(1)+' 억원';
-  const pct=Math.min((net/GOAL)*100,100);
-  const pe=document.getElementById('gpct');if(pe)pe.textContent=pct.toFixed(1)+'%';
-  const fe=document.getElementById('pfill');if(fe)fe.style.width=pct+'%';
-  const se=document.getElementById('gsub');if(se)se.textContent=`목표 400억까지 ${Math.max(GOAL-net,0).toFixed(1)}억원 남았어요`;
-  const ci=document.getElementById('cfin');if(ci)ci.textContent=ti.toLocaleString()+' 만원';
-  const ce=document.getElementById('cfex');if(ce)ce.textContent=te.toLocaleString()+' 만원';
-  const cn=document.getElementById('cfnet');const nf=ti-te;
-  if(cn){cn.textContent=(nf>=0?'+':'')+nf.toLocaleString()+' 만원';cn.style.color=nf>=0?'var(--ok)':'var(--err)';}
+function lmk(){return `m_${ledgerY}_${ledgerM+1}`;}
+function updLedgerHeader(){
+  document.getElementById('ledger-title').textContent=`${ledgerY}년 ${MOS[ledgerM]}`;
+  document.getElementById('msub').textContent=`${ledgerY}년 ${MOS[ledgerM]} 가계부`;
 }
-let saveTimer=null;
-function schedSave(){recalc();clearTimeout(saveTimer);saveTimer=setTimeout(saveMonthlyNow,800);}
-async function saveMonthlyNow(){
-  clearTimeout(saveTimer);
-  const p=document.getElementById('mprinciple')?.value||'';
-  try{await sbRPC('upsert_monthly',{p_month_key:mk(),p_asset_data:aData,p_principle:p});}
-  catch(err){console.error('자산 저장 실패',err);}
+function setType(t){
+  ledgerType=t;
+  document.getElementById('tbtn-in').classList.toggle('on',t==='income');
+  document.getElementById('tbtn-ex').classList.toggle('on',t==='expense');
+  updCatSelect();
 }
-async function saveMonthly(){await saveMonthlyNow();notice('mnotice','이달 기록 저장되었어요 ✓','ok');}
-async function loadMonthlyData(){
+function updCatSelect(){
+  const sel=document.getElementById('l-cat');
+  const cats=ledgerType==='income'?CATS_IN:CATS_EX;
+  sel.innerHTML=cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+}
+
+async function loadLedgerData(){
+  const key=lmk();
   try{
-    const rows=await sbGet('monthly_assets?month_key=eq.'+mk()+'&select=*');
-    if(rows&&rows.length>0){
-      aData=rows[0].asset_data||{};
-      Object.keys(SECS).forEach(k=>{if(!aData[k])aData[k]=[];});
-      renderAllSecs();
-      const el=document.getElementById('mprinciple');if(el&&rows[0].principle)el.value=rows[0].principle;
-    }else{Object.keys(SECS).forEach(k=>{if(!aData[k])aData[k]=[];});renderAllSecs();}
-  }catch(err){console.error('자산 로드 실패',err);Object.keys(SECS).forEach(k=>{if(!aData[k])aData[k]=[];});renderAllSecs();}
+    // 가계부 내역
+    const rows=await sbGet(`ledger_entries?month_key=eq.${key}&select=*&order=entry_date.desc,created_at.desc`);
+    ledgerData=rows||[];
+    // 예산/자산 스냅샷
+    const brows=await sbGet(`monthly_budget?month_key=eq.${key}&select=*`);
+    if(brows&&brows.length>0){
+      budgets=brows[0].budgets||{};
+      snapAsset=brows[0].total_asset||0;
+      snapDebt=brows[0].total_debt||0;
+      mPrinciple=brows[0].principle||'';
+      document.getElementById('snap-asset').value=snapAsset||'';
+      document.getElementById('snap-debt').value=snapDebt||'';
+      const el=document.getElementById('mprinciple');if(el)el.value=mPrinciple;
+    }else{budgets={};snapAsset=0;snapDebt=0;}
+    calcNet();renderLedger();renderCatBars();renderBudgetInputs();
+  }catch(err){console.error('가계부 로드 실패',err);}
+}
+
+function calcNet(){
+  const a=parseFloat(document.getElementById('snap-asset').value)||0;
+  const d=parseFloat(document.getElementById('snap-debt').value)||0;
+  const net=a-d;snapAsset=a;snapDebt=d;
+  document.getElementById('snap-net').textContent=net.toFixed(1);
+  document.getElementById('netval').textContent=net.toFixed(1)+' 억원';
+  const pct=Math.min((net/GOAL)*100,100);
+  document.getElementById('gpct').textContent=pct.toFixed(1)+'%';
+  document.getElementById('pfill').style.width=pct+'%';
+  document.getElementById('gsub').textContent=`목표 400억까지 ${Math.max(GOAL-net,0).toFixed(1)}억원 남았어요`;
+}
+
+function renderLedger(){
+  const totalIn=ledgerData.filter(r=>r.type==='income').reduce((a,b)=>a+b.amount,0);
+  const totalEx=ledgerData.filter(r=>r.type==='expense').reduce((a,b)=>a+b.amount,0);
+  const net=totalIn-totalEx;
+  document.getElementById('sum-income').textContent=totalIn.toLocaleString();
+  document.getElementById('sum-expense').textContent=totalEx.toLocaleString();
+  const sn=document.getElementById('sum-net');
+  sn.textContent=(net>=0?'+':'')+net.toLocaleString();
+  sn.style.color=net>=0?'var(--ok)':'var(--err)';
+  document.getElementById('ledger-count').textContent=`${ledgerData.length}건`;
+  const list=document.getElementById('ledger-list');
+  if(!ledgerData.length){list.innerHTML='<div style="text-align:center;padding:20px;color:var(--ink3);font-size:13px;">이달 내역이 없어요</div>';return;}
+  list.innerHTML=ledgerData.map((r,i)=>`
+    <div class="ledger-item">
+      <div class="ledger-dot ${r.type==='income'?'in':'ex'}"></div>
+      <div class="ledger-info">
+        <div class="ledger-cat">${r.category} · <span class="ledger-date">${r.entry_date}</span></div>
+        <div class="ledger-memo">${r.memo||r.category}</div>
+      </div>
+      <div class="ledger-amt ${r.type==='income'?'in':'ex'}">${r.type==='income'?'+':'-'}${r.amount.toLocaleString()}</div>
+      <div class="ledger-actions">
+        <button class="ledit" onclick="editLedger(${i})">✏️</button>
+        <button class="ledit del" onclick="delLedger('${r.id}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderCatBars(){
+  const exData=ledgerData.filter(r=>r.type==='expense');
+  const catTotals={};
+  exData.forEach(r=>{catTotals[r.category]=(catTotals[r.category]||0)+r.amount;});
+  const sorted=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+  const maxVal=sorted[0]?.[1]||1;
+  const bars=document.getElementById('cat-bars');
+  if(!sorted.length){bars.innerHTML='<div style="text-align:center;padding:12px;color:var(--ink3);font-size:13px;">지출 내역이 없어요</div>';return;}
+  bars.innerHTML=sorted.map(([cat,amt])=>{
+    const budget=budgets[cat]||0;
+    const pct=Math.min((amt/maxVal)*100,100);
+    const overBudget=budget>0&&amt>budget;
+    const color=overBudget?'var(--err)':(CAT_COLORS[cat]||'var(--accent)');
+    return `<div class="cat-bar-row">
+      <div class="cat-bar-name">
+        <span>${cat}</span>
+        <span style="color:${overBudget?'var(--err)':'var(--ink3)'};">${amt.toLocaleString()}만원${budget?` / 예산 ${budget.toLocaleString()}만원`:''}</span>
+      </div>
+      <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%;background:${color};"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderBudgetInputs(){
+  const all=[...CATS_IN,...CATS_EX];
+  document.getElementById('budget-inputs').innerHTML=all.map(cat=>`
+    <div class="budget-inp-row">
+      <span style="font-size:13px;">${cat}</span>
+      <input type="number" class="budget-inp" value="${budgets[cat]||''}" placeholder="0" oninput="updBudget('${cat}',this.value)">
+    </div>`).join('');
+}
+function updBudget(cat,v){budgets[cat]=parseInt(v)||0;renderCatBars();}
+function toggleBudgetEdit(){
+  const el=document.getElementById('budget-edit');
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
+async function addLedger(){
+  const date=document.getElementById('l-date').value||td();
+  const cat=document.getElementById('l-cat').value;
+  const amount=parseInt(document.getElementById('l-amount').value)||0;
+  const memo=document.getElementById('l-memo').value.trim();
+  if(!amount){notice('lnotice','금액을 입력해주세요.','err');return;}
+
+  if(editingLedger){
+    // 수정 모드
+    try{
+      await sbFetchDirect(`ledger_entries?id=eq.${editingLedger}`,{
+        method:'PATCH',
+        body:JSON.stringify({entry_date:date,type:ledgerType,category:cat,amount,memo,month_key:lmk()})
+      });
+      toast('수정되었어요 ✓');
+      editingLedger=null;
+      document.getElementById('l-amount').value='';
+      document.getElementById('l-memo').value='';
+      document.querySelector('.bp[onclick="addLedger()"]').textContent='추가하기';
+      await loadLedgerData();
+    }catch(err){notice('lnotice','수정 실패: '+err.message,'err');}
+    return;
+  }
+
+  try{
+    await sbFetchDirect('ledger_entries',{
+      method:'POST',
+      body:JSON.stringify({entry_date:date,month_key:lmk(),type:ledgerType,category:cat,amount,memo})
+    });
+    document.getElementById('l-amount').value='';
+    document.getElementById('l-memo').value='';
+    notice('lnotice','추가되었어요 ✓','ok');
+    await loadLedgerData();
+  }catch(err){notice('lnotice','추가 실패: '+err.message,'err');}
+}
+
+function editLedger(i){
+  const r=ledgerData[i];
+  editingLedger=r.id;
+  setType(r.type);
+  document.getElementById('l-date').value=r.entry_date;
+  document.getElementById('l-cat').value=r.category;
+  document.getElementById('l-amount').value=r.amount;
+  document.getElementById('l-memo').value=r.memo||'';
+  document.querySelector('.bp[onclick="addLedger()"]').textContent='수정 저장';
+  document.getElementById('scr').scrollTo({top:999,behavior:'smooth'});
+}
+
+async function delLedger(id){
+  if(!confirm('이 내역을 삭제할까요?'))return;
+  try{
+    await sbDel('ledger_entries?id=eq.'+id);
+    toast('삭제되었어요 ✓');
+    await loadLedgerData();
+  }catch(err){toast('삭제 실패: '+err.message);}
+}
+
+async function saveMonthly(){
+  const p=document.getElementById('mprinciple')?.value||'';
+  try{
+    await sbRPC('upsert_monthly_budget',{
+      p_month_key:lmk(),p_budgets:budgets,
+      p_net_asset:snapAsset-snapDebt,p_total_asset:snapAsset,p_total_debt:snapDebt
+    });
+    // 원칙은 별도 저장 (monthly_budget 테이블에 principle 컬럼 없으면 로컬)
+    localStorage.setItem('principle_'+lmk(),p);
+    notice('mnotice','저장되었어요 ✓','ok');
+  }catch(err){notice('mnotice','저장 실패: '+err.message,'err');}
+}
+
+async function loadMonthlyData(){initLedger();}
+
+// sbFetchDirect — POST/PATCH for ledger (not RPC)
+async function sbFetchDirect(path,opt={}){
+  const r=await fetch(SBU+'/rest/v1/'+path,{
+    method:opt.method||'POST',
+    headers:{...H,'Prefer':'return=minimal'},
+    body:opt.body
+  });
+  if(!r.ok)throw new Error(await r.text());
+  return true;
 }
 
 // ── 분기 ──
