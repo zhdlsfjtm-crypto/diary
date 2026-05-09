@@ -3,8 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="나의 일기장">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#C4622D">
+<meta name="description" content="나만의 일기장 — 핵심 한 줄, 결정, 배움을 기록하세요">
 <title>나의 일기장</title>
-<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23C4622D'/%3E%3Ctext y='.9em' font-size='80' x='10'%3E📔%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="data:application/json,%7B%22name%22%3A%22%EB%82%98%EC%9D%98%20%EC%9D%BC%EA%B8%B0%EC%9E%A5%22%2C%22short_name%22%3A%22%EC%9D%BC%EA%B8%B0%EC%9E%A5%22%2C%22start_url%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23F5F2ED%22%2C%22theme_color%22%3A%22%23C4622D%22%7D">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&family=Pretendard:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#F5F2ED;--paper:#FDFCF9;--ink:#1C1A16;--ink2:#4A4640;--ink3:#8C877E;
@@ -31,9 +41,9 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
 /* 콘텐츠 */
-.scr{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px calc(var(--nh)+24px);-webkit-overflow-scrolling:touch;}
+.scr{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px calc(var(--nh)+24px);overscroll-behavior:contain;}
 .pn{display:none;}
-.pn.on{display:block;animation:fi .18s ease;}
+.pn.on{display:block;animation:fi .18s ease;will-change:opacity,transform;}
 @keyframes fi{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 .ptitle{font-family:'Nanum Myeongjo',serif;font-size:22px;margin-bottom:2px;}
 .psub{font-size:12px;color:var(--ink3);margin-bottom:18px;}
@@ -203,8 +213,8 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .empty{text-align:center;padding:48px 0;color:var(--ink3);font-size:14px;line-height:2.2;}
 
 /* 팝업 */
-.ov{position:fixed;inset:0;background:rgba(28,26,22,.5);display:flex;align-items:flex-end;z-index:200;backdrop-filter:blur(3px);}
-.modal{background:var(--paper);border-radius:20px 20px 0 0;padding:20px 18px 40px;width:100%;max-height:88vh;overflow-y:auto;animation:su .22s ease;position:relative;}
+.ov{position:fixed;inset:0;background:rgba(28,26,22,.5);display:flex;align-items:flex-end;z-index:200;}
+.modal{background:var(--paper);border-radius:20px 20px 0 0;padding:20px 18px 40px;width:100%;max-height:88vh;overflow-y:auto;animation:su .22s ease;position:relative;will-change:transform;}
 @keyframes su{from{transform:translateY(100%)}to{transform:none}}
 .mh{width:40px;height:4px;background:var(--line);border-radius:2px;margin:0 auto 16px;}
 .mx{position:absolute;top:14px;right:14px;background:var(--bg);border:1px solid var(--line);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--ink3);}
@@ -1361,6 +1371,36 @@ if(window.visualViewport){
     const em=document.getElementById('emod');
     if(em&&em.style.display==='flex')em.style.maxHeight=window.visualViewport.height+'px';
   });
+}
+
+// ── 작성 중 탭 이동 경고 ──
+function hasUnsaved(){
+  const core=document.getElementById('core')?.value||'';
+  const dtx=document.getElementById('dtx')?.value||'';
+  return (core||dtx).trim().length>0;
+}
+const origGoTab=goTab;
+window.goTab=function(t){
+  if(t!=='daily'&&document.getElementById('pn-daily').classList.contains('on')&&hasUnsaved()){
+    if(!confirm('작성 중인 내용이 있어요. 저장하지 않고 이동할까요?'))return;
+  }
+  origGoTab(t);
+};
+
+// ── Supabase 재시도 래퍼 ──
+async function sbGetRetry(path,retries=2){
+  for(let i=0;i<=retries;i++){
+    try{return await sbGet(path);}
+    catch(err){
+      if(i===retries)throw err;
+      await new Promise(r=>setTimeout(r,1000*(i+1)));
+    }
+  }
+}
+
+// ── PWA Service Worker (오프라인 캐시) ──
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
 }
 
 init();
