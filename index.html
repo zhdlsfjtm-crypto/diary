@@ -475,18 +475,29 @@ async function sbFetch(path,opt={}){
 }
 async function sbAll(){return sbFetch('diary_entries?select=*&order=date.desc');}
 async function sbUpsert(d){
-  const res=await fetch(SB_URL+'/rest/v1/diary_entries',{
-    method:'POST',
-    headers:{
-      apikey:SB_KEY,
-      Authorization:'Bearer '+SB_KEY,
-      'Content-Type':'application/json',
-      'Prefer':'resolution=merge-duplicates,return=minimal',
-      'X-Upsert':'true'
-    },
-    body:JSON.stringify(d)
+  // 먼저 해당 날짜 존재 여부 확인
+  const checkRes=await fetch(SB_URL+'/rest/v1/diary_entries?date=eq.'+d.date+'&select=date',{
+    headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}
   });
-  if(!res.ok){const t=await res.text();throw new Error(t);}
+  const existing=await checkRes.json();
+
+  if(existing&&existing.length>0){
+    // 존재하면 PATCH로 업데이트
+    const res=await fetch(SB_URL+'/rest/v1/diary_entries?date=eq.'+d.date,{
+      method:'PATCH',
+      headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify(d)
+    });
+    if(!res.ok){const t=await res.text();throw new Error(t);}
+  }else{
+    // 없으면 POST로 삽입
+    const res=await fetch(SB_URL+'/rest/v1/diary_entries',{
+      method:'POST',
+      headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify(d)
+    });
+    if(!res.ok){const t=await res.text();throw new Error(t);}
+  }
   return true;
 }
 async function sbDel(date){return sbFetch('diary_entries?date=eq.'+date,{method:'DELETE'});}
