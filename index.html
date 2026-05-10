@@ -556,21 +556,37 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
         </div>
       </div>
 
-      <!-- 월간 목표 -->
+      <!-- 월간 목표 + 이동 -->
       <div class="card">
-        <div class="ch"><span class="ci">📅</span><span class="ct">이번 달 목표</span><span class="cd" id="mo-pct">0% 달성</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="ch" style="margin-bottom:0;"><span class="ci">📅</span><span class="ct">달 목표</span><span style="font-size:11px;color:var(--ink3);margin-left:6px;" id="mo-nav-label"></span></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="cd" id="mo-pct">0% 달성</span>
+            <button onclick="chGoalMo(-1)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:12px;">◀</button>
+            <button onclick="chGoalMo(0)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--accent);background:var(--a2);cursor:pointer;font-size:11px;color:var(--accent);">이번달</button>
+            <button onclick="chGoalMo(1)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:12px;">▶</button>
+          </div>
+        </div>
         <div id="mo-goals-list"></div>
-        <div style="display:flex;gap:8px;margin-top:10px;">
+        <div id="mo-add-area" style="display:flex;gap:8px;margin-top:10px;">
           <input type="text" id="mo-inp" class="linp" placeholder="이번 달 목표 추가..." style="font-size:14px;flex:1;">
           <button onclick="addGoal('mo')" style="padding:10px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:18px;">+</button>
         </div>
       </div>
 
-      <!-- 주간 목표 -->
+      <!-- 주간 목표 + 이동 -->
       <div class="card">
-        <div class="ch"><span class="ci">⚡</span><span class="ct">이번 주 목표</span><span class="cd" id="wk-pct">0% 달성</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="ch" style="margin-bottom:0;"><span class="ci">⚡</span><span class="ct">주 목표</span><span style="font-size:11px;color:var(--ink3);margin-left:6px;" id="wk-nav-label"></span></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="cd" id="wk-pct">0% 달성</span>
+            <button onclick="chGoalWk(-1)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:12px;">◀</button>
+            <button onclick="chGoalWk(0)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--accent);background:var(--a2);cursor:pointer;font-size:11px;color:var(--accent);">이번주</button>
+            <button onclick="chGoalWk(1)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:12px;">▶</button>
+          </div>
+        </div>
         <div id="wk-goals-list"></div>
-        <div style="display:flex;gap:8px;margin-top:10px;">
+        <div id="wk-add-area" style="display:flex;gap:8px;margin-top:10px;">
           <input type="text" id="wk-inp" class="linp" placeholder="이번 주 목표 추가..." style="font-size:14px;flex:1;">
           <button onclick="addGoal('wk')" style="padding:10px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:18px;">+</button>
         </div>
@@ -1386,22 +1402,48 @@ function renderGoalWidgets(){
 }
 
 // ── 목표 ──
-function goalKeys(){
+// 현재 보고 있는 주/월 오프셋 (0=이번주/달, -1=지난주/달)
+let goalWkOffset=0, goalMoOffset=0;
+
+function goalKeys(wkOff=0, moOff=0){
   const now=new Date();
   const yr=now.getFullYear();
-  const mo=now.getMonth()+1;
-  // 월요일 기준 주 시작 계산
+
+  // 월 오프셋 적용
+  const moDate=new Date(now);
+  moDate.setMonth(moDate.getMonth()+moOff);
+  const mo=moDate.getMonth()+1;
+  const moYr=moDate.getFullYear();
+
+  // 주 오프셋 적용 (월요일 기준)
   const dow=now.getDay();
-  const diffToMon=dow===0?-6:1-dow; // 일요일이면 -6, 아니면 월요일로
+  const diffToMon=dow===0?-6:1-dow;
   const weekStart=new Date(now);
-  weekStart.setDate(now.getDate()+diffToMon);
+  weekStart.setDate(now.getDate()+diffToMon+(wkOff*7));
   const wk=`${weekStart.getFullYear()}${p2(weekStart.getMonth()+1)}${p2(weekStart.getDate())}`;
+  const wkEnd=new Date(weekStart);wkEnd.setDate(weekStart.getDate()+6);
+
   return {
     yr:`goals_yr_${yr}`,
-    mo:`goals_mo_${yr}_${mo}`,
+    mo:`goals_mo_${moYr}_${mo}`,
     wk:`goals_wk_${wk}`,
-    main:`goals_${yr}_${mo}_${wk}`
+    main:`goals_${moYr}_${mo}_${wk}`,
+    moLabel:`${moYr}년 ${MOS[moDate.getMonth()]}`,
+    wkLabel:`${weekStart.getMonth()+1}/${weekStart.getDate()} ~ ${wkEnd.getMonth()+1}/${wkEnd.getDate()}`,
+    isCurrentMo:moOff===0,
+    isCurrentWk:wkOff===0
   };
+}
+
+function chGoalWk(dir){
+  if(dir===0)goalWkOffset=0;
+  else goalWkOffset+=dir;
+  loadGoalWk();
+}
+function chGoalMo(dir){
+  if(dir===0)goalMoOffset=0;
+  else goalMoOffset+=dir;
+  loadGoalMo();
 }
 
 let goalsAutoSaveTimer=null;
@@ -1411,121 +1453,84 @@ function schedGoalSave(){
 }
 
 async function loadGoals(){
+  goalWkOffset=0; goalMoOffset=0;
   const now=new Date();
   const gsub=document.getElementById('gsub2');
   if(gsub)gsub.textContent=`${now.getFullYear()}년 ${MOS[now.getMonth()]} · ${Math.ceil((now.getMonth()+1)/3)}분기`;
-  const keys=goalKeys();
+  const keys=goalKeys(0,0);
   try{
-    const [mainRows,yrRows,moRows]=await Promise.all([
-      sbGet(`goals?goal_key=eq.${keys.main}&select=*`),
+    const [yrRows,moRows,wkRows]=await Promise.all([
       sbGet(`goals?goal_key=eq.${keys.yr}&select=*`),
-      sbGet(`goals?goal_key=eq.${keys.mo}&select=*`)
+      sbGet(`goals?goal_key=eq.${keys.mo}&select=*`),
+      sbGet(`goals?goal_key=eq.${keys.main}&select=*`)
     ]);
-    // 주간 목표 — main 키
-    if(mainRows&&mainRows.length>0){
-      goalsData.wk=mainRows[0].week_goals||[];
-      const retro=document.getElementById('goal-retro');
-      if(retro)retro.value=mainRows[0].retrospect||'';
-    }else{goalsData.wk=[];}
-    // 월간 목표 — mo 전용 키 (주 바뀌어도 유지)
-    if(moRows&&moRows.length>0){
-      goalsData.mo=moRows[0].month_goals||[];
-    }else{
-      // mo 키 없으면 이전 데이터에서 복구
-      const prevRows=await sbGet(`goals?goal_key=like.goals_${now.getFullYear()}_${now.getMonth()+1}_*&select=*&order=updated_at.desc&limit=1`);
-      goalsData.mo=prevRows&&prevRows.length>0?(prevRows[0].month_goals||[]):[];
+    goalsData.yr=yrRows&&yrRows.length>0?yrRows[0].year_goals||[]:[];
+    if(moRows&&moRows.length>0){goalsData.mo=moRows[0].month_goals||[];}
+    else{
+      const prev=await sbGet(`goals?goal_key=like.goals_${now.getFullYear()}_${now.getMonth()+1}_*&select=*&order=updated_at.desc&limit=1`);
+      goalsData.mo=prev&&prev.length>0?(prev[0].month_goals||[]):[];
     }
-    // 연간 목표 — yr 전용 키
-    if(yrRows&&yrRows.length>0){
-      goalsData.yr=yrRows[0].year_goals||[];
-    }else{goalsData.yr=[];}
+    if(wkRows&&wkRows.length>0){
+      goalsData.wk=wkRows[0].week_goals||[];
+      const retro=document.getElementById('goal-retro');
+      if(retro)retro.value=wkRows[0].retrospect||'';
+    }else{goalsData.wk=[];}
+    updGoalNavLabels(keys);
     renderGoals();
     renderGoalWidgets();
   }catch(err){console.error('목표 로드 실패',err);}
 }
 
-function renderGoals(){
-  renderGoalList('yr');
-  renderGoalList('mo');
-  renderGoalList('wk');
-}
-
-function renderGoalList(type){
-  const list=document.getElementById(type+'-goals-list');if(!list)return;
-  const items=goalsData[type]||[];
-  const done=items.filter(g=>g.done).length;
-  const pct=items.length?Math.round((done/items.length)*100):0;
-  const pctEl=document.getElementById(type+'-pct');
-  if(pctEl)pctEl.textContent=`${pct}% 달성`;
-
-  if(!items.length){
-    list.innerHTML='<div style="text-align:center;padding:14px;color:var(--ink3);font-size:13px;">목표를 추가해보세요</div>';
-    return;
-  }
-  list.innerHTML=items.map((g,i)=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);">
-      <div onclick="toggleGoal('${type}',${i})" style="width:22px;height:22px;border-radius:50%;border:2px solid ${g.done?'var(--ok)':'var(--line)'};background:${g.done?'var(--ok)':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
-        ${g.done?'<span style="color:#fff;font-size:12px;">✓</span>':''}
-      </div>
-      <span style="flex:1;font-size:14px;font-family:\'Nanum Myeongjo\',serif;color:var(--ink);text-decoration:${g.done?'line-through':'none'};opacity:${g.done?'.5':'1'};">${g.text.replace(/</g,'&lt;')}</span>
-      <button onclick="delGoal('${type}',${i})" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink3);padding:4px;">×</button>
-    </div>`).join('');
-}
-
-function addGoal(type){
-  const inp=document.getElementById(type+'-inp');
-  const text=inp?.value?.trim();
-  if(!text)return;
-  goalsData[type]=goalsData[type]||[];
-  goalsData[type].push({text,done:false});
-  inp.value='';
-  renderGoalList(type);
-  renderGoalWidgets();
-  schedGoalSave();
-}
-
-function toggleGoal(type,i){
-  goalsData[type][i].done=!goalsData[type][i].done;
-  renderGoalList(type);
-  renderGoalWidgets();
-  schedGoalSave();
-}
-
-function delGoal(type,i){
-  goalsData[type].splice(i,1);
-  renderGoalList(type);
-  renderGoalWidgets();
-  schedGoalSave();
-}
-
-// Enter 키로 추가
-['yr','mo','wk'].forEach(type=>{
-  document.addEventListener('keydown',e=>{
-    if(e.key==='Enter'&&document.activeElement?.id===type+'-inp'){
-      addGoal(type);
+async function loadGoalWk(){
+  const keys=goalKeys(goalWkOffset,goalMoOffset);
+  const isNow=goalWkOffset===0;
+  updGoalNavLabels(keys);
+  const addArea=document.getElementById('wk-add-area');
+  if(addArea)addArea.style.display=isNow?'flex':'none';
+  try{
+    const rows=await sbGet(`goals?goal_key=eq.${keys.main}&select=*`);
+    goalsData.wk=rows&&rows.length>0?rows[0].week_goals||[]:[];
+    if(rows&&rows.length>0&&isNow){
+      const retro=document.getElementById('goal-retro');
+      if(retro)retro.value=rows[0].retrospect||'';
     }
-  });
-});
+    renderGoalList('wk');
+    renderGoalWidgets();
+  }catch(err){console.error('주간 목표 로드 실패',err);}
+}
+
+async function loadGoalMo(){
+  const keys=goalKeys(goalWkOffset,goalMoOffset);
+  const isNow=goalMoOffset===0;
+  updGoalNavLabels(keys);
+  const addArea=document.getElementById('mo-add-area');
+  if(addArea)addArea.style.display=isNow?'flex':'none';
+  try{
+    const rows=await sbGet(`goals?goal_key=eq.${keys.mo}&select=*`);
+    goalsData.mo=rows&&rows.length>0?rows[0].month_goals||[]:[];
+    renderGoalList('mo');
+    renderGoalWidgets();
+  }catch(err){console.error('월간 목표 로드 실패',err);}
+}
+
+function updGoalNavLabels(keys){
+  const wlbl=document.getElementById('wk-nav-label');
+  const mlbl=document.getElementById('mo-nav-label');
+  if(wlbl)wlbl.textContent=goalWkOffset===0?'(이번 주)':keys.wkLabel;
+  if(mlbl)mlbl.textContent=goalMoOffset===0?'':keys.moLabel;
+}
 
 async function saveGoals(){
   const retro=document.getElementById('goal-retro')?.value||'';
-  const keys=goalKeys();
+  const keys=goalKeys(goalWkOffset,goalMoOffset);
   try{
     await Promise.all([
-      sbRPC('upsert_goals',{p_goal_key:keys.main,p_year_goals:[],p_month_goals:[],p_week_goals:goalsData.wk,p_retrospect:retro}),
+      sbRPC('upsert_goals',{p_goal_key:keys.yr,p_year_goals:goalsData.yr,p_month_goals:[],p_week_goals:[],p_retrospect:''}),
       sbRPC('upsert_goals',{p_goal_key:keys.mo,p_year_goals:[],p_month_goals:goalsData.mo,p_week_goals:[],p_retrospect:''}),
-      sbRPC('upsert_goals',{p_goal_key:keys.yr,p_year_goals:goalsData.yr,p_month_goals:[],p_week_goals:[],p_retrospect:''})
+      sbRPC('upsert_goals',{p_goal_key:keys.main,p_year_goals:[],p_month_goals:[],p_week_goals:goalsData.wk,p_retrospect:retro})
     ]);
     notice('gnotice','목표 저장되었어요 ✓','ok');
   }catch(err){notice('gnotice','저장 실패: '+err.message,'err');}
-}
-
-// ── 분기 ──
-async function saveQuarterly(){
-  try{
-    await sbRPC('upsert_quarterly',{p_quarter_key:qk(),p_before_text:gv('qbefore'),p_after_text:gv('qafter'),p_mistakes:gv('qmistakes'),p_principles:gv('qprinciples')});
-    notice('qnotice','분기 회고 저장되었어요 ✓','ok');
-  }catch(err){notice('qnotice','저장 실패: '+err.message,'err');}
 }
 async function loadQuarterlyData(){
   try{
