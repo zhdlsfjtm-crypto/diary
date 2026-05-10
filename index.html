@@ -667,7 +667,7 @@ const MOS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월
 const SECS={re:{u:'억',c:'av-a'},fi:{u:'억',c:'av-a'},co:{u:'억',c:'av-a'},et:{u:'억',c:'av-a'},de:{u:'억',c:'av-d'},in:{u:'만원',c:'av-i'},ex:{u:'만원',c:'av-e'}};
 
 // ── 상태 ──
-let entries={}, vEntry=null, eEntry=null, wDate=null, calY, calM, aData={}, fbEntry=null;
+let entries={}, vEntry=null, eEntry=null, wDate=null, fbEntry=null;
 let tabs=['daily','weekly','monthly','goals','quarterly','all'];
 let goalsData={yr:[],mo:[],wk:[]}; // renderGoalWidgets보다 먼저 선언
 
@@ -733,17 +733,17 @@ function e2r(e){return{p_date:e.date,p_mood:e.mood||'',p_emotion:e.emotion||'',p
 
 // ── 초기화 ──
 async function init(){
-  const now=new Date();calY=now.getFullYear();calM=now.getMonth();
+  const now=new Date();
   const q=Math.ceil((now.getMonth()+1)/3);
   document.getElementById('dsub').textContent=fd(td());
   document.getElementById('msub').textContent=`${now.getFullYear()}년 ${MOS[now.getMonth()]} 가계부`;
+  // 주간 라벨 — 월요일 기준
   const wd=wdates();
   const f=new Date(wd[0]+'T00:00:00'),l=new Date(wd[6]+'T00:00:00');
-  document.getElementById('wsub').textContent=`${f.getMonth()+1}월 ${f.getDate()}일 — ${l.getMonth()+1}월 ${l.getDate()}일`;
+  document.getElementById('wsub').textContent=`${f.getMonth()+1}월 ${f.getDate()}일(월) — ${l.getMonth()+1}월 ${l.getDate()}일(일)`;
 
   setSync('s');
   try{
-    // 최근 180일만 로드 + 전체 개수 병렬 조회
     const cutoff=new Date();cutoff.setDate(cutoff.getDate()-180);
     const cutoffStr=fmtD(cutoff);
     const [rows]=await Promise.all([
@@ -756,10 +756,8 @@ async function init(){
 
   loadDay(td());
 
-  // 1년 전
   const ly=new Date();ly.setFullYear(ly.getFullYear()-1);
   const lys=fmtD(ly);
-  // 1년 전 데이터는 별도 조회 (180일 범위 밖일 수 있음)
   if(!entries[lys]){
     try{
       const lyRows=await sbGet(`diary_entries?select=*&date=eq.${lys}`);
@@ -774,12 +772,7 @@ async function init(){
     document.getElementById('fbcard').style.display='block';
   }
 
-  // 병렬 로드 (성능 최적화)
-  await Promise.all([
-    loadMonthlyData(),
-    loadQuarterlyData(),
-    loadGoals()
-  ]);
+  await Promise.all([loadMonthlyData(),loadQuarterlyData(),loadGoals()]);
 }
 
 // ── 날짜 선택 ──
@@ -973,7 +966,10 @@ async function renderAll(){
   const sorted=Object.values(entries).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   elist=sorted;
   const displayCount=totalEntryCount>sorted.length?totalEntryCount:sorted.length;
-  if(subEl)subEl.textContent=`총 ${displayCount}개의 기록 (최근 180일 표시 중)`;
+  const countLabel=totalEntryCount>sorted.length
+    ?`총 ${displayCount}개의 기록 (최근 180일 ${sorted.length}개 표시)`
+    :`총 ${displayCount}개의 기록`;
+  if(subEl)subEl.textContent=countLabel;
   if(!sorted.length){listEl.innerHTML=searchHTML+'<div class="empty">아직 기록이 없어요.<br>오늘 핵심 한 줄부터 써보세요 ✏️</div>';return;}
   renderEntryList(searchHTML);
 }
@@ -1110,6 +1106,12 @@ function initLedger(){
   loadLedgerData();
 }
 function chLedgerMo(d){
+  const now=new Date();
+  const nextM=ledgerM+d;
+  const nextY=nextM>11?ledgerY+1:nextM<0?ledgerY-1:ledgerY;
+  const nextMo=(nextM+12)%12;
+  // 미래 달 이동 차단
+  if(nextY>now.getFullYear()||(nextY===now.getFullYear()&&nextMo>now.getMonth()))return;
   ledgerM+=d;if(ledgerM>11){ledgerM=0;ledgerY++;}if(ledgerM<0){ledgerM=11;ledgerY--;}
   updLedgerHeader();loadLedgerData();
 }
@@ -1444,13 +1446,21 @@ function goalKeys(wkOff=0, moOff=0){
 }
 
 function chGoalWk(dir){
-  if(dir===0)goalWkOffset=0;
-  else goalWkOffset+=dir;
+  if(dir===0){goalWkOffset=0;}
+  else{
+    // 미래 주 이동 차단
+    if(dir>0&&goalWkOffset>=0)return;
+    goalWkOffset+=dir;
+  }
   loadGoalWk();
 }
 function chGoalMo(dir){
-  if(dir===0)goalMoOffset=0;
-  else goalMoOffset+=dir;
+  if(dir===0){goalMoOffset=0;}
+  else{
+    // 미래 달 이동 차단
+    if(dir>0&&goalMoOffset>=0)return;
+    goalMoOffset+=dir;
+  }
   loadGoalMo();
 }
 
