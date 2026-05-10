@@ -306,6 +306,48 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
         <button class="dptd" onclick="pickToday()">오늘로 돌아가기</button>
       </div>
 
+      <!-- 나의 철학 — 항시 노출 -->
+      <div id="philosophy-card" style="background:linear-gradient(135deg,#1C1A16,#2D2820);border-radius:14px;padding:16px;margin-bottom:12px;cursor:pointer;" onclick="togglePhilosophy()">
+        <div style="font-size:10px;color:#9FE1CB;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">💡 나의 방향</div>
+        <div style="font-size:15px;font-family:'Nanum Myeongjo',serif;color:#F5F2ED;line-height:1.9;">
+          돈은 시장이 줄 수 있다.<br>
+          하지만 품격·안목·판단력은<br>
+          시간과 경험으로만 만들어진다.
+        </div>
+        <div id="philosophy-full" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);">
+          <div style="font-size:13px;font-family:'Nanum Myeongjo',serif;color:#C8C4BE;line-height:2.1;">
+            <div style="color:#FAC775;font-size:12px;font-weight:600;margin-bottom:8px;">돈을 번 사람에서, 판단 체계를 가진 사람으로</div>
+            진짜 차이는 자산 규모가 아니라<br>
+            <span style="color:#9FE1CB;">무엇을 기준으로 판단하는가</span><br>
+            <span style="color:#9FE1CB;">어떤 경험이 축적되어 있는가</span><br>
+            <span style="color:#9FE1CB;">어떤 실패를 통과했는가</span><br>
+            에서 나온다.<br><br>
+
+            <div style="color:#FAC775;font-size:12px;font-weight:600;margin:12px 0 8px;">1. 판단력 데이터베이스를 축적한다</div>
+            사람 · 산업 · 권력 · 브랜드 · 조직 · 심리 · 역사 · 실패 패턴 · 사이클을 관찰하는 시간을 늘린다.<br><br>
+
+            <div style="color:#FAC775;font-size:12px;font-weight:600;margin:12px 0 8px;">2. 속도 중독에서 벗어난다</div>
+            진짜 오래가는 세계는 느린 축적, 반복 경험, 긴 시간의 신뢰 위에서 만들어진다.<br><br>
+
+            <div style="color:#FAC775;font-size:12px;font-weight:600;margin:12px 0 8px;">3. 기준을 가진 사람이 된다</div>
+            왜 이 사업을 하는가, 왜 이 사람과 함께하는가,<br>왜 이 구조는 오래 못 가는가를 설명할 수 있어야 한다.<br><br>
+
+            <div style="color:#FAC775;font-size:12px;font-weight:600;margin:12px 0 8px;">4. 좋은 환경을 만든다</div>
+            오래 사업한 사람, 조용히 강한 사람, 기준이 있는 사람, 장기 생존 경험이 있는 사람을 가까이한다.<br><br>
+
+            <div style="color:#FAC775;font-size:12px;font-weight:600;margin:12px 0 8px;">5. 경험의 질에 돈을 쓴다</div>
+            여행·호텔·레스토랑·도시에서도 서비스 구조와 인간 욕망을 본다.<br>관찰과 체득으로 연결되면 자산이 된다.<br><br>
+
+            <div style="color:#FAC775;font-size:12px;font-weight:600;margin:12px 0 8px;">6. 오래가는 구조를 우선한다</div>
+            10년 유지 가능한가 · 브랜드가 남는가 · 신뢰가 축적되는가 · 시스템이 남는가를 기준으로 판단한다.<br><br>
+
+            <div style="color:#FAC775;font-size:12px;font-weight:600;margin:12px 0 8px;">7. 자기 객관화를 유지한다</div>
+            돈이 커질수록 자기 확신은 강해지고 현실 검증은 줄어든다.<br>항상 <span style="color:#9FE1CB;">"내가 틀릴 수도 있다"</span>를 유지한다.
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,.4);text-align:right;" id="philosophy-hint">전체 읽기 ↓</div>
+      </div>
+
       <div class="fb" id="fbcard" style="display:none" onclick="openFlashback()">
         <div class="fb-badge">📅 1년 전 오늘</div>
         <div id="fbdate" style="font-size:11px;color:var(--accent);margin-bottom:6px;"></div>
@@ -806,6 +848,15 @@ function loadDay(ds){
   }
 }
 function openFlashback(){if(fbEntry)openV(fbEntry);}
+
+// ── 나의 철학 토글 ──
+function togglePhilosophy(){
+  const full=document.getElementById('philosophy-full');
+  const hint=document.getElementById('philosophy-hint');
+  const open=full.style.display==='none'||full.style.display==='';
+  full.style.display=open?'block':'none';
+  hint.textContent=open?'접기 ↑':'전체 읽기 ↓';
+}
 
 // ── 더 쓰기 ──
 function toggleX(){
