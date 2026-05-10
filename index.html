@@ -574,7 +574,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
         </div>
       </div>
 
-      <!-- 주간 목표 + 이동 -->
+      <!-- 주간 목표 + 이동 + 회고 -->
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <div class="ch" style="margin-bottom:0;"><span class="ci">⚡</span><span class="ct">주 목표</span><span style="font-size:11px;color:var(--ink3);margin-left:6px;" id="wk-nav-label"></span></div>
@@ -590,12 +590,11 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
           <input type="text" id="wk-inp" class="linp" placeholder="이번 주 목표 추가..." style="font-size:14px;flex:1;">
           <button onclick="addGoal('wk')" style="padding:10px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:18px;">+</button>
         </div>
-      </div>
-
-      <!-- 회고 -->
-      <div class="pcard">
-        <div class="plbl">📝 목표 회고 — 못 한 이유 / 다음 주 집중</div>
-        <textarea class="ptx" id="goal-retro" rows="3" placeholder="달성 못 한 목표의 이유와 다음에 할 것..."></textarea>
+        <!-- 주간 회고 — 주 목표 바로 아래 -->
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
+          <div style="font-size:10px;color:var(--core);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;">📝 이번 주 회고</div>
+          <textarea id="goal-retro" style="width:100%;border:none;background:transparent;font-size:14px;font-family:'Nanum Myeongjo',serif;color:var(--ink);resize:none;line-height:1.9;outline:none;" rows="3" placeholder="못 한 이유 / 다음 주 집중할 것..."></textarea>
+        </div>
       </div>
 
       <button class="bp" onclick="saveGoals()">목표 저장</button>
@@ -1490,9 +1489,13 @@ async function loadGoalWk(){
   try{
     const rows=await sbGet(`goals?goal_key=eq.${keys.main}&select=*`);
     goalsData.wk=rows&&rows.length>0?rows[0].week_goals||[]:[];
-    if(rows&&rows.length>0&&isNow){
-      const retro=document.getElementById('goal-retro');
-      if(retro)retro.value=rows[0].retrospect||'';
+    // 회고 — 해당 주 회고 표시 (과거 주도 읽기 전용으로 표시)
+    const retro=document.getElementById('goal-retro');
+    if(retro){
+      retro.value=rows&&rows.length>0?rows[0].retrospect||'':'';
+      retro.readOnly=!isNow;
+      retro.style.opacity=isNow?'1':'0.7';
+      retro.placeholder=isNow?'못 한 이유 / 다음 주 집중할 것...':'(지난 주 회고)';
     }
     renderGoalList('wk');
     renderGoalWidgets();
