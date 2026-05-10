@@ -1390,14 +1390,17 @@ function goalKeys(){
   const now=new Date();
   const yr=now.getFullYear();
   const mo=now.getMonth()+1;
-  const wd=now.getDay();
-  const weekStart=new Date(now);weekStart.setDate(now.getDate()-wd);
+  // 월요일 기준 주 시작 계산
+  const dow=now.getDay();
+  const diffToMon=dow===0?-6:1-dow; // 일요일이면 -6, 아니면 월요일로
+  const weekStart=new Date(now);
+  weekStart.setDate(now.getDate()+diffToMon);
   const wk=`${weekStart.getFullYear()}${p2(weekStart.getMonth()+1)}${p2(weekStart.getDate())}`;
   return {
-    yr:`goals_yr_${yr}`,        // 연간 — 연도 기준
-    mo:`goals_mo_${yr}_${mo}`,  // 월간 — 월 기준
-    wk:`goals_wk_${wk}`,        // 주간 — 주 기준
-    main:`goals_${yr}_${mo}_${wk}` // 저장용 통합키
+    yr:`goals_yr_${yr}`,
+    mo:`goals_mo_${yr}_${mo}`,
+    wk:`goals_wk_${wk}`,
+    main:`goals_${yr}_${mo}_${wk}`
   };
 }
 
@@ -1413,19 +1416,26 @@ async function loadGoals(){
   if(gsub)gsub.textContent=`${now.getFullYear()}년 ${MOS[now.getMonth()]} · ${Math.ceil((now.getMonth()+1)/3)}분기`;
   const keys=goalKeys();
   try{
-    // 연간 목표(yr키)와 월간+주간(main키) 병렬 로드
-    const [mainRows,yrRows]=await Promise.all([
+    const [mainRows,yrRows,moRows]=await Promise.all([
       sbGet(`goals?goal_key=eq.${keys.main}&select=*`),
-      sbGet(`goals?goal_key=eq.${keys.yr}&select=*`)
+      sbGet(`goals?goal_key=eq.${keys.yr}&select=*`),
+      sbGet(`goals?goal_key=eq.${keys.mo}&select=*`)
     ]);
+    // 주간 목표 — main 키
     if(mainRows&&mainRows.length>0){
-      const r=mainRows[0];
-      goalsData.mo=r.month_goals||[];
-      goalsData.wk=r.week_goals||[];
+      goalsData.wk=mainRows[0].week_goals||[];
       const retro=document.getElementById('goal-retro');
-      if(retro)retro.value=r.retrospect||'';
-    }else{goalsData.mo=[];goalsData.wk=[];}
-    // 연간 목표는 yr 전용 키에서 로드 → 주가 바뀌어도 유지
+      if(retro)retro.value=mainRows[0].retrospect||'';
+    }else{goalsData.wk=[];}
+    // 월간 목표 — mo 전용 키 (주 바뀌어도 유지)
+    if(moRows&&moRows.length>0){
+      goalsData.mo=moRows[0].month_goals||[];
+    }else{
+      // mo 키 없으면 이전 데이터에서 복구
+      const prevRows=await sbGet(`goals?goal_key=like.goals_${now.getFullYear()}_${now.getMonth()+1}_*&select=*&order=updated_at.desc&limit=1`);
+      goalsData.mo=prevRows&&prevRows.length>0?(prevRows[0].month_goals||[]):[];
+    }
+    // 연간 목표 — yr 전용 키
     if(yrRows&&yrRows.length>0){
       goalsData.yr=yrRows[0].year_goals||[];
     }else{goalsData.yr=[];}
@@ -1501,22 +1511,10 @@ async function saveGoals(){
   const retro=document.getElementById('goal-retro')?.value||'';
   const keys=goalKeys();
   try{
-    // 연간 목표는 yr 전용 키, 월간+주간은 main 키에 저장
     await Promise.all([
-      sbRPC('upsert_goals',{
-        p_goal_key:keys.main,
-        p_year_goals:[],
-        p_month_goals:goalsData.mo,
-        p_week_goals:goalsData.wk,
-        p_retrospect:retro
-      }),
-      sbRPC('upsert_goals',{
-        p_goal_key:keys.yr,
-        p_year_goals:goalsData.yr,
-        p_month_goals:[],
-        p_week_goals:[],
-        p_retrospect:''
-      })
+      sbRPC('upsert_goals',{p_goal_key:keys.main,p_year_goals:[],p_month_goals:[],p_week_goals:goalsData.wk,p_retrospect:retro}),
+      sbRPC('upsert_goals',{p_goal_key:keys.mo,p_year_goals:[],p_month_goals:goalsData.mo,p_week_goals:[],p_retrospect:''}),
+      sbRPC('upsert_goals',{p_goal_key:keys.yr,p_year_goals:goalsData.yr,p_month_goals:[],p_week_goals:[],p_retrospect:''})
     ]);
     notice('gnotice','목표 저장되었어요 ✓','ok');
   }catch(err){notice('gnotice','저장 실패: '+err.message,'err');}
