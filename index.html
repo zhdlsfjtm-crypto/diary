@@ -702,7 +702,16 @@ function td(){const d=new Date();return `${d.getFullYear()}-${p2(d.getMonth()+1)
 function p2(n){return String(n).padStart(2,'0');}
 function fd(s){if(!s)return'날짜 없음';const d=new Date(s+'T00:00:00');return `${d.getFullYear()}년 ${MOS[d.getMonth()]} ${d.getDate()}일 (${DAYS[d.getDay()]})`;}
 function fmtD(d){return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;}
-function wdates(){const t=new Date(),dow=t.getDay();return Array.from({length:7},(_,i)=>{const d=new Date(t);d.setDate(t.getDate()-dow+i);return fmtD(d);});}
+function wdates(){
+  const t=new Date();
+  const dow=t.getDay();
+  const diffToMon=dow===0?-6:1-dow; // 월요일 기준
+  return Array.from({length:7},(_,i)=>{
+    const d=new Date(t);
+    d.setDate(t.getDate()+diffToMon+i);
+    return fmtD(d);
+  });
+}
 function mk(){const d=new Date();return `m_${d.getFullYear()}_${d.getMonth()+1}`;}
 function qk(){const d=new Date(),q=Math.ceil((d.getMonth()+1)/3);return `q_${d.getFullYear()}_Q${q}`;}
 function gv(id){return(document.getElementById(id)?.value||'').trim();}
