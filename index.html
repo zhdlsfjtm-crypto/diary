@@ -1594,6 +1594,15 @@ function delGoal(type,i){
     }
   });
 });
+
+// ── 분기 ──
+async function saveQuarterly(){
+  try{
+    await sbRPC('upsert_quarterly',{p_quarter_key:qk(),p_before_text:gv('qbefore'),p_after_text:gv('qafter'),p_mistakes:gv('qmistakes'),p_principles:gv('qprinciples')});
+    notice('qnotice','분기 회고 저장되었어요 ✓','ok');
+  }catch(err){notice('qnotice','저장 실패: '+err.message,'err');}
+}
+async function loadQuarterlyData(){
   try{
     const rows=await sbGet('quarterly_notes?quarter_key=eq.'+qk()+'&select=*');
     if(rows&&rows.length>0){
