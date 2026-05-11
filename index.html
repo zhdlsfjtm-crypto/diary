@@ -57,7 +57,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 
 /* 핵심 한 줄 */
 .core-hero{background:var(--c2);border:1.5px solid #C9AADC;border-radius:16px;padding:18px;margin-bottom:12px;}
-.core-lbl{font-size:10px;color:var(--core);font-weight:600;letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px;}
+.core-lbl{font-size:10px;color:var(--core);font-weight:600;letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
 .core-inp{width:100%;border:none;background:transparent;font-size:18px;font-family:'Nanum Myeongjo',serif;color:var(--core);resize:none;line-height:1.8;outline:none;}
 .core-inp::placeholder{color:#B09AC8;font-style:italic;font-size:15px;}
 
@@ -66,6 +66,11 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .tx::placeholder{color:var(--ink3);font-style:italic;}
 .afoot{display:flex;justify-content:flex-end;margin-top:6px;padding-top:6px;border-top:1px solid var(--line);}
 .cc{font-size:11px;color:var(--ink3);}
+
+/* 맞춤법 버튼 */
+.spell-btn{font-size:11px;color:var(--accent);cursor:pointer;background:none;border:1px solid var(--accent);border-radius:14px;padding:3px 10px;font-family:'Pretendard',sans-serif;transition:all .15s;}
+.spell-btn:active{background:var(--accent);color:#fff;}
+.spell-btn:disabled{opacity:.5;cursor:not-allowed;}
 
 /* 확장 */
 .xbtn{width:100%;padding:11px 14px;background:var(--bg);border:1px dashed var(--line);border-radius:10px;font-size:13px;color:var(--ink3);cursor:pointer;text-align:center;margin-bottom:10px;font-family:'Pretendard',sans-serif;transition:all .15s;}
@@ -307,7 +312,6 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       </div>
 
       <!-- 나의 철학 — 항시 노출 -->
-      <!-- 나의 철학 — 항시 노출 -->
       <div id="philosophy-card" style="background:linear-gradient(135deg,#1C1A16,#2D2820);border-radius:14px;padding:16px;margin-bottom:12px;cursor:pointer;" onclick="togglePhilosophy()">
         <div style="font-size:10px;color:#9FE1CB;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">💡 나의 방향</div>
         <div style="font-size:15px;font-family:'Nanum Myeongjo',serif;color:#F5F2ED;line-height:1.9;">
@@ -395,12 +399,18 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       </div>
 
       <div class="core-hero">
-        <div class="core-lbl">✨ 오늘의 핵심 한 줄</div>
+        <div class="core-lbl">
+          <span>✨ 오늘의 핵심 한 줄</span>
+          <button class="spell-btn" onclick="checkSpell('core')">✏️ 맞춤법</button>
+        </div>
         <textarea class="core-inp" id="core" rows="2" placeholder="오늘을 한 문장으로 압축하세요..."></textarea>
       </div>
 
       <div class="card">
-        <div class="ch"><span class="ci">📝</span><span class="ct">오늘 있었던 일</span><span class="cd">맥락 중심으로</span></div>
+        <div class="ch">
+          <span class="ci">📝</span><span class="ct">오늘 있었던 일</span>
+          <button class="spell-btn" style="margin-left:auto;" onclick="checkSpell('dtx')">✏️ 맞춤법</button>
+        </div>
         <textarea class="tx" id="dtx" rows="6" placeholder="오늘 있었던 일을 적어보세요..." oninput="ucc()"></textarea>
         <div class="afoot"><span class="cc"><span id="cc">0</span>자</span></div>
       </div>
@@ -409,26 +419,38 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       <div class="xbody" id="xbody">
         <div class="dcard">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="font-size:16px;">⚖️</span><span style="font-size:13px;font-weight:600;color:var(--dec);">오늘의 결정</span><span style="font-size:11px;color:#C4956A;margin-left:auto;">달리오 방식</span></div>
-          <div class="dlbl">무엇을 결정했나</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <div class="dlbl">무엇을 결정했나</div>
+            <button class="spell-btn" onclick="checkSpell('dwhat')">✏️ 맞춤법</button>
+          </div>
           <textarea class="dtx" id="dwhat" rows="2" placeholder="어떤 선택을 했나요?"></textarea>
           <div class="ddiv"></div>
-          <div class="dlbl">왜 그 선택을 했나</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <div class="dlbl">왜 그 선택을 했나</div>
+            <button class="spell-btn" onclick="checkSpell('dwhy')">✏️ 맞춤법</button>
+          </div>
           <textarea class="dtx" id="dwhy" rows="2" placeholder="어떤 근거와 판단으로?"></textarea>
         </div>
         <div class="mcard">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="font-size:16px;">🔍</span><span style="font-size:13px;font-weight:600;color:var(--mis);">실수 또는 배움</span><span style="font-size:11px;color:#6BA090;margin-left:auto;">고통 + 반성 = 진보</span></div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="font-size:16px;">🔍</span><span style="font-size:13px;font-weight:600;color:var(--mis);">실수 또는 배움</span><span style="font-size:11px;color:#6BA090;margin-left:auto;">고통 + 반성 = 진보</span><button class="spell-btn" style="margin-left:8px;" onclick="checkSpell('dmistake')">✏️ 맞춤법</button></div>
           <textarea class="mtx" id="dmistake" rows="3" placeholder="오늘 틀렸던 것, 아쉬웠던 것, 배운 것..."></textarea>
         </div>
         <div class="qcard">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="font-size:16px;">❓</span><span style="font-size:13px;font-weight:600;color:var(--q);">오늘의 질문 → 나의 답</span></div>
-          <div class="qlbl">질문</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <div class="qlbl">질문</div>
+            <button class="spell-btn" onclick="checkSpell('dq')">✏️ 맞춤법</button>
+          </div>
           <textarea class="qtx" id="dq" rows="2" placeholder="나는 무슨 경험을 쌓고 있을까?"></textarea>
           <div class="qdiv"></div>
-          <div class="qlbl">나의 답</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <div class="qlbl">나의 답</div>
+            <button class="spell-btn" onclick="checkSpell('da')">✏️ 맞춤법</button>
+          </div>
           <textarea class="qtx" id="da" rows="2" placeholder="짧아도 괜찮아요."></textarea>
         </div>
         <div class="icard">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="font-size:16px;">💡</span><span style="font-size:13px;font-weight:600;color:#3B6D11;">오늘의 영감</span><span style="font-size:11px;color:#88A870;margin-left:auto;">책/유튜브/사람</span></div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="font-size:16px;">💡</span><span style="font-size:13px;font-weight:600;color:#3B6D11;">오늘의 영감</span><span style="font-size:11px;color:#88A870;margin-left:auto;">책/유튜브/사람</span><button class="spell-btn" style="margin-left:8px;" onclick="checkSpell('dins')">✏️ 맞춤법</button></div>
           <textarea class="itx" id="dins" rows="3" placeholder="터보832 — '삶은 결국 경험의 총합'..."></textarea>
         </div>
       </div>
@@ -574,7 +596,13 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       </div>
 
       <!-- 이달 원칙 -->
-      <div class="pcard"><div class="plbl">이달의 원칙</div><textarea class="ptx" id="mprinciple" rows="2" placeholder="이달 가장 중요하게 깨달은 원칙..."></textarea></div>
+      <div class="pcard">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div class="plbl" style="margin-bottom:0;">이달의 원칙</div>
+          <button class="spell-btn" onclick="checkSpell('mprinciple')">✏️ 맞춤법</button>
+        </div>
+        <textarea class="ptx" id="mprinciple" rows="2" placeholder="이달 가장 중요하게 깨달은 원칙..."></textarea>
+      </div>
       <button class="bp" id="monthly-save-btn" onclick="saveMonthly()">이달 저장</button>
       <div class="notice" id="mnotice"></div>
     </div>
@@ -585,14 +613,32 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       <div class="psub" id="qsub"></div>
       <div class="cmpcard">
         <div class="ch"><span class="ci">🔄</span><span class="ct">3개월 전 나 vs 지금 나</span></div>
-        <div style="margin-bottom:10px;"><span class="badge bf">3개월 전</span><textarea class="cmptx" id="qbefore" rows="3" placeholder="그때 나는 이렇게 생각했다..."></textarea></div>
-        <div><span class="badge af">지금</span><textarea class="cmptx" id="qafter" rows="3" placeholder="지금은 이렇게 바뀌었다..."></textarea></div>
+        <div style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span class="badge bf">3개월 전</span>
+            <button class="spell-btn" onclick="checkSpell('qbefore')">✏️ 맞춤법</button>
+          </div>
+          <textarea class="cmptx" id="qbefore" rows="3" placeholder="그때 나는 이렇게 생각했다..."></textarea>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span class="badge af">지금</span>
+            <button class="spell-btn" onclick="checkSpell('qafter')">✏️ 맞춤법</button>
+          </div>
+          <textarea class="cmptx" id="qafter" rows="3" placeholder="지금은 이렇게 바뀌었다..."></textarea>
+        </div>
       </div>
       <div class="card">
-        <div class="ch"><span class="ci">⚠️</span><span class="ct">반복된 실수 + 다음 분기 집중</span></div>
+        <div class="ch"><span class="ci">⚠️</span><span class="ct">반복된 실수 + 다음 분기 집중</span><button class="spell-btn" style="margin-left:auto;" onclick="checkSpell('qmistakes')">✏️ 맞춤법</button></div>
         <textarea class="tx" id="qmistakes" rows="3" style="font-size:14px;line-height:1.9;" placeholder="이번 분기 반복된 실수는? 다음 분기 가장 중요한 것은?"></textarea>
       </div>
-      <div class="pcard"><div class="plbl">이번 분기 원칙 Top 3</div><textarea class="ptx" id="qprinciples" rows="4" placeholder="1. ...\n2. ...\n3. ..."></textarea></div>
+      <div class="pcard">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div class="plbl" style="margin-bottom:0;">이번 분기 원칙 Top 3</div>
+          <button class="spell-btn" onclick="checkSpell('qprinciples')">✏️ 맞춤법</button>
+        </div>
+        <textarea class="ptx" id="qprinciples" rows="4" placeholder="1. ...\n2. ...\n3. ..."></textarea>
+      </div>
       <button class="bp" onclick="saveQuarterly()">분기 회고 저장</button>
       <div class="notice" id="qnotice"></div>
     </div>
@@ -734,7 +780,10 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
         </div>
         <!-- 주간 회고 — 주 목표 바로 아래 -->
         <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
-          <div style="font-size:10px;color:var(--core);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;">📝 이번 주 회고</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="font-size:10px;color:var(--core);font-weight:600;letter-spacing:.5px;text-transform:uppercase;">📝 이번 주 회고</div>
+            <button class="spell-btn" onclick="checkSpell('goal-retro')">✏️ 맞춤법</button>
+          </div>
           <textarea id="goal-retro" style="width:100%;border:none;background:transparent;font-size:14px;font-family:'Nanum Myeongjo',serif;color:var(--ink);resize:none;line-height:1.9;outline:none;" rows="3" placeholder="못 한 이유 / 다음 주 집중할 것..."></textarea>
         </div>
       </div>
@@ -782,18 +831,94 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
     <div class="mh"></div>
     <button class="mx" onclick="closeE()">✕</button>
     <div id="edate" style="font-family:'Nanum Myeongjo',serif;font-size:17px;margin-bottom:16px;"></div>
-    <div style="margin-bottom:12px;"><div class="elbl">감정 한 줄</div><textarea class="efld" id="eemo" rows="2"></textarea></div>
-    <div style="margin-bottom:12px;background:var(--c2);border-radius:12px;padding:12px;"><div class="elbl" style="color:var(--core);">✨ 핵심 한 줄</div><textarea class="efld" id="ecore" rows="2" style="color:var(--core);font-size:16px;"></textarea></div>
-    <div style="margin-bottom:12px;"><div class="elbl">📝 오늘 있었던 일</div><textarea class="efld" id="etx" rows="5"></textarea></div>
-    <div style="margin-bottom:12px;background:var(--d2);border-radius:12px;padding:12px;"><div class="elbl" style="color:var(--dec);">⚖️ 결정 — 무엇을</div><textarea class="efld" id="edw" rows="2"></textarea><div class="elbl" style="color:var(--dec);margin-top:8px;">이유</div><textarea class="efld" id="edy" rows="2"></textarea></div>
-    <div style="margin-bottom:12px;background:var(--m2);border-radius:12px;padding:12px;"><div class="elbl" style="color:var(--mis);">🔍 실수/배움</div><textarea class="efld" id="emis" rows="2"></textarea></div>
-    <div style="margin-bottom:12px;background:var(--q2);border-radius:12px;padding:12px;"><div class="elbl" style="color:var(--q);">❓ 질문</div><textarea class="efld" id="eq" rows="2"></textarea><div class="elbl" style="color:var(--q);margin-top:8px;">나의 답</div><textarea class="efld" id="ea" rows="2"></textarea></div>
-    <div style="margin-bottom:16px;background:#EAF3DE;border-radius:12px;padding:12px;"><div class="elbl" style="color:#3B6D11;">💡 영감</div><textarea class="efld" id="eins" rows="2"></textarea></div>
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div class="elbl" style="margin-bottom:0;">감정 한 줄</div>
+        <button class="spell-btn" onclick="checkSpell('eemo')">✏️ 맞춤법</button>
+      </div>
+      <textarea class="efld" id="eemo" rows="2"></textarea>
+    </div>
+    <div style="margin-bottom:12px;background:var(--c2);border-radius:12px;padding:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div class="elbl" style="color:var(--core);margin-bottom:0;">✨ 핵심 한 줄</div>
+        <button class="spell-btn" onclick="checkSpell('ecore')">✏️ 맞춤법</button>
+      </div>
+      <textarea class="efld" id="ecore" rows="2" style="color:var(--core);font-size:16px;"></textarea>
+    </div>
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div class="elbl" style="margin-bottom:0;">📝 오늘 있었던 일</div>
+        <button class="spell-btn" onclick="checkSpell('etx')">✏️ 맞춤법</button>
+      </div>
+      <textarea class="efld" id="etx" rows="5"></textarea>
+    </div>
+    <div style="margin-bottom:12px;background:var(--d2);border-radius:12px;padding:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div class="elbl" style="color:var(--dec);margin-bottom:0;">⚖️ 결정 — 무엇을</div>
+        <button class="spell-btn" onclick="checkSpell('edw')">✏️ 맞춤법</button>
+      </div>
+      <textarea class="efld" id="edw" rows="2"></textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;margin-bottom:6px;">
+        <div class="elbl" style="color:var(--dec);margin-bottom:0;">이유</div>
+        <button class="spell-btn" onclick="checkSpell('edy')">✏️ 맞춤법</button>
+      </div>
+      <textarea class="efld" id="edy" rows="2"></textarea>
+    </div>
+    <div style="margin-bottom:12px;background:var(--m2);border-radius:12px;padding:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div class="elbl" style="color:var(--mis);margin-bottom:0;">🔍 실수/배움</div>
+        <button class="spell-btn" onclick="checkSpell('emis')">✏️ 맞춤법</button>
+      </div>
+      <textarea class="efld" id="emis" rows="2"></textarea>
+    </div>
+    <div style="margin-bottom:12px;background:var(--q2);border-radius:12px;padding:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div class="elbl" style="color:var(--q);margin-bottom:0;">❓ 질문</div>
+        <button class="spell-btn" onclick="checkSpell('eq')">✏️ 맞춤법</button>
+      </div>
+      <textarea class="efld" id="eq" rows="2"></textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;margin-bottom:6px;">
+        <div class="elbl" style="color:var(--q);margin-bottom:0;">나의 답</div>
+        <button class="spell-btn" onclick="checkSpell('ea')">✏️ 맞춤법</button>
+      </div>
+      <textarea class="efld" id="ea" rows="2"></textarea>
+    </div>
+    <div style="margin-bottom:16px;background:#EAF3DE;border-radius:12px;padding:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div class="elbl" style="color:#3B6D11;margin-bottom:0;">💡 영감</div>
+        <button class="spell-btn" onclick="checkSpell('eins')">✏️ 맞춤법</button>
+      </div>
+      <textarea class="efld" id="eins" rows="2"></textarea>
+    </div>
     <div style="display:flex;gap:8px;">
       <button class="bp" id="esavebtn" onclick="saveE()" style="flex:2;">저장하기</button>
       <button class="bg" onclick="closeE()" style="flex:1;">취소</button>
     </div>
     <div class="notice" id="enotice" style="margin-top:8px;"></div>
+  </div>
+</div>
+
+<!-- 맞춤법 교정 팝업 -->
+<div class="ov" id="spell-modal" style="display:none" onclick="if(event.target===this)closeSpell()">
+  <div class="modal" style="max-height:88vh;">
+    <div class="mh"></div>
+    <button class="mx" onclick="closeSpell()">✕</button>
+    <div style="font-family:'Nanum Myeongjo',serif;font-size:17px;margin-bottom:14px;">✏️ 맞춤법 교정</div>
+
+    <div style="margin-bottom:12px;">
+      <div class="elbl">원본</div>
+      <div id="spell-original" style="background:var(--bg);border-radius:10px;padding:12px;font-size:14px;font-family:'Nanum Myeongjo',serif;line-height:1.9;color:var(--ink2);white-space:pre-wrap;max-height:25vh;overflow-y:auto;"></div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div class="elbl" style="color:var(--accent);">교정안</div>
+      <div id="spell-corrected" style="background:var(--a2);border:1px solid var(--accent);border-radius:10px;padding:12px;font-size:14px;font-family:'Nanum Myeongjo',serif;line-height:1.9;color:var(--ink);white-space:pre-wrap;max-height:25vh;overflow-y:auto;"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;">
+      <button class="bp" id="spell-apply" onclick="applySpell()" style="flex:2;" disabled>교정안 적용</button>
+      <button class="bg" onclick="closeSpell()" style="flex:1;">취소</button>
+    </div>
   </div>
 </div>
 
@@ -803,6 +928,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 // ── 설정 ──
 const SBU='https://aeopocvdsfiuhdyutwdb.supabase.co';
 const SBK='sb_publishable_sC1ZGLuPueCzy4o7A3pxtw_CDndcFXV';
+const CLAUDE_KEY='sk-ant-api03-여기에본인API키붙여넣기';
 const GOAL=1500;
 const DAYS=['일','월','화','수','목','금','토'];
 const MOS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
@@ -811,7 +937,7 @@ const SECS={re:{u:'억',c:'av-a'},fi:{u:'억',c:'av-a'},co:{u:'억',c:'av-a'},et
 // ── 상태 ──
 let entries={}, vEntry=null, eEntry=null, wDate=null, fbEntry=null;
 let tabs=['daily','weekly','monthly','goals','quarterly','all'];
-let goalsData={yr:[],mo:[],wk:[]}; // renderGoalWidgets보다 먼저 선언
+let goalsData={yr:[],mo:[],wk:[]};
 
 // ── Supabase API ──
 const H={'Content-Type':'application/json',apikey:SBK,Authorization:'Bearer '+SBK};
@@ -847,7 +973,7 @@ function fmtD(d){return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate
 function wdates(){
   const t=new Date();
   const dow=t.getDay();
-  const diffToMon=dow===0?-6:1-dow; // 월요일 기준
+  const diffToMon=dow===0?-6:1-dow;
   return Array.from({length:7},(_,i)=>{
     const d=new Date(t);
     d.setDate(t.getDate()+diffToMon+i);
@@ -869,6 +995,80 @@ function setSync(s){
 function onSyncClick(){if(document.getElementById('dot').classList.contains('e'))location.reload();}
 function ucc(){document.getElementById('cc').textContent=document.getElementById('dtx').value.length;}
 
+// ── 맞춤법 교정 ──
+let spellCheckTarget=null;
+
+async function checkSpell(textareaId){
+  const ta=document.getElementById(textareaId);
+  if(!ta){toast('대상을 찾을 수 없어요');return;}
+  const text=ta.value.trim();
+  if(!text){toast('교정할 내용이 없어요');return;}
+  if(text.length>3000){toast('너무 길어요 (3000자 이하)');return;}
+
+  if(!CLAUDE_KEY||CLAUDE_KEY.includes('여기에본인API키')){
+    toast('Claude API 키를 먼저 설정해주세요');
+    return;
+  }
+
+  spellCheckTarget=textareaId;
+
+  document.getElementById('spell-original').textContent=text;
+  document.getElementById('spell-corrected').textContent='교정 중... (몇 초 걸려요)';
+  document.getElementById('spell-apply').disabled=true;
+  document.getElementById('spell-modal').style.display='flex';
+
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':CLAUDE_KEY,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-haiku-4-5-20251001',
+        max_tokens:4000,
+        messages:[{
+          role:'user',
+          content:`다음 한국어 텍스트의 맞춤법과 띄어쓰기만 교정해주세요. 글의 의미, 어투, 감정 표현, 문체는 절대 바꾸지 마세요. 교정된 텍스트만 반환하고 어떤 설명이나 인사말도 붙이지 마세요.\n\n원문:\n${text}`
+        }]
+      })
+    });
+
+    if(!r.ok){
+      const errText=await r.text();
+      document.getElementById('spell-corrected').textContent='오류: '+errText.slice(0,300);
+      return;
+    }
+
+    const data=await r.json();
+    const corrected=data.content?.[0]?.text||'';
+    document.getElementById('spell-corrected').textContent=corrected;
+    document.getElementById('spell-apply').disabled=false;
+
+  }catch(err){
+    document.getElementById('spell-corrected').textContent='연결 오류: '+err.message;
+  }
+}
+
+function applySpell(){
+  if(!spellCheckTarget)return;
+  const corrected=document.getElementById('spell-corrected').textContent;
+  const ta=document.getElementById(spellCheckTarget);
+  if(ta&&corrected){
+    ta.value=corrected;
+    if(spellCheckTarget==='dtx')ucc();
+    toast('교정 적용 완료 ✓');
+  }
+  closeSpell();
+}
+
+function closeSpell(){
+  document.getElementById('spell-modal').style.display='none';
+  spellCheckTarget=null;
+}
+
 // ── 데이터 변환 ──
 function r2e(r){return{date:r.date,mood:r.mood||'',emotion:r.emotion||'',text:r.text||'',core:r.core||'',question:r.question||'',answer:r.answer||'',insight:r.insight||'',dWhat:r.decision_what||'',dWhy:r.decision_why||'',mistake:r.mistake||'',tags:r.tags||''};}
 function e2r(e){return{p_date:e.date,p_mood:e.mood||'',p_emotion:e.emotion||'',p_text:e.text||'',p_core:e.core||'',p_question:e.question||'',p_answer:e.answer||'',p_insight:e.insight||'',p_decision_what:e.dWhat||'',p_decision_why:e.dWhy||'',p_mistake:e.mistake||'',p_tags:e.tags||''};}
@@ -879,7 +1079,6 @@ async function init(){
   const q=Math.ceil((now.getMonth()+1)/3);
   document.getElementById('dsub').textContent=fd(td());
   document.getElementById('msub').textContent=`${now.getFullYear()}년 ${MOS[now.getMonth()]} 가계부`;
-  // 주간 라벨 — 월요일 기준
   const wd=wdates();
   const f=new Date(wd[0]+'T00:00:00'),l=new Date(wd[6]+'T00:00:00');
   document.getElementById('wsub').textContent=`${f.getMonth()+1}월 ${f.getDate()}일(월) — ${l.getMonth()+1}월 ${l.getDate()}일(일)`;
@@ -988,7 +1187,6 @@ async function saveEntry(){
     entries[d]=e;setSync('ok');
     notice('savenotice',d===td()?'저장되었어요 ✓':fd(d)+' 저장되었어요 ✓','ok');
     renderWeek();
-    // 저장 성공 후 편집 감지 리셋
     setupDailyEditListeners();
   }catch(err){setSync('e');notice('savenotice','저장 실패: '+err.message,'err');}
   btn.disabled=false;btn.textContent=d===td()?'저장하기':fd(d)+' 저장';
@@ -1005,11 +1203,9 @@ function goTab(t){
   document.getElementById('scr').scrollTop=0;
   if(t==='weekly')renderWeek();
   if(t==='monthly'){
-    // 원칙 입력 중인 내용 임시 보존
     const mp=document.getElementById('mprinciple');
     const tempPrinciple=mp?.value||'';
     initLedger();
-    // 로드 후 입력 중이던 원칙 복원 (저장 전 내용 유지)
     if(tempPrinciple&&tempPrinciple!==savedPrinciple){
       setTimeout(()=>{const el=document.getElementById('mprinciple');if(el)el.value=tempPrinciple;},300);
     }
@@ -1079,7 +1275,7 @@ async function saveE(){
   btn.disabled=false;btn.textContent='저장하기';
 }
 
-// ── 전체 기록 (DB 기반 페이지네이션 + 검색) ──
+// ── 전체 기록 ──
 let elist=[], allPage=1, allSearch='', PAGE_SIZE=20;
 let totalEntryCount=0, searchFromDB=false;
 
@@ -1097,14 +1293,12 @@ async function renderAll(){
   const listEl=document.getElementById('elist');
   const subEl=document.getElementById('asub');
 
-  // 검색창 먼저 렌더
   const searchHTML=`<div style="margin-bottom:12px;position:relative;">
     <input type="text" id="all-search" class="linp" placeholder="🔍 날짜, 키워드로 검색..." value="${allSearch.replace(/"/g,'&quot;')}" oninput="onSearch(this.value)" style="font-size:14px;padding-right:36px;">
     ${allSearch?`<button onclick="clearSearch()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink3);">✕</button>`:''}
   </div>`;
 
   if(allSearch&&allSearch.length>=1){
-    // 검색어 있으면 DB에서 직접 조회 (10년치 전체 검색)
     listEl.innerHTML=searchHTML+'<div style="text-align:center;padding:20px;color:var(--ink3);">검색 중...</div>';
     try{
       const enc=encodeURIComponent(allSearch);
@@ -1113,7 +1307,6 @@ async function renderAll(){
         sbGet(`diary_entries?select=*&text=ilike.*${enc}*&order=date.desc&limit=50`),
         sbGet(`diary_entries?select=*&date=ilike.*${enc}*&order=date.desc&limit=50`)
       ]);
-      // 중복 제거
       const seen=new Set();
       const merged=[...r1,...r2,...r3].filter(r=>{if(seen.has(r.date))return false;seen.add(r.date);return true;});
       merged.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
@@ -1125,7 +1318,6 @@ async function renderAll(){
     return;
   }
 
-  // 검색 없으면 메모리 데이터 + DB 페이지네이션
   const sorted=Object.values(entries).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   elist=sorted;
   const displayCount=totalEntryCount>sorted.length?totalEntryCount:sorted.length;
@@ -1177,7 +1369,7 @@ let searchTimer=null;
 function onSearch(v){
   allSearch=v;allPage=1;
   clearTimeout(searchTimer);
-  searchTimer=setTimeout(()=>renderAll(),300); // 300ms 디바운스
+  searchTimer=setTimeout(()=>renderAll(),300);
 }
 function clearSearch(){allSearch='';allPage=1;renderAll();}
 function changePage(d){
@@ -1258,7 +1450,6 @@ let snapAsset=0, snapDebt=0, ledgerInited=false;
 
 function initLedger(){
   if(!ledgerInited){
-    // 최초 1회만 날짜/타입 초기화
     const now=new Date();ledgerY=now.getFullYear();ledgerM=now.getMonth();
     document.getElementById('l-date').value=td();
     setType('expense');
@@ -1273,7 +1464,6 @@ function chLedgerMo(d){
   const nextM=ledgerM+d;
   const nextY=nextM>11?ledgerY+1:nextM<0?ledgerY-1:ledgerY;
   const nextMo=(nextM+12)%12;
-  // 미래 달 이동 차단
   if(nextY>now.getFullYear()||(nextY===now.getFullYear()&&nextMo>now.getMonth()))return;
   ledgerM+=d;if(ledgerM>11){ledgerM=0;ledgerY++;}if(ledgerM<0){ledgerM=11;ledgerY--;}
   updLedgerHeader();loadLedgerData();
@@ -1299,7 +1489,7 @@ function updCatSelect(){
   }
 }
 
-let savedPrinciple=''; // 저장된 원칙 메모리에도 유지
+let savedPrinciple='';
 
 async function loadLedgerData(){
   const key=lmk();
@@ -1318,7 +1508,7 @@ async function loadLedgerData(){
       const sd=document.getElementById('snap-debt');if(sd)sd.value=snapDebt||'';
       savedPrinciple=b.principle||'';
       const mp=document.getElementById('mprinciple');
-      if(mp)mp.value=savedPrinciple; // 항상 DB 값으로 복원
+      if(mp)mp.value=savedPrinciple;
     }else{
       budgets={};snapAsset=0;snapDebt=0;savedPrinciple='';
       const mp=document.getElementById('mprinciple');if(mp)mp.value='';
@@ -1444,12 +1634,11 @@ function editLedger(i){
   setTimeout(()=>{const sel=document.getElementById('l-cat');if(sel)sel.value=r.category;},50);
   document.getElementById('l-amount').value=r.amount;
   document.getElementById('l-memo').value=r.memo||'';
-  // 버튼 텍스트 변경 + 취소 버튼 표시
   const addBtn=document.getElementById('ledger-add-btn');
   const cancelBtn=document.getElementById('ledger-cancel-btn');
   if(addBtn)addBtn.textContent='수정 저장';
   if(cancelBtn)cancelBtn.style.display='block';
-  renderLedger(); // 수정 중인 항목 하이라이트
+  renderLedger();
   document.getElementById('scr').scrollTo({top:document.getElementById('ledger-list').offsetTop-100,behavior:'smooth'});
 }
 
@@ -1490,7 +1679,7 @@ async function saveMonthly(){
       p_principle:p
     });
     notice('mnotice','저장되었어요 ✓','ok');
-    savedPrinciple=p; // 저장 성공 후 기준점 업데이트
+    savedPrinciple=p;
   }catch(err){
     console.error('월간 저장 실패',err);
     notice('mnotice','저장 실패: '+err.message,'err');
@@ -1500,7 +1689,6 @@ async function saveMonthly(){
 
 async function loadMonthlyData(){initLedger();}
 
-// sbFetchDirect — POST/PATCH for ledger
 async function sbFetchDirect(path,opt={}){
   const r=await fetch(SBU+'/rest/v1/'+path,{
     method:opt.method||'POST',
@@ -1511,12 +1699,11 @@ async function sbFetchDirect(path,opt={}){
   return true;
 }
 
-// ── 목표 연결 위젯 — 오늘/주간/월간 탭에 표시 ──
+// ── 목표 연결 위젯 ──
 function renderGoalWidgets(){
   const wk=goalsData.wk||[];
   const mo=goalsData.mo||[];
 
-  // ① 오늘 탭 — 이번 주 목표
   const widget=document.getElementById('daily-goals-widget');
   const items=document.getElementById('daily-goal-items');
   const pctEl=document.getElementById('daily-goal-pct');
@@ -1536,7 +1723,6 @@ function renderGoalWidgets(){
     widget.style.display='none';
   }
 
-  // ② 주간 탭 — 이번 주 목표 달성률
   const wwid=document.getElementById('weekly-goals-widget');
   const wbar=document.getElementById('weekly-goal-bar');
   const wpct=document.getElementById('weekly-goal-pct');
@@ -1553,7 +1739,6 @@ function renderGoalWidgets(){
     wwid.style.display='none';
   }
 
-  // ③ 월간 탭 — 이달 목표 달성률
   const mwid=document.getElementById('monthly-goals-widget');
   const mbar=document.getElementById('monthly-goal-bar');
   const mpct=document.getElementById('monthly-goal-pct');
@@ -1575,20 +1760,17 @@ function renderGoalWidgets(){
 }
 
 // ── 목표 ──
-// 현재 보고 있는 주/월 오프셋 (0=이번주/달, -1=지난주/달)
 let goalWkOffset=0, goalMoOffset=0;
 
 function goalKeys(wkOff=0, moOff=0){
   const now=new Date();
   const yr=now.getFullYear();
 
-  // 월 오프셋 적용
   const moDate=new Date(now);
   moDate.setMonth(moDate.getMonth()+moOff);
   const mo=moDate.getMonth()+1;
   const moYr=moDate.getFullYear();
 
-  // 주 오프셋 적용 (월요일 기준)
   const dow=now.getDay();
   const diffToMon=dow===0?-6:1-dow;
   const weekStart=new Date(now);
@@ -1658,14 +1840,13 @@ async function loadGoalWk(){
   const keys=goalKeys(goalWkOffset,goalMoOffset);
   updGoalNavLabels(keys);
   const addArea=document.getElementById('wk-add-area');
-  if(addArea)addArea.style.display='flex'; // 과거/미래 모두 추가 가능
+  if(addArea)addArea.style.display='flex';
   try{
     const rows=await sbGet(`goals?goal_key=eq.${keys.main}&select=*`);
     goalsData.wk=rows&&rows.length>0?rows[0].week_goals||[]:[];
     const retro=document.getElementById('goal-retro');
     if(retro){
       retro.value=rows&&rows.length>0?rows[0].retrospect||'':'';
-      // 미래 주는 회고 비활성화, 과거 주는 읽기 전용
       retro.readOnly=goalWkOffset!==0;
       retro.style.opacity=goalWkOffset===0?'1':'0.7';
       retro.placeholder=goalWkOffset>0?'(다음 주 회고는 그 주에 작성해요)':goalWkOffset<0?'(지난 주 회고)':'못 한 이유 / 다음 주 집중할 것...';
@@ -1679,7 +1860,7 @@ async function loadGoalMo(){
   const keys=goalKeys(goalWkOffset,goalMoOffset);
   updGoalNavLabels(keys);
   const addArea=document.getElementById('mo-add-area');
-  if(addArea)addArea.style.display='flex'; // 과거/미래 모두 추가 가능
+  if(addArea)addArea.style.display='flex';
   try{
     const rows=await sbGet(`goals?goal_key=eq.${keys.mo}&select=*`);
     goalsData.mo=rows&&rows.length>0?rows[0].month_goals||[]:[];
@@ -1734,13 +1915,58 @@ function renderGoalList(type){
     return;
   }
   list.innerHTML=items.map((g,i)=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);">
+    <div class="goal-row" data-type="${type}" data-idx="${i}" style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);">
       <div onclick="toggleGoal('${type}',${i})" style="width:22px;height:22px;border-radius:50%;border:2px solid ${g.done?'var(--ok)':'var(--line)'};background:${g.done?'var(--ok)':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
         ${g.done?'<span style="color:#fff;font-size:12px;">✓</span>':''}
       </div>
-      <span style="flex:1;font-size:14px;font-family:'Nanum Myeongjo',serif;color:var(--ink);text-decoration:${g.done?'line-through':'none'};opacity:${g.done?'.5':'1'};">${g.text.replace(/</g,'&lt;')}</span>
-      <button onclick="delGoal('${type}',${i})" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink3);padding:4px;">×</button>
+      <span class="goal-text" style="flex:1;font-size:14px;font-family:'Nanum Myeongjo',serif;color:var(--ink);text-decoration:${g.done?'line-through':'none'};opacity:${g.done?'.5':'1'};">${g.text.replace(/</g,'&lt;')}</span>
+      <button onclick="startEditGoal('${type}',${i})" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink3);padding:4px;" title="수정">✏️</button>
+      <button onclick="delGoal('${type}',${i})" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink3);padding:4px;" title="삭제">×</button>
     </div>`).join('');
+}
+
+function startEditGoal(type,i){
+  const items=goalsData[type]||[];
+  if(!items[i])return;
+  const row=document.querySelector(`.goal-row[data-type="${type}"][data-idx="${i}"]`);
+  if(!row)return;
+  const currentText=items[i].text;
+  const done=items[i].done;
+
+  row.innerHTML=`
+    <div style="width:22px;height:22px;border-radius:50%;border:2px solid ${done?'var(--ok)':'var(--line)'};background:${done?'var(--ok)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      ${done?'<span style="color:#fff;font-size:12px;">✓</span>':''}
+    </div>
+    <input type="text" class="goal-edit-inp" value="${currentText.replace(/"/g,'&quot;')}" style="flex:1;font-size:14px;font-family:'Nanum Myeongjo',serif;color:var(--ink);border:1px solid var(--accent);border-radius:6px;padding:6px 10px;outline:none;background:var(--paper);">
+    <button onclick="saveEditGoal('${type}',${i})" style="background:var(--accent);border:none;color:#fff;cursor:pointer;font-size:12px;padding:6px 10px;border-radius:6px;">저장</button>
+    <button onclick="cancelEditGoal('${type}')" style="background:var(--bg);border:1px solid var(--line);cursor:pointer;font-size:12px;padding:6px 10px;border-radius:6px;color:var(--ink2);">취소</button>
+  `;
+
+  const inp=row.querySelector('.goal-edit-inp');
+  inp.focus();
+  inp.select();
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();saveEditGoal(type,i);}
+    if(e.key==='Escape'){e.preventDefault();cancelEditGoal(type);}
+  });
+}
+
+function saveEditGoal(type,i){
+  const row=document.querySelector(`.goal-row[data-type="${type}"][data-idx="${i}"]`);
+  if(!row)return;
+  const inp=row.querySelector('.goal-edit-inp');
+  if(!inp)return;
+  const newText=inp.value.trim();
+  if(!newText){toast('내용을 입력해주세요');return;}
+  goalsData[type][i].text=newText;
+  renderGoalList(type);
+  renderGoalWidgets();
+  schedGoalSave();
+  toast('수정되었어요 ✓');
+}
+
+function cancelEditGoal(type){
+  renderGoalList(type);
 }
 
 function addGoal(type){
@@ -1769,7 +1995,6 @@ function delGoal(type,i){
   schedGoalSave();
 }
 
-// Enter 키로 추가
 ['yr','mo','wk'].forEach(type=>{
   document.addEventListener('keydown',e=>{
     if(e.key==='Enter'&&document.activeElement?.id===type+'-inp'){
@@ -1795,7 +2020,7 @@ async function loadQuarterlyData(){
 }
 
 // ── 모바일 키보드 ──
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeV();closeE();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeV();closeE();closeSpell();}});
 if(window.visualViewport){
   window.visualViewport.addEventListener('resize',()=>{
     const em=document.getElementById('emod');
@@ -1803,10 +2028,8 @@ if(window.visualViewport){
   });
 }
 
-// ── 탭 이동 경고 제거 (저장 버튼으로 충분) ──
-function setupDailyEditListeners(){} // 사용 안 함
+function setupDailyEditListeners(){}
 
-// ── PWA Service Worker 비활성화 (캐시 문제 방지) ──
 if('serviceWorker' in navigator){
   navigator.serviceWorker.getRegistrations().then(regs=>{
     regs.forEach(r=>r.unregister());
@@ -1814,7 +2037,7 @@ if('serviceWorker' in navigator){
 }
 
 init().then(()=>{
-  setupDailyEditListeners(); // init 완료 후 편집 감지 시작
+  setupDailyEditListeners();
 });
 </script>
 </body>
