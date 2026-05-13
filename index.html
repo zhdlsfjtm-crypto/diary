@@ -26,6 +26,8 @@
   --mis:#2D6B5A;--m2:#E8F5F0;
   --asset:#1A5C8C;
   --nh:60px;
+  /* 영어 5단계 색상 */
+  --en1:#FFB84D;--en2:#4DB6FF;--en3:#9D4DFF;--en4:#4DD4A8;--en5:#FF6B6B;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--ink);overflow:hidden;}
@@ -234,9 +236,9 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .efld:focus{border-color:var(--accent);}
 
 /* 하단 네비 */
-.bnav{position:fixed;bottom:0;left:0;right:0;height:var(--nh);background:var(--paper);border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;padding-bottom:env(safe-area-inset-bottom);z-index:100;}
-.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:none;background:transparent;cursor:pointer;}
-.nb .ni{font-size:18px;color:var(--ink3);}
+.bnav{position:fixed;bottom:0;left:0;right:0;height:var(--nh);background:var(--paper);border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;padding-bottom:env(safe-area-inset-bottom);z-index:100;overflow-x:auto;}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px;border:none;background:transparent;cursor:pointer;min-width:48px;}
+.nb .ni{font-size:17px;color:var(--ink3);}
 .nb .nl{font-size:9px;color:var(--ink3);font-family:'Pretendard',sans-serif;}
 .nb.on .ni{color:var(--accent);}
 .nb.on .nl{color:var(--accent);font-weight:600;}
@@ -283,6 +285,61 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .ledit{font-size:12px;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;color:var(--ink3);}
 .ledit.del{color:var(--err);}
 .ledger-item.editing{background:var(--a2);border-radius:8px;padding:8px;margin:-4px;}
+
+/* 영어 학습 트래커 */
+.eng-hero{background:linear-gradient(135deg,#1C1A16,#2D2820);border-radius:16px;padding:18px;color:#fff;margin-bottom:12px;text-align:center;}
+.eng-target{font-size:11px;color:#9FE1CB;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.eng-dday{font-size:42px;font-weight:700;line-height:1;margin-bottom:4px;}
+.eng-dday-sub{font-size:13px;color:rgba(255,255,255,.7);}
+.eng-counter{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.15);}
+.eng-c-item{text-align:center;}
+.eng-c-val{font-size:20px;font-weight:700;color:#FAC775;}
+.eng-c-lbl{font-size:10px;color:rgba(255,255,255,.6);margin-top:2px;}
+.eng-today{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:10px;}
+.eng-video-inp{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;font-family:'Pretendard',sans-serif;background:var(--bg);outline:none;margin-bottom:10px;}
+.eng-video-inp:focus{border-color:var(--accent);}
+.eng-progress-bar{height:10px;background:var(--line);border-radius:5px;overflow:hidden;margin-bottom:10px;display:flex;}
+.eng-pb-seg{height:100%;transition:width .3s;}
+.eng-pb-seg.s1{background:var(--en1);}
+.eng-pb-seg.s2{background:var(--en2);}
+.eng-pb-seg.s3{background:var(--en3);}
+.eng-pb-seg.s4{background:var(--en4);}
+.eng-pb-seg.s5{background:var(--en5);}
+.eng-stages{display:flex;flex-direction:column;gap:14px;}
+.eng-stage{background:var(--bg);border-radius:12px;padding:12px;}
+.eng-stage-h{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.eng-stage-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.eng-stage-num{font-size:11px;font-weight:600;color:var(--ink3);}
+.eng-stage-name{font-size:13px;font-weight:600;color:var(--ink);}
+.eng-stage-cnt{font-size:11px;color:var(--ink3);margin-left:auto;}
+.eng-stage-goal{font-size:11px;color:var(--ink3);margin-bottom:8px;font-style:italic;line-height:1.5;}
+.eng-circles{display:flex;flex-wrap:wrap;gap:6px;}
+.eng-circ{width:32px;height:32px;border-radius:50%;border:2px solid var(--line);background:var(--paper);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--ink3);transition:all .15s;font-weight:600;}
+.eng-circ.done{color:#fff;}
+.eng-circ.s1.done{background:var(--en1);border-color:var(--en1);}
+.eng-circ.s2.done{background:var(--en2);border-color:var(--en2);}
+.eng-circ.s3.done{background:var(--en3);border-color:var(--en3);}
+.eng-circ.s4.done{background:var(--en4);border-color:var(--en4);}
+.eng-circ.s5.done{background:var(--en5);border-color:var(--en5);}
+.eng-sentence{background:#FFF9E8;border:1.5px solid #FAC775;border-radius:12px;padding:14px;margin-top:12px;}
+.eng-s-lbl{font-size:10px;color:#A8761A;font-weight:600;letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
+.eng-s-inp{width:100%;border:none;background:transparent;font-size:15px;font-family:'Nanum Myeongjo',serif;color:var(--ink);resize:none;line-height:1.7;outline:none;font-style:italic;}
+.eng-s-inp::placeholder{color:#C4AA70;font-size:13px;}
+.eng-heat{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px;}
+.eng-heat-c{aspect-ratio:1;border-radius:3px;background:var(--line);cursor:default;}
+.eng-heat-c.l1{background:#FFE5C2;}
+.eng-heat-c.l2{background:#FFC080;}
+.eng-heat-c.l3{background:#FF9040;}
+.eng-heat-c.l4{background:#E06010;}
+.eng-heat-c.l5{background:#A03800;}
+.eng-heat-c.today{outline:2px solid var(--accent);outline-offset:1px;}
+.eng-rule{background:var(--paper);border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden;}
+.eng-rule-h{padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600;}
+.eng-rule-b{padding:0 16px 16px;display:none;font-size:13px;color:var(--ink2);line-height:2;}
+.eng-rule-b.on{display:block;}
+.eng-rule-b strong{color:var(--accent);}
+.eng-rule-b ul{margin-left:18px;margin-top:4px;}
+.eng-rule-b li{margin-bottom:4px;}
 </style>
 </head>
 <body>
@@ -792,6 +849,196 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       <div class="notice" id="gnotice"></div>
     </div>
 
+    <!-- 영어 학습 트래커 -->
+    <div class="pn" id="pn-english">
+      <div class="ptitle">CES 라스베가스 영어 루틴</div>
+      <div class="psub" id="ensub">TED-Ed 1개 · 하루 20회 반복 · 노출 방식</div>
+
+      <!-- D-Day 히어로 -->
+      <div class="eng-hero">
+        <div class="eng-target">🎯 CES 2027 LAS VEGAS</div>
+        <div class="eng-dday" id="eng-dday">D-—</div>
+        <div class="eng-dday-sub" id="eng-dday-sub">2027.1.6 까지</div>
+        <div class="eng-counter">
+          <div class="eng-c-item">
+            <div class="eng-c-val" id="eng-streak">0</div>
+            <div class="eng-c-lbl">연속일</div>
+          </div>
+          <div class="eng-c-item">
+            <div class="eng-c-val" id="eng-total-days">0</div>
+            <div class="eng-c-lbl">총 학습일</div>
+          </div>
+          <div class="eng-c-item">
+            <div class="eng-c-val" id="eng-total-reps">0</div>
+            <div class="eng-c-lbl">총 반복</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 오늘의 학습 -->
+      <div class="eng-today">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:600;">📺 오늘의 TED-Ed</div>
+          <div style="font-size:11px;color:var(--ink3);" id="eng-today-date"></div>
+        </div>
+        <input type="text" class="eng-video-inp" id="eng-video" placeholder="영상 제목 또는 링크 (선택)" oninput="schedEngSave()">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div style="font-size:12px;color:var(--ink3);">오늘 진행도</div>
+          <div style="font-size:13px;font-weight:700;color:var(--accent);"><span id="eng-done-cnt">0</span>/20</div>
+        </div>
+        <div class="eng-progress-bar" id="eng-progress-bar"></div>
+
+        <!-- 5단계 -->
+        <div class="eng-stages">
+          <div class="eng-stage">
+            <div class="eng-stage-h">
+              <div class="eng-stage-dot" style="background:var(--en1);"></div>
+              <span class="eng-stage-num">STAGE 1</span>
+              <span class="eng-stage-name">영어 ONLY 듣기</span>
+              <span class="eng-stage-cnt"><span id="s1-done">0</span>/4</span>
+            </div>
+            <div class="eng-stage-goal">🎧 귀 열기 · 해석 X · 억양/리듬 느끼기</div>
+            <div class="eng-circles" id="eng-circs-1"></div>
+          </div>
+          <div class="eng-stage">
+            <div class="eng-stage-h">
+              <div class="eng-stage-dot" style="background:var(--en2);"></div>
+              <span class="eng-stage-num">STAGE 2</span>
+              <span class="eng-stage-name">영어 자막 ON</span>
+              <span class="eng-stage-cnt"><span id="s2-done">0</span>/3</span>
+            </div>
+            <div class="eng-stage-goal">📝 소리와 철자 연결 · "이 소리가 이 단어구나"</div>
+            <div class="eng-circles" id="eng-circs-2"></div>
+          </div>
+          <div class="eng-stage">
+            <div class="eng-stage-h">
+              <div class="eng-stage-dot" style="background:var(--en3);"></div>
+              <span class="eng-stage-num">STAGE 3</span>
+              <span class="eng-stage-name">한글 자막 1회</span>
+              <span class="eng-stage-cnt"><span id="s3-done">0</span>/1</span>
+            </div>
+            <div class="eng-stage-goal">🇰🇷 내용 확인만 · 번역 공부 금지 · 짧게</div>
+            <div class="eng-circles" id="eng-circs-3"></div>
+          </div>
+          <div class="eng-stage">
+            <div class="eng-stage-h">
+              <div class="eng-stage-dot" style="background:var(--en4);"></div>
+              <span class="eng-stage-num">STAGE 4</span>
+              <span class="eng-stage-name">다시 영어 ONLY</span>
+              <span class="eng-stage-cnt"><span id="s4-done">0</span>/9</span>
+            </div>
+            <div class="eng-stage-goal">🔁 영어를 영어로 · 덩어리로 들림 · 예측 가능</div>
+            <div class="eng-circles" id="eng-circs-4"></div>
+          </div>
+          <div class="eng-stage">
+            <div class="eng-stage-h">
+              <div class="eng-stage-dot" style="background:var(--en5);"></div>
+              <span class="eng-stage-num">STAGE 5</span>
+              <span class="eng-stage-name">쉐도잉</span>
+              <span class="eng-stage-cnt"><span id="s5-done">0</span>/3</span>
+            </div>
+            <div class="eng-stage-goal">🗣️ 입까지 리듬 · 동시에 따라 말하기 · 숨 타이밍</div>
+            <div class="eng-circles" id="eng-circs-5"></div>
+          </div>
+        </div>
+
+        <!-- 오늘의 문장 -->
+        <div class="eng-sentence">
+          <div class="eng-s-lbl">
+            <span>💎 오늘 가장 마음에 든 문장 1개</span>
+            <span style="font-weight:400;color:#A8761A;font-style:italic;font-size:9px;">중얼거리기 · 상황 떠올리기</span>
+          </div>
+          <textarea class="eng-s-inp" id="eng-sentence" rows="2" placeholder='"I realized that fear is not the enemy."' oninput="schedEngSave()"></textarea>
+        </div>
+
+        <button class="bp" style="margin-top:12px;" onclick="saveEnglish()">오늘 저장</button>
+        <div class="notice" id="ennotice"></div>
+      </div>
+
+      <!-- 잔디밭 히트맵 -->
+      <div class="card">
+        <div class="ch"><span class="ci">🌱</span><span class="ct">학습 잔디밭</span><span class="cd">최근 8주</span></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:10px;color:var(--ink3);">
+          <span>적게</span>
+          <div style="display:flex;gap:2px;">
+            <div style="width:10px;height:10px;border-radius:2px;background:var(--line);"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:#FFE5C2;"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:#FFC080;"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:#FF9040;"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:#E06010;"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:#A03800;"></div>
+          </div>
+          <span>많이</span>
+        </div>
+        <div class="eng-heat" id="eng-heat"></div>
+      </div>
+
+      <!-- 핵심 원칙 (접기/펼치기) -->
+      <div class="eng-rule">
+        <div class="eng-rule-h" onclick="toggleEngRule('rule1')">
+          <span>🎯 핵심 방향</span>
+          <span id="rule1-arr" style="font-size:11px;color:var(--ink3);transition:transform .2s;">▼</span>
+        </div>
+        <div class="eng-rule-b" id="rule1-body">
+          <strong>목표:</strong> "영어 해석"이 아니라 "영어 환경에 익숙해지는 것"
+          <ul>
+            <li>영어를 번역하지 않고 받아들이기</li>
+            <li>귀가 영어 속도에 얼어붙지 않게 만들기</li>
+            <li>실제 현장에서 핵심 단어와 분위기를 캐치</li>
+            <li>영어를 '공부'가 아니라 '노출'로 체화</li>
+          </ul>
+          <br>
+          <strong>총 시간:</strong> 약 1시간 40분 ~ 2시간<br>
+          단, 집중이 아니라 이동 중·운동 중·샤워 준비·식사·자기 전 등 <strong>반복 노출 방식</strong>으로 진행
+        </div>
+      </div>
+
+      <div class="eng-rule">
+        <div class="eng-rule-h" onclick="toggleEngRule('rule2')">
+          <span>📌 추가 룰</span>
+          <span id="rule2-arr" style="font-size:11px;color:var(--ink3);transition:transform .2s;">▼</span>
+        </div>
+        <div class="eng-rule-b" id="rule2-body">
+          <strong>하루 1문장만 가져가기</strong><br>
+          TED 전체 암기 금지. "오늘 가장 마음에 드는 문장 1개"만 반복.
+          <ul>
+            <li>중얼거리기</li>
+            <li>실제 상황 떠올리기</li>
+            <li>생각할 때 사용하기</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="eng-rule">
+        <div class="eng-rule-h" onclick="toggleEngRule('rule3')">
+          <span>🚀 7개월 뒤 기대 변화</span>
+          <span id="rule3-arr" style="font-size:11px;color:var(--ink3);transition:transform .2s;">▼</span>
+        </div>
+        <div class="eng-rule-b" id="rule3-body">
+          단순 영어 점수가 아니라:
+          <ul>
+            <li>영어 속도 공포 감소</li>
+            <li>외국인 말이 덜 뭉개져 들림</li>
+            <li>핵심 단어 캐치 가능</li>
+            <li>분위기 이해 가능</li>
+            <li>영어를 번역 없이 일부 받아들이기</li>
+            <li>회화 반응속도 증가</li>
+            <li>억양 감각 향상</li>
+          </ul>
+          <br>
+          <strong>CES 현장에서 필요한 건:</strong>
+          <ul>
+            <li>얼지 않는 귀</li>
+            <li>당황하지 않는 멘탈</li>
+            <li>핵심 단어 캐치</li>
+            <li>흐름 이해</li>
+            <li>자신감 있는 반응</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <nav class="bnav">
@@ -799,6 +1046,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
     <button class="nb" id="nb-weekly" onclick="goTab('weekly')"><span class="ni">📅</span><span class="nl">주간</span></button>
     <button class="nb" id="nb-monthly" onclick="goTab('monthly')"><span class="ni">💰</span><span class="nl">월간</span></button>
     <button class="nb" id="nb-goals" onclick="goTab('goals')"><span class="ni">🎯</span><span class="nl">목표</span></button>
+    <button class="nb" id="nb-english" onclick="goTab('english')"><span class="ni">🇺🇸</span><span class="nl">영어</span></button>
     <button class="nb" id="nb-quarterly" onclick="goTab('quarterly')"><span class="ni">🔄</span><span class="nl">분기</span></button>
     <button class="nb" id="nb-all" onclick="goTab('all')"><span class="ni">📚</span><span class="nl">전체</span></button>
   </nav>
@@ -930,14 +1178,18 @@ const SBU='https://aeopocvdsfiuhdyutwdb.supabase.co';
 const SBK='sb_publishable_sC1ZGLuPueCzy4o7A3pxtw_CDndcFXV';
 const CLAUDE_KEY='sk-ant-api03-여기에본인API키붙여넣기';
 const GOAL=1500;
+const CES_DATE='2027-01-06';
+const STAGE_REPS=[4,3,1,9,3];
 const DAYS=['일','월','화','수','목','금','토'];
 const MOS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 const SECS={re:{u:'억',c:'av-a'},fi:{u:'억',c:'av-a'},co:{u:'억',c:'av-a'},et:{u:'억',c:'av-a'},de:{u:'억',c:'av-d'},in:{u:'만원',c:'av-i'},ex:{u:'만원',c:'av-e'}};
 
 // ── 상태 ──
 let entries={}, vEntry=null, eEntry=null, wDate=null, fbEntry=null;
-let tabs=['daily','weekly','monthly','goals','quarterly','all'];
+let tabs=['daily','weekly','monthly','goals','english','quarterly','all'];
 let goalsData={yr:[],mo:[],wk:[]};
+let englishToday={video:'',sentence:'',stages:[[],[],[],[],[]]};
+let englishHistory={};
 
 // ── Supabase API ──
 const H={'Content-Type':'application/json',apikey:SBK,Authorization:'Bearer '+SBK};
@@ -1113,7 +1365,8 @@ async function init(){
     document.getElementById('fbcard').style.display='block';
   }
 
-  await Promise.all([loadMonthlyData(),loadQuarterlyData(),loadGoals()]);
+  await Promise.all([loadMonthlyData(),loadQuarterlyData(),loadGoals(),loadEnglish()]);
+  initEnglishUI();
 }
 
 // ── 날짜 선택 ──
@@ -1212,6 +1465,7 @@ function goTab(t){
   }
   if(t==='goals')loadGoals();
   if(t==='quarterly')loadQuarterlyData();
+  if(t==='english'){renderEnglish();renderEngHeat();}
   if(t==='all'){allPage=1;renderAll();}
 }
 
@@ -2017,6 +2271,210 @@ async function loadQuarterlyData(){
       const r=rows[0];sv('qbefore',r.before_text);sv('qafter',r.after_text);sv('qmistakes',r.mistakes);sv('qprinciples',r.principles);
     }
   }catch(err){console.error('분기 로드 실패',err);}
+}
+
+// ──────────────── 영어 학습 트래커 ────────────────
+function initEnglishUI(){
+  const tdEl=document.getElementById('eng-today-date');
+  if(tdEl)tdEl.textContent=fd(td());
+  for(let s=1;s<=5;s++){
+    const cont=document.getElementById('eng-circs-'+s);
+    if(!cont)continue;
+    cont.innerHTML='';
+    const total=STAGE_REPS[s-1];
+    const offsets=[0,4,7,8,17];
+    for(let i=0;i<total;i++){
+      const c=document.createElement('button');
+      c.className='eng-circ s'+s;
+      c.dataset.stage=s;
+      c.dataset.idx=i;
+      c.textContent=offsets[s-1]+i+1;
+      c.onclick=()=>toggleEngCircle(s-1,i);
+      cont.appendChild(c);
+    }
+  }
+}
+
+function toggleEngCircle(stageIdx,i){
+  englishToday.stages=englishToday.stages||[[],[],[],[],[]];
+  englishToday.stages[stageIdx]=englishToday.stages[stageIdx]||[];
+  englishToday.stages[stageIdx][i]=!englishToday.stages[stageIdx][i];
+  renderEnglish();
+  schedEngSave();
+}
+
+let engSaveTimer=null;
+function schedEngSave(){
+  clearTimeout(engSaveTimer);
+  const v=document.getElementById('eng-video');
+  const s=document.getElementById('eng-sentence');
+  englishToday.video=v?v.value:'';
+  englishToday.sentence=s?s.value:'';
+  englishToday.date=td();
+  englishHistory[td()]={...englishToday,stages:englishToday.stages.map(a=>[...a])};
+  renderEngHero();
+  engSaveTimer=setTimeout(()=>saveEnglish(true),1500);
+}
+
+function renderEnglish(){
+  let totalDone=0;
+  for(let s=0;s<5;s++){
+    const arr=englishToday.stages[s]||[];
+    const cont=document.getElementById('eng-circs-'+(s+1));
+    if(!cont)continue;
+    const btns=cont.querySelectorAll('.eng-circ');
+    btns.forEach((b,i)=>{
+      if(arr[i])b.classList.add('done');
+      else b.classList.remove('done');
+    });
+    const stageDone=arr.filter(Boolean).length;
+    totalDone+=stageDone;
+    const cntEl=document.getElementById('s'+(s+1)+'-done');
+    if(cntEl)cntEl.textContent=stageDone;
+  }
+  const dc=document.getElementById('eng-done-cnt');
+  if(dc)dc.textContent=totalDone;
+  const pb=document.getElementById('eng-progress-bar');
+  if(pb){
+    pb.innerHTML='';
+    for(let s=0;s<5;s++){
+      const arr=englishToday.stages[s]||[];
+      const stageDone=arr.filter(Boolean).length;
+      const seg=document.createElement('div');
+      seg.className='eng-pb-seg s'+(s+1);
+      seg.style.width=(stageDone/20*100)+'%';
+      pb.appendChild(seg);
+    }
+  }
+  const v=document.getElementById('eng-video');
+  if(v&&v.value!==(englishToday.video||''))v.value=englishToday.video||'';
+  const ss=document.getElementById('eng-sentence');
+  if(ss&&ss.value!==(englishToday.sentence||''))ss.value=englishToday.sentence||'';
+  renderEngHero();
+}
+
+function renderEngHero(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const target=new Date(CES_DATE+'T00:00:00');
+  const diff=Math.ceil((target-today)/(1000*60*60*24));
+  const dd=document.getElementById('eng-dday');
+  if(dd)dd.textContent=diff>0?'D-'+diff:diff===0?'D-DAY':'D+'+Math.abs(diff);
+  const ds=document.getElementById('eng-dday-sub');
+  if(ds)ds.textContent=CES_DATE.replace(/-/g,'.')+' 까지';
+  let totalDays=0,totalReps=0;
+  Object.keys(englishHistory).forEach(d=>{
+    const e=englishHistory[d];
+    const reps=(e.stages||[]).reduce((a,arr)=>a+(arr||[]).filter(Boolean).length,0);
+    if(reps>0){totalDays++;totalReps+=reps;}
+  });
+  let streak=0;
+  const checkDate=new Date();
+  let safety=0;
+  while(safety++<400){
+    const ds2=fmtD(checkDate);
+    const e=englishHistory[ds2];
+    const reps=e?(e.stages||[]).reduce((a,arr)=>a+(arr||[]).filter(Boolean).length,0):0;
+    if(reps>0){
+      streak++;
+      checkDate.setDate(checkDate.getDate()-1);
+    }else{
+      if(ds2===td()){checkDate.setDate(checkDate.getDate()-1);}
+      else break;
+    }
+  }
+  const sEl=document.getElementById('eng-streak');if(sEl)sEl.textContent=streak;
+  const tdEl=document.getElementById('eng-total-days');if(tdEl)tdEl.textContent=totalDays;
+  const trEl=document.getElementById('eng-total-reps');if(trEl)trEl.textContent=totalReps;
+}
+
+function renderEngHeat(){
+  const heat=document.getElementById('eng-heat');
+  if(!heat)return;
+  heat.innerHTML='';
+  const today=new Date();today.setHours(0,0,0,0);
+  const dow=today.getDay();
+  const days=56;
+  const start=new Date(today);
+  start.setDate(today.getDate()-(days-1-(6-dow)));
+  for(let i=0;i<days;i++){
+    const d=new Date(start);
+    d.setDate(start.getDate()+i);
+    const ds=fmtD(d);
+    const e=englishHistory[ds];
+    const reps=e?(e.stages||[]).reduce((a,arr)=>a+(arr||[]).filter(Boolean).length,0):0;
+    const cell=document.createElement('div');
+    cell.className='eng-heat-c';
+    if(reps>=1&&reps<=4)cell.classList.add('l1');
+    else if(reps>=5&&reps<=8)cell.classList.add('l2');
+    else if(reps>=9&&reps<=12)cell.classList.add('l3');
+    else if(reps>=13&&reps<=16)cell.classList.add('l4');
+    else if(reps>=17)cell.classList.add('l5');
+    if(ds===td())cell.classList.add('today');
+    cell.title=ds+' · '+reps+'/20회';
+    heat.appendChild(cell);
+  }
+}
+
+function toggleEngRule(key){
+  const body=document.getElementById(key+'-body');
+  const arr=document.getElementById(key+'-arr');
+  if(!body)return;
+  body.classList.toggle('on');
+  if(arr)arr.style.transform=body.classList.contains('on')?'rotate(180deg)':'';
+}
+
+async function loadEnglish(){
+  try{
+    const rows=await sbGet('goals?goal_key=like.eng_*&select=*&order=goal_key.desc&limit=400');
+    if(rows&&rows.length>0){
+      rows.forEach(r=>{
+        const ds=r.goal_key.replace('eng_','');
+        try{
+          const data=JSON.parse(r.retrospect||'{}');
+          if(data&&data.stages)englishHistory[ds]=data;
+        }catch(e){}
+      });
+    }
+    const todayData=englishHistory[td()];
+    if(todayData){
+      englishToday={
+        video:todayData.video||'',
+        sentence:todayData.sentence||'',
+        stages:todayData.stages||[[],[],[],[],[]]
+      };
+    }else{
+      englishToday={video:'',sentence:'',stages:[[],[],[],[],[]]};
+    }
+  }catch(err){console.error('영어 로드 실패',err);}
+}
+
+async function saveEnglish(silent){
+  const v=document.getElementById('eng-video');
+  const s=document.getElementById('eng-sentence');
+  englishToday.video=v?v.value:'';
+  englishToday.sentence=s?s.value:'';
+  englishToday.date=td();
+  englishHistory[td()]={...englishToday,stages:englishToday.stages.map(a=>[...a])};
+  const btn=silent?null:document.querySelector('#pn-english .bp');
+  if(btn){btn.disabled=true;btn.textContent='저장 중...';}
+  setSync('s');
+  try{
+    await sbRPC('upsert_goals',{
+      p_goal_key:'eng_'+td(),
+      p_year_goals:[],
+      p_month_goals:[],
+      p_week_goals:[],
+      p_retrospect:JSON.stringify(englishToday)
+    });
+    setSync('ok');
+    if(!silent)notice('ennotice','저장되었어요 ✓','ok');
+    renderEngHero();
+    renderEngHeat();
+  }catch(err){
+    setSync('e');
+    if(!silent)notice('ennotice','저장 실패: '+err.message,'err');
+  }
+  if(btn){btn.disabled=false;btn.textContent='오늘 저장';}
 }
 
 // ── 모바일 키보드 ──
