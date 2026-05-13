@@ -378,6 +378,8 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .eng-grad-meta{font-size:10px;color:var(--ink3);margin-top:2px;}
 .eng-grad-del{background:none;border:none;color:var(--ink3);font-size:14px;cursor:pointer;padding:4px;flex-shrink:0;}
 .eng-grad-del:active{color:var(--err);}
+.eng-grad-restart{background:var(--accent);border:none;color:#fff;font-size:13px;cursor:pointer;padding:4px 8px;border-radius:8px;flex-shrink:0;font-weight:600;transition:all .15s;}
+.eng-grad-restart:active{transform:scale(0.92);opacity:.8;}
 
 .eng-hero{background:linear-gradient(135deg,#1C1A16,#2D2820);border-radius:16px;padding:18px;color:#fff;margin-bottom:12px;text-align:center;}
 .eng-target{font-size:11px;color:#9FE1CB;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
@@ -936,6 +938,27 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       <div class="ptitle">CES 라스베가스 영어 루틴</div>
       <div class="psub" id="ensub">하루 20회 반복 · 노출 방식</div>
 
+      <!-- D-Day 히어로 (최상단 고정) -->
+      <div class="eng-hero">
+        <div class="eng-target">🎯 CES 2027 LAS VEGAS</div>
+        <div class="eng-dday" id="eng-dday">D-—</div>
+        <div class="eng-dday-sub" id="eng-dday-sub">2027.1.6 까지</div>
+        <div class="eng-counter">
+          <div class="eng-c-item">
+            <div class="eng-c-val" id="eng-streak">0</div>
+            <div class="eng-c-lbl">연속일</div>
+          </div>
+          <div class="eng-c-item">
+            <div class="eng-c-val" id="eng-total-days">0</div>
+            <div class="eng-c-lbl">총 학습일</div>
+          </div>
+          <div class="eng-c-item">
+            <div class="eng-c-val" id="eng-total-reps">0</div>
+            <div class="eng-c-lbl">총 반복</div>
+          </div>
+        </div>
+      </div>
+
       <!-- 영어 공부 링크 모음 -->
       <div class="eng-links" id="eng-links">
         <div class="eng-links-h">
@@ -962,13 +985,11 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
         <div class="eng-video-form-t" id="eng-video-form-t">🎬 새 영상 등록</div>
         <input type="text" id="eng-video-title-input" placeholder="영상 제목" maxlength="80">
         <input type="url" id="eng-video-url-input" placeholder="영상 URL (선택사항)">
-        <div style="font-size:11px;color:var(--ink3);margin:4px 0 4px;">학습 주기 (며칠 동안 들을지)</div>
+        <div style="font-size:11px;color:var(--ink3);margin:4px 0 4px;">학습 주기 (며칠 동안 마스터할지)</div>
         <select id="eng-video-duration-input">
           <option value="3">3일</option>
           <option value="5">5일</option>
           <option value="7" selected>7일 (일주일)</option>
-          <option value="10">10일</option>
-          <option value="14">14일 (2주)</option>
         </select>
         <div class="eng-video-form-row">
           <button class="eng-video-form-btn cancel" onclick="cancelEngVideo()">취소</button>
@@ -981,27 +1002,6 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 
       <!-- 졸업한 영상 -->
       <div id="eng-graduated-wrap"></div>
-
-      <!-- D-Day 히어로 -->
-      <div class="eng-hero">
-        <div class="eng-target">🎯 CES 2027 LAS VEGAS</div>
-        <div class="eng-dday" id="eng-dday">D-—</div>
-        <div class="eng-dday-sub" id="eng-dday-sub">2027.1.6 까지</div>
-        <div class="eng-counter">
-          <div class="eng-c-item">
-            <div class="eng-c-val" id="eng-streak">0</div>
-            <div class="eng-c-lbl">연속일</div>
-          </div>
-          <div class="eng-c-item">
-            <div class="eng-c-val" id="eng-total-days">0</div>
-            <div class="eng-c-lbl">총 학습일</div>
-          </div>
-          <div class="eng-c-item">
-            <div class="eng-c-val" id="eng-total-reps">0</div>
-            <div class="eng-c-lbl">총 반복</div>
-          </div>
-        </div>
-      </div>
 
       <!-- 오늘의 학습 -->
       <div class="eng-today">
@@ -2756,6 +2756,9 @@ function graduateEngVideo(){
   const stats=getVideoStats(data.current);
   if(!confirm(`"${data.current.title}"\n\n총 ${stats.totalReps}회 노출했어요.\n명예의 전당으로 옮길까요?`))return;
   data.graduated=data.graduated||[];
+  // 같은 제목으로 이전에 졸업한 횟수 계산 → 회차 번호
+  const prevCount=data.graduated.filter(g=>g.title===data.current.title).length;
+  const round=prevCount+1; // 1회차, 2회차...
   data.graduated.unshift({
     title:data.current.title,
     url:data.current.url,
@@ -2763,11 +2766,37 @@ function graduateEngVideo(){
     endDate:td(),
     duration:data.current.duration,
     totalReps:stats.totalReps,
-    target:stats.target
+    target:stats.target,
+    round:round
   });
   data.current=null;
   saveEngVideoData(data);
   renderEngVideo();
+}
+
+// 졸업한 영상을 다시 학습 시작 (새 기록으로)
+function restartGraduated(idx){
+  const data=getEngVideoData();
+  const g=data.graduated[idx];
+  if(!g)return;
+  if(data.current){
+    if(!confirm(`현재 학습 중인 "${data.current.title}"이(가) 있어요.\n\n현재 영상을 졸업하지 않고 새 영상을 시작하면 현재 진행 기록이 사라집니다.\n그래도 진행할까요?`))return;
+  }else{
+    if(!confirm(`"${g.title}"을(를) 다시 학습할까요?\n\n오늘부터 새 사이클이 시작됩니다.\n(이전 ${g.round||1}회차 기록은 그대로 유지돼요)`))return;
+  }
+  data.current={
+    title:g.title,
+    url:g.url,
+    duration:g.duration,
+    startDate:td()
+  };
+  saveEngVideoData(data);
+  renderEngVideo();
+  // 화면을 영상 카드로 스크롤
+  setTimeout(()=>{
+    const el=document.getElementById('eng-video-wrap');
+    if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+  },100);
 }
 
 function changeEngVideo(){
@@ -2838,6 +2867,10 @@ function renderEngVideo(){
     const safeUrl=(v.url||'').replace(/"/g,'&quot;');
     const linkHtml=v.url?`<a class="eng-video-link" href="${safeUrl}" target="_blank" rel="noopener noreferrer">🔗 영상 열기</a>`:'';
     const isComplete=stats.dayProgress>=v.duration&&stats.totalReps>=stats.target;
+    // 같은 제목의 졸업 기록 수 = 이전 복습 회수 → 현재는 (그 수+1) 회차
+    const prevRounds=(data.graduated||[]).filter(g=>g.title===v.title).length;
+    const currentRound=prevRounds+1;
+    const roundLabel=prevRounds>0?`<span style="background:var(--core);color:#fff;font-size:9px;padding:2px 7px;border-radius:8px;margin-left:8px;font-weight:700;vertical-align:middle;">🔄 ${currentRound}회차 복습</span>`:'';
     
     wrap.innerHTML=`<div class="eng-video">
       <div class="eng-video-h">
@@ -2848,7 +2881,7 @@ function renderEngVideo(){
           <button class="eng-video-btn grad" onclick="graduateEngVideo()">🏆 졸업</button>
         </div>
       </div>
-      <div class="eng-video-title">${safeTitle}</div>
+      <div class="eng-video-title">${safeTitle}${roundLabel}</div>
       ${linkHtml}
       <div class="eng-video-stats">
         <div class="eng-video-stat">
@@ -2925,27 +2958,46 @@ function renderGraduated(list){
   if(!wrap)return;
   if(!list||list.length===0){wrap.innerHTML='';return;}
   
+  // 같은 제목 그룹핑: 각 항목이 그 제목에서 몇 번째 사이클인지 카운트
+  // list는 최신순(unshift)이므로 뒤에서부터 카운트해야 1회차/2회차가 자연스러움
+  const titleCounter={};
+  // 전체 졸업 횟수 (제목별)
+  const totalByTitle={};
+  list.forEach(g=>{totalByTitle[g.title]=(totalByTitle[g.title]||0)+1;});
+  
   let items='';
   list.forEach((g,i)=>{
     const safeTitle=(g.title||'').replace(/</g,'&lt;');
     const medals=['🥇','🥈','🥉'];
     const medal=i<3?medals[i]:'🏅';
-    const linkPart=g.url?` · <a href="${(g.url||'').replace(/"/g,'&quot;')}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;">🔗</a>`:'';
+    const linkPart=g.url?` · <a href="${(g.url||'').replace(/"/g,'&quot;')}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;" onclick="event.stopPropagation();">🔗 영상</a>`:'';
+    // 회차 표시: 저장된 round 값 사용, 없으면 추정
+    const round=g.round||1;
+    const totalRound=totalByTitle[g.title];
+    const roundBadge=totalRound>1?`<span style="background:var(--core);color:#fff;font-size:9px;padding:2px 6px;border-radius:8px;margin-left:6px;font-weight:700;">${round}회차</span>`:'';
+    
     items+=`<div class="eng-grad-item">
       <div class="eng-grad-medal">${medal}</div>
       <div class="eng-grad-info">
-        <div class="eng-grad-name">${safeTitle}</div>
+        <div class="eng-grad-name">${safeTitle}${roundBadge}</div>
         <div class="eng-grad-meta">${g.startDate} ~ ${g.endDate} · ${g.duration}일 · ${g.totalReps}회 노출${linkPart}</div>
       </div>
-      <button class="eng-grad-del" onclick="deleteGraduated(${i})">×</button>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+        <button class="eng-grad-restart" onclick="restartGraduated(${i})" title="다시 학습">🔄</button>
+        <button class="eng-grad-del" onclick="deleteGraduated(${i})" title="삭제">×</button>
+      </div>
     </div>`;
   });
   
+  // 유니크 영상 수 (제목 기준)
+  const uniqueCount=Object.keys(totalByTitle).length;
+  const countLabel=uniqueCount===list.length?`${list.length}개`:`${uniqueCount}편 · ${list.length}회`;
+  
   wrap.innerHTML=`<div class="eng-graduated">
     <div class="eng-grad-h" onclick="toggleGraduated()">
-      <div class="eng-grad-t"><span>🏆</span><span>졸업한 영상</span></div>
+      <div class="eng-grad-t"><span>🏆</span><span>마스터한 영상</span></div>
       <div style="display:flex;align-items:center;gap:6px;">
-        <span class="eng-grad-cnt">${list.length}개</span>
+        <span class="eng-grad-cnt">${countLabel}</span>
         <span id="eng-grad-arr" style="font-size:11px;color:var(--ink3);transition:transform .2s;">▼</span>
       </div>
     </div>
