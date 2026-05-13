@@ -296,8 +296,6 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .eng-c-val{font-size:20px;font-weight:700;color:#FAC775;}
 .eng-c-lbl{font-size:10px;color:rgba(255,255,255,.6);margin-top:2px;}
 .eng-today{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:10px;}
-.eng-video-inp{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;font-family:'Pretendard',sans-serif;background:var(--bg);outline:none;margin-bottom:10px;}
-.eng-video-inp:focus{border-color:var(--accent);}
 .eng-progress-bar{height:10px;background:var(--line);border-radius:5px;overflow:hidden;margin-bottom:10px;display:flex;}
 .eng-pb-seg{height:100%;transition:width .3s;}
 .eng-pb-seg.s1{background:var(--en1);}
@@ -844,7 +842,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
     <!-- 영어 학습 트래커 -->
     <div class="pn" id="pn-english">
       <div class="ptitle">CES 라스베가스 영어 루틴</div>
-      <div class="psub" id="ensub">TED-Ed 1개 · 하루 20회 반복 · 노출 방식</div>
+      <div class="psub" id="ensub">하루 20회 반복 · 노출 방식</div>
 
       <!-- D-Day 히어로 -->
       <div class="eng-hero">
@@ -869,14 +867,8 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 
       <!-- 오늘의 학습 -->
       <div class="eng-today">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <div style="font-size:13px;font-weight:600;">📺 오늘의 TED-Ed</div>
-          <div style="font-size:11px;color:var(--ink3);" id="eng-today-date"></div>
-        </div>
-        <input type="text" class="eng-video-inp" id="eng-video" placeholder="영상 제목 또는 링크 (선택)" oninput="schedEngSave()">
-
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <div style="font-size:12px;color:var(--ink3);">오늘 진행도</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:12px;color:var(--ink3);" id="eng-today-date"></div>
           <div style="font-size:13px;font-weight:700;color:var(--accent);"><span id="eng-done-cnt">0</span>/20</div>
         </div>
         <div class="eng-progress-bar" id="eng-progress-bar"></div>
@@ -1162,7 +1154,7 @@ const SECS={re:{u:'억',c:'av-a'},fi:{u:'억',c:'av-a'},co:{u:'억',c:'av-a'},et
 let entries={}, vEntry=null, eEntry=null, wDate=null, fbEntry=null;
 let tabs=['daily','weekly','monthly','goals','english','quarterly','all'];
 let goalsData={yr:[],mo:[],wk:[]};
-let englishToday={video:'',sentence:'',stages:[[],[],[],[],[]]};
+let englishToday={sentence:'',stages:[[],[],[],[],[]]};
 let englishHistory={};
 
 // ── Supabase API ──
@@ -2280,9 +2272,7 @@ function toggleEngCircle(stageIdx,i){
 let engSaveTimer=null;
 function schedEngSave(){
   clearTimeout(engSaveTimer);
-  const v=document.getElementById('eng-video');
   const s=document.getElementById('eng-sentence');
-  englishToday.video=v?v.value:'';
   englishToday.sentence=s?s.value:'';
   englishToday.date=td();
   englishHistory[td()]={...englishToday,stages:englishToday.stages.map(a=>[...a])};
@@ -2320,8 +2310,6 @@ function renderEnglish(){
       pb.appendChild(seg);
     }
   }
-  const v=document.getElementById('eng-video');
-  if(v&&v.value!==(englishToday.video||''))v.value=englishToday.video||'';
   const ss=document.getElementById('eng-sentence');
   if(ss&&ss.value!==(englishToday.sentence||''))ss.value=englishToday.sentence||'';
   renderEngHero();
@@ -2384,20 +2372,17 @@ async function loadEnglish(){
     const todayData=englishHistory[td()];
     if(todayData){
       englishToday={
-        video:todayData.video||'',
         sentence:todayData.sentence||'',
         stages:todayData.stages||[[],[],[],[],[]]
       };
     }else{
-      englishToday={video:'',sentence:'',stages:[[],[],[],[],[]]};
+      englishToday={sentence:'',stages:[[],[],[],[],[]]};
     }
   }catch(err){console.error('영어 로드 실패',err);}
 }
 
 async function saveEnglish(silent){
-  const v=document.getElementById('eng-video');
   const s=document.getElementById('eng-sentence');
-  englishToday.video=v?v.value:'';
   englishToday.sentence=s?s.value:'';
   englishToday.date=td();
   englishHistory[td()]={...englishToday,stages:englishToday.stages.map(a=>[...a])};
