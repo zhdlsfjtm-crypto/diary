@@ -287,6 +287,98 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .ledger-item.editing{background:var(--a2);border-radius:8px;padding:8px;margin:-4px;}
 
 /* 영어 학습 트래커 */
+/* 영어 학습 링크 모음 */
+.eng-links{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;}
+.eng-links-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.eng-links-t{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ink);}
+.eng-links-edit{font-size:11px;color:var(--accent);cursor:pointer;background:none;border:1px solid var(--accent);border-radius:12px;padding:3px 10px;font-family:'Pretendard',sans-serif;}
+.eng-links-edit:active{background:var(--accent);color:#fff;}
+.eng-links-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.eng-link-card{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s;text-decoration:none;color:var(--ink);position:relative;}
+.eng-link-card:active{background:var(--a2);border-color:var(--accent);transform:scale(0.98);}
+.eng-link-icon{font-size:20px;flex-shrink:0;}
+.eng-link-name{font-size:12px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+.eng-link-del{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--err);color:#fff;border:none;font-size:12px;cursor:pointer;display:none;align-items:center;justify-content:center;line-height:1;font-weight:700;}
+.eng-links.editing .eng-link-del{display:flex;}
+.eng-links.editing .eng-link-card{animation:wiggle .3s ease-in-out infinite alternate;}
+@keyframes wiggle{from{transform:rotate(-0.5deg)}to{transform:rotate(0.5deg)}}
+.eng-link-add{background:var(--bg);border:1.5px dashed var(--line);border-radius:10px;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:var(--ink3);font-size:12px;font-weight:600;}
+.eng-link-add:active{border-color:var(--accent);color:var(--accent);background:var(--a2);}
+.eng-link-form{background:var(--bg);border:1px solid var(--accent);border-radius:10px;padding:12px;margin-top:8px;display:none;}
+.eng-link-form.on{display:block;animation:fi .18s ease;}
+.eng-link-form input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;margin-bottom:8px;background:var(--paper);font-family:'Pretendard',sans-serif;outline:none;}
+.eng-link-form input:focus{border-color:var(--accent);}
+.eng-link-form-row{display:flex;gap:8px;margin-top:8px;}
+.eng-link-form-btn{flex:1;padding:8px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'Pretendard',sans-serif;}
+.eng-link-form-btn.save{background:var(--accent);color:#fff;}
+.eng-link-form-btn.cancel{background:var(--bg);color:var(--ink2);border:1px solid var(--line);}
+
+/* 현재 학습 영상 카드 */
+.eng-video{background:linear-gradient(135deg,#FFF4E6,#FFE8CC);border:1.5px solid #FAC775;border-radius:16px;padding:16px;margin-bottom:12px;}
+.eng-video-empty{background:var(--paper);border:1.5px dashed var(--line);border-radius:16px;padding:20px;margin-bottom:12px;text-align:center;color:var(--ink3);}
+.eng-video-empty-btn{display:inline-block;margin-top:10px;padding:8px 18px;background:var(--accent);color:#fff;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Pretendard',sans-serif;}
+.eng-video-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.eng-video-lbl{font-size:10px;color:#A8761A;font-weight:600;letter-spacing:.8px;text-transform:uppercase;}
+.eng-video-acts{display:flex;gap:6px;}
+.eng-video-btn{font-size:10px;background:rgba(255,255,255,.7);border:1px solid #D4A876;border-radius:12px;padding:3px 8px;cursor:pointer;color:#7A4A1A;font-family:'Pretendard',sans-serif;}
+.eng-video-btn.grad{background:#3B6D11;color:#fff;border-color:#3B6D11;}
+.eng-video-title{font-family:'Nanum Myeongjo',serif;font-size:16px;color:var(--ink);line-height:1.4;margin-bottom:8px;font-weight:600;}
+.eng-video-link{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--accent);text-decoration:none;margin-bottom:12px;word-break:break-all;}
+.eng-video-link:active{opacity:.7;}
+.eng-video-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;padding:10px;background:rgba(255,255,255,.5);border-radius:10px;}
+.eng-video-stat{text-align:center;}
+.eng-video-stat-val{font-size:18px;font-weight:700;color:var(--accent);font-family:'Nanum Myeongjo',serif;}
+.eng-video-stat-lbl{font-size:10px;color:var(--ink3);margin-top:2px;}
+.eng-video-pbar{height:8px;background:rgba(255,255,255,.6);border-radius:4px;overflow:hidden;margin-bottom:6px;}
+.eng-video-pfill{height:100%;background:linear-gradient(90deg,var(--en1),var(--en2),var(--en3),var(--en4),var(--en5));border-radius:4px;transition:width .4s;}
+.eng-video-pct{font-size:11px;color:var(--ink3);text-align:right;}
+
+/* 매트릭스 */
+.eng-matrix{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;overflow-x:auto;}
+.eng-matrix-title{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.eng-matrix-table{display:grid;gap:4px;min-width:100%;}
+.eng-matrix-row{display:grid;gap:3px;align-items:center;}
+.eng-matrix-label{font-size:10px;color:var(--ink3);font-weight:600;text-align:right;padding-right:4px;white-space:nowrap;}
+.eng-matrix-day{font-size:9px;color:var(--ink3);text-align:center;font-weight:600;}
+.eng-matrix-day.today{color:var(--accent);font-weight:700;}
+.eng-matrix-cell{aspect-ratio:1;border-radius:6px;background:var(--bg);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:transparent;position:relative;}
+.eng-matrix-cell.full{color:#fff;}
+.eng-matrix-cell.partial{background:rgba(0,0,0,0.05);}
+.eng-matrix-cell.full.s1{background:var(--en1);border-color:var(--en1);}
+.eng-matrix-cell.full.s2{background:var(--en2);border-color:var(--en2);}
+.eng-matrix-cell.full.s3{background:var(--en3);border-color:var(--en3);}
+.eng-matrix-cell.full.s4{background:var(--en4);border-color:var(--en4);}
+.eng-matrix-cell.full.s5{background:var(--en5);border-color:var(--en5);}
+.eng-matrix-cell.today{box-shadow:0 0 0 2px var(--accent);}
+.eng-matrix-cell.future{opacity:.35;}
+
+/* 영상 등록 폼 */
+.eng-video-form{background:var(--paper);border:1.5px solid var(--accent);border-radius:14px;padding:14px;margin-bottom:12px;display:none;}
+.eng-video-form.on{display:block;animation:fi .18s ease;}
+.eng-video-form-t{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px;}
+.eng-video-form input,.eng-video-form select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:13px;margin-bottom:8px;background:var(--bg);font-family:'Pretendard',sans-serif;outline:none;}
+.eng-video-form input:focus,.eng-video-form select:focus{border-color:var(--accent);}
+.eng-video-form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.eng-video-form-btn{padding:9px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:'Pretendard',sans-serif;}
+.eng-video-form-btn.save{background:var(--accent);color:#fff;}
+.eng-video-form-btn.cancel{background:var(--bg);color:var(--ink2);border:1px solid var(--line);}
+
+/* 졸업한 영상 */
+.eng-graduated{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;}
+.eng-grad-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;cursor:pointer;}
+.eng-grad-t{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ink);}
+.eng-grad-cnt{font-size:11px;color:var(--ink3);background:var(--bg);padding:2px 8px;border-radius:10px;}
+.eng-grad-body{display:none;margin-top:8px;}
+.eng-grad-body.on{display:block;animation:fi .18s ease;}
+.eng-grad-item{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.eng-grad-item:last-child{margin-bottom:0;}
+.eng-grad-medal{font-size:18px;flex-shrink:0;}
+.eng-grad-info{flex:1;min-width:0;}
+.eng-grad-name{font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.eng-grad-meta{font-size:10px;color:var(--ink3);margin-top:2px;}
+.eng-grad-del{background:none;border:none;color:var(--ink3);font-size:14px;cursor:pointer;padding:4px;flex-shrink:0;}
+.eng-grad-del:active{color:var(--err);}
+
 .eng-hero{background:linear-gradient(135deg,#1C1A16,#2D2820);border-radius:16px;padding:18px;color:#fff;margin-bottom:12px;text-align:center;}
 .eng-target{font-size:11px;color:#9FE1CB;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
 .eng-dday{font-size:42px;font-weight:700;line-height:1;margin-bottom:4px;}
@@ -843,6 +935,52 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
     <div class="pn" id="pn-english">
       <div class="ptitle">CES 라스베가스 영어 루틴</div>
       <div class="psub" id="ensub">하루 20회 반복 · 노출 방식</div>
+
+      <!-- 영어 공부 링크 모음 -->
+      <div class="eng-links" id="eng-links">
+        <div class="eng-links-h">
+          <div class="eng-links-t"><span>🔗</span><span>영어 공부 바로가기</span></div>
+          <button class="eng-links-edit" onclick="toggleEngLinksEdit()" id="eng-links-edit-btn">편집</button>
+        </div>
+        <div class="eng-links-grid" id="eng-links-grid"></div>
+        <div class="eng-link-form" id="eng-link-form">
+          <input type="text" id="eng-link-icon-input" placeholder="이모지 (예: 🎬)" maxlength="2">
+          <input type="text" id="eng-link-name-input" placeholder="이름 (예: 유튜브 영어채널)" maxlength="20">
+          <input type="url" id="eng-link-url-input" placeholder="https://...">
+          <div class="eng-link-form-row">
+            <button class="eng-link-form-btn cancel" onclick="cancelEngLink()">취소</button>
+            <button class="eng-link-form-btn save" onclick="saveEngLink()">저장</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 현재 학습 영상 -->
+      <div id="eng-video-wrap"></div>
+
+      <!-- 영상 등록/수정 폼 -->
+      <div class="eng-video-form" id="eng-video-form">
+        <div class="eng-video-form-t" id="eng-video-form-t">🎬 새 영상 등록</div>
+        <input type="text" id="eng-video-title-input" placeholder="영상 제목" maxlength="80">
+        <input type="url" id="eng-video-url-input" placeholder="영상 URL (선택사항)">
+        <div style="font-size:11px;color:var(--ink3);margin:4px 0 4px;">학습 주기 (며칠 동안 들을지)</div>
+        <select id="eng-video-duration-input">
+          <option value="3">3일</option>
+          <option value="5">5일</option>
+          <option value="7" selected>7일 (일주일)</option>
+          <option value="10">10일</option>
+          <option value="14">14일 (2주)</option>
+        </select>
+        <div class="eng-video-form-row">
+          <button class="eng-video-form-btn cancel" onclick="cancelEngVideo()">취소</button>
+          <button class="eng-video-form-btn save" onclick="saveEngVideo()">시작하기</button>
+        </div>
+      </div>
+
+      <!-- 학습 매트릭스 -->
+      <div id="eng-matrix-wrap"></div>
+
+      <!-- 졸업한 영상 -->
+      <div id="eng-graduated-wrap"></div>
 
       <!-- D-Day 히어로 -->
       <div class="eng-hero">
@@ -2281,6 +2419,8 @@ function schedEngSave(){
 }
 
 function renderEnglish(){
+  renderEngLinks();
+  renderEngVideo();
   let totalDone=0;
   for(let s=0;s<5;s++){
     const arr=englishToday.stages[s]||[];
@@ -2417,6 +2557,401 @@ if(window.visualViewport){
 }
 
 function setupDailyEditListeners(){}
+
+/* ===== 영어 학습 링크 관리 ===== */
+const ENG_LINKS_KEY='eng_study_links';
+const DEFAULT_ENG_LINKS=[
+  {icon:'🎬',name:'YouTube',url:'https://www.youtube.com'},
+  {icon:'📺',name:'Netflix',url:'https://www.netflix.com'},
+  {icon:'📰',name:'BBC Learning',url:'https://www.bbc.co.uk/learningenglish'},
+  {icon:'🎙️',name:'TED Talks',url:'https://www.ted.com'}
+];
+let engLinkEditMode=false;
+let engLinkEditIndex=-1;
+
+function getEngLinks(){
+  try{
+    const saved=localStorage.getItem(ENG_LINKS_KEY);
+    if(saved)return JSON.parse(saved);
+  }catch(e){}
+  return [...DEFAULT_ENG_LINKS];
+}
+
+function saveEngLinks(links){
+  try{localStorage.setItem(ENG_LINKS_KEY,JSON.stringify(links));}catch(e){console.error('링크 저장 실패',e);}
+}
+
+function renderEngLinks(){
+  const grid=document.getElementById('eng-links-grid');
+  if(!grid)return;
+  const links=getEngLinks();
+  let html='';
+  links.forEach((link,i)=>{
+    const safeUrl=(link.url||'').replace(/"/g,'&quot;');
+    const safeName=(link.name||'').replace(/</g,'&lt;');
+    const safeIcon=(link.icon||'🔗').replace(/</g,'&lt;');
+    if(engLinkEditMode){
+      html+=`<div class="eng-link-card" onclick="editEngLink(${i})">
+        <span class="eng-link-icon">${safeIcon}</span>
+        <span class="eng-link-name">${safeName}</span>
+        <button class="eng-link-del" onclick="event.stopPropagation();deleteEngLink(${i})">×</button>
+      </div>`;
+    }else{
+      html+=`<a class="eng-link-card" href="${safeUrl}" target="_blank" rel="noopener noreferrer">
+        <span class="eng-link-icon">${safeIcon}</span>
+        <span class="eng-link-name">${safeName}</span>
+      </a>`;
+    }
+  });
+  if(engLinkEditMode){
+    html+=`<div class="eng-link-add" onclick="showEngLinkForm()">＋ 링크 추가</div>`;
+  }
+  grid.innerHTML=html;
+}
+
+function toggleEngLinksEdit(){
+  engLinkEditMode=!engLinkEditMode;
+  const wrap=document.getElementById('eng-links');
+  const btn=document.getElementById('eng-links-edit-btn');
+  if(engLinkEditMode){
+    wrap.classList.add('editing');
+    btn.textContent='완료';
+  }else{
+    wrap.classList.remove('editing');
+    btn.textContent='편집';
+    cancelEngLink();
+  }
+  renderEngLinks();
+}
+
+function showEngLinkForm(){
+  engLinkEditIndex=-1;
+  document.getElementById('eng-link-icon-input').value='';
+  document.getElementById('eng-link-name-input').value='';
+  document.getElementById('eng-link-url-input').value='';
+  document.getElementById('eng-link-form').classList.add('on');
+}
+
+function editEngLink(i){
+  const links=getEngLinks();
+  const link=links[i];
+  if(!link)return;
+  engLinkEditIndex=i;
+  document.getElementById('eng-link-icon-input').value=link.icon||'';
+  document.getElementById('eng-link-name-input').value=link.name||'';
+  document.getElementById('eng-link-url-input').value=link.url||'';
+  document.getElementById('eng-link-form').classList.add('on');
+}
+
+function saveEngLink(){
+  const icon=document.getElementById('eng-link-icon-input').value.trim()||'🔗';
+  const name=document.getElementById('eng-link-name-input').value.trim();
+  let url=document.getElementById('eng-link-url-input').value.trim();
+  if(!name){alert('이름을 입력해주세요');return;}
+  if(!url){alert('URL을 입력해주세요');return;}
+  if(!/^https?:\/\//i.test(url))url='https://'+url;
+  const links=getEngLinks();
+  if(engLinkEditIndex>=0){
+    links[engLinkEditIndex]={icon,name,url};
+  }else{
+    links.push({icon,name,url});
+  }
+  saveEngLinks(links);
+  cancelEngLink();
+  renderEngLinks();
+}
+
+function cancelEngLink(){
+  engLinkEditIndex=-1;
+  const form=document.getElementById('eng-link-form');
+  if(form)form.classList.remove('on');
+}
+
+function deleteEngLink(i){
+  if(!confirm('이 링크를 삭제할까요?'))return;
+  const links=getEngLinks();
+  links.splice(i,1);
+  saveEngLinks(links);
+  renderEngLinks();
+}
+
+/* ===== 영상 학습 트래커 ===== */
+const ENG_VIDEO_KEY='eng_video_tracker';
+const STAGE_TARGETS=[4,3,1,9,3]; // 단계별 일일 목표
+const STAGE_NAMES=['듣기','자막ON','한글','영어ONLY','쉐도잉'];
+let engVideoEditMode=false;
+
+function getEngVideoData(){
+  try{
+    const saved=localStorage.getItem(ENG_VIDEO_KEY);
+    if(saved)return JSON.parse(saved);
+  }catch(e){}
+  return {current:null,graduated:[]};
+}
+
+function saveEngVideoData(data){
+  try{localStorage.setItem(ENG_VIDEO_KEY,JSON.stringify(data));}catch(e){console.error('영상 저장 실패',e);}
+}
+
+function daysBetween(d1,d2){
+  const a=new Date(d1+'T00:00:00');
+  const b=new Date(d2+'T00:00:00');
+  return Math.floor((b-a)/(1000*60*60*24));
+}
+
+function addDays(dateStr,n){
+  const d=new Date(dateStr+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  return d.toISOString().slice(0,10);
+}
+
+function showEngVideoForm(isEdit){
+  const data=getEngVideoData();
+  const form=document.getElementById('eng-video-form');
+  const titleEl=document.getElementById('eng-video-form-t');
+  if(isEdit&&data.current){
+    titleEl.textContent='✏️ 영상 수정';
+    document.getElementById('eng-video-title-input').value=data.current.title||'';
+    document.getElementById('eng-video-url-input').value=data.current.url||'';
+    document.getElementById('eng-video-duration-input').value=data.current.duration||7;
+    engVideoEditMode=true;
+  }else{
+    titleEl.textContent='🎬 새 영상 등록';
+    document.getElementById('eng-video-title-input').value='';
+    document.getElementById('eng-video-url-input').value='';
+    document.getElementById('eng-video-duration-input').value='7';
+    engVideoEditMode=false;
+  }
+  form.classList.add('on');
+  form.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function cancelEngVideo(){
+  document.getElementById('eng-video-form').classList.remove('on');
+  engVideoEditMode=false;
+}
+
+function saveEngVideo(){
+  const title=document.getElementById('eng-video-title-input').value.trim();
+  let url=document.getElementById('eng-video-url-input').value.trim();
+  const duration=parseInt(document.getElementById('eng-video-duration-input').value)||7;
+  if(!title){alert('영상 제목을 입력해주세요');return;}
+  if(url&&!/^https?:\/\//i.test(url))url='https://'+url;
+  const data=getEngVideoData();
+  if(engVideoEditMode&&data.current){
+    data.current.title=title;
+    data.current.url=url;
+    data.current.duration=duration;
+  }else{
+    data.current={title,url,duration,startDate:td()};
+  }
+  saveEngVideoData(data);
+  cancelEngVideo();
+  renderEngVideo();
+}
+
+function graduateEngVideo(){
+  const data=getEngVideoData();
+  if(!data.current)return;
+  const stats=getVideoStats(data.current);
+  if(!confirm(`"${data.current.title}"\n\n총 ${stats.totalReps}회 노출했어요.\n명예의 전당으로 옮길까요?`))return;
+  data.graduated=data.graduated||[];
+  data.graduated.unshift({
+    title:data.current.title,
+    url:data.current.url,
+    startDate:data.current.startDate,
+    endDate:td(),
+    duration:data.current.duration,
+    totalReps:stats.totalReps,
+    target:stats.target
+  });
+  data.current=null;
+  saveEngVideoData(data);
+  renderEngVideo();
+}
+
+function changeEngVideo(){
+  if(!confirm('현재 영상을 졸업 처리하지 않고 새 영상으로 바꿀까요?\n(현재 영상 기록은 사라집니다)'))return;
+  const data=getEngVideoData();
+  data.current=null;
+  saveEngVideoData(data);
+  showEngVideoForm(false);
+}
+
+function deleteGraduated(idx){
+  if(!confirm('이 졸업 기록을 삭제할까요?'))return;
+  const data=getEngVideoData();
+  data.graduated.splice(idx,1);
+  saveEngVideoData(data);
+  renderEngVideo();
+}
+
+function toggleGraduated(){
+  const body=document.getElementById('eng-grad-body');
+  const arr=document.getElementById('eng-grad-arr');
+  if(!body)return;
+  body.classList.toggle('on');
+  if(arr)arr.style.transform=body.classList.contains('on')?'rotate(180deg)':'';
+}
+
+// 현재 영상의 누적 통계 계산
+function getVideoStats(video){
+  const target=video.duration*20; // 학습일수 × 일일 20회
+  let totalReps=0;
+  const dailyData={}; // {날짜: [stage별 카운트]}
+  for(let i=0;i<video.duration;i++){
+    const ds=addDays(video.startDate,i);
+    const dh=englishHistory[ds];
+    if(dh&&dh.stages){
+      const stageCnts=dh.stages.map(arr=>(arr||[]).filter(Boolean).length);
+      dailyData[ds]=stageCnts;
+      totalReps+=stageCnts.reduce((a,b)=>a+b,0);
+    }else{
+      dailyData[ds]=[0,0,0,0,0];
+    }
+  }
+  const todayIdx=daysBetween(video.startDate,td());
+  const dayProgress=Math.max(1,Math.min(video.duration,todayIdx+1));
+  return {target,totalReps,dailyData,dayProgress,pct:Math.min(100,Math.round((totalReps/target)*100))};
+}
+
+function renderEngVideo(){
+  const data=getEngVideoData();
+  const wrap=document.getElementById('eng-video-wrap');
+  const matrixWrap=document.getElementById('eng-matrix-wrap');
+  const gradWrap=document.getElementById('eng-graduated-wrap');
+  if(!wrap)return;
+  
+  // 현재 영상 카드
+  if(!data.current){
+    wrap.innerHTML=`<div class="eng-video-empty">
+      <div style="font-size:24px;margin-bottom:6px;">🎬</div>
+      <div style="font-size:13px;margin-bottom:2px;">아직 학습 중인 영상이 없어요</div>
+      <div style="font-size:11px;color:var(--ink3);">반복해서 들을 영상을 등록하면<br>매일 자동으로 누적돼요</div>
+      <button class="eng-video-empty-btn" onclick="showEngVideoForm(false)">＋ 영상 등록하기</button>
+    </div>`;
+    matrixWrap.innerHTML='';
+  }else{
+    const v=data.current;
+    const stats=getVideoStats(v);
+    const safeTitle=(v.title||'').replace(/</g,'&lt;');
+    const safeUrl=(v.url||'').replace(/"/g,'&quot;');
+    const linkHtml=v.url?`<a class="eng-video-link" href="${safeUrl}" target="_blank" rel="noopener noreferrer">🔗 영상 열기</a>`:'';
+    const isComplete=stats.dayProgress>=v.duration&&stats.totalReps>=stats.target;
+    
+    wrap.innerHTML=`<div class="eng-video">
+      <div class="eng-video-h">
+        <span class="eng-video-lbl">🎬 이번 학습 영상</span>
+        <div class="eng-video-acts">
+          <button class="eng-video-btn" onclick="showEngVideoForm(true)">수정</button>
+          <button class="eng-video-btn" onclick="changeEngVideo()">교체</button>
+          <button class="eng-video-btn grad" onclick="graduateEngVideo()">🏆 졸업</button>
+        </div>
+      </div>
+      <div class="eng-video-title">${safeTitle}</div>
+      ${linkHtml}
+      <div class="eng-video-stats">
+        <div class="eng-video-stat">
+          <div class="eng-video-stat-val">D+${stats.dayProgress} / ${v.duration}</div>
+          <div class="eng-video-stat-lbl">진행 일수</div>
+        </div>
+        <div class="eng-video-stat">
+          <div class="eng-video-stat-val">${stats.totalReps} / ${stats.target}</div>
+          <div class="eng-video-stat-lbl">누적 노출</div>
+        </div>
+      </div>
+      <div class="eng-video-pbar"><div class="eng-video-pfill" style="width:${stats.pct}%"></div></div>
+      <div class="eng-video-pct">${stats.pct}% ${isComplete?'🎉 목표 달성! 졸업 버튼을 눌러주세요':''}</div>
+    </div>`;
+    
+    // 매트릭스 렌더링
+    renderEngMatrix(v,stats);
+  }
+  
+  // 졸업한 영상
+  renderGraduated(data.graduated||[]);
+}
+
+function renderEngMatrix(video,stats){
+  const wrap=document.getElementById('eng-matrix-wrap');
+  if(!wrap)return;
+  const duration=video.duration;
+  const today=td();
+  
+  // 헤더 행 (요일/날짜)
+  let headerCells='<div></div>'; // 빈 칸 (단계 라벨 자리)
+  for(let i=0;i<duration;i++){
+    const ds=addDays(video.startDate,i);
+    const d=new Date(ds+'T00:00:00');
+    const dayLabel=['일','월','화','수','목','금','토'][d.getDay()];
+    const isToday=ds===today?' today':'';
+    headerCells+=`<div class="eng-matrix-day${isToday}">D+${i+1}<br>${dayLabel}</div>`;
+  }
+  
+  // 5단계 × N일 매트릭스
+  let rows='';
+  for(let s=0;s<5;s++){
+    let cells=`<div class="eng-matrix-label">S${s+1}<br>${STAGE_NAMES[s]}</div>`;
+    for(let i=0;i<duration;i++){
+      const ds=addDays(video.startDate,i);
+      const cnt=(stats.dailyData[ds]||[0,0,0,0,0])[s]||0;
+      const target=STAGE_TARGETS[s];
+      const isFull=cnt>=target;
+      const isPartial=cnt>0&&!isFull;
+      const isToday=ds===today;
+      const isFuture=ds>today;
+      let cls='eng-matrix-cell s'+(s+1);
+      if(isFull)cls+=' full';
+      else if(isPartial)cls+=' partial';
+      if(isToday)cls+=' today';
+      if(isFuture)cls+=' future';
+      const display=isFull?'✓':(isPartial?cnt:'');
+      cells+=`<div class="${cls}" title="${ds} ${STAGE_NAMES[s]}: ${cnt}/${target}">${display}</div>`;
+    }
+    rows+=`<div class="eng-matrix-row" style="grid-template-columns:50px repeat(${duration},1fr);">${cells}</div>`;
+  }
+  
+  wrap.innerHTML=`<div class="eng-matrix">
+    <div class="eng-matrix-title">📊 학습 진척도 (${duration}일 × 5단계)</div>
+    <div class="eng-matrix-table">
+      <div class="eng-matrix-row" style="grid-template-columns:50px repeat(${duration},1fr);">${headerCells}</div>
+      ${rows}
+    </div>
+  </div>`;
+}
+
+function renderGraduated(list){
+  const wrap=document.getElementById('eng-graduated-wrap');
+  if(!wrap)return;
+  if(!list||list.length===0){wrap.innerHTML='';return;}
+  
+  let items='';
+  list.forEach((g,i)=>{
+    const safeTitle=(g.title||'').replace(/</g,'&lt;');
+    const medals=['🥇','🥈','🥉'];
+    const medal=i<3?medals[i]:'🏅';
+    const linkPart=g.url?` · <a href="${(g.url||'').replace(/"/g,'&quot;')}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;">🔗</a>`:'';
+    items+=`<div class="eng-grad-item">
+      <div class="eng-grad-medal">${medal}</div>
+      <div class="eng-grad-info">
+        <div class="eng-grad-name">${safeTitle}</div>
+        <div class="eng-grad-meta">${g.startDate} ~ ${g.endDate} · ${g.duration}일 · ${g.totalReps}회 노출${linkPart}</div>
+      </div>
+      <button class="eng-grad-del" onclick="deleteGraduated(${i})">×</button>
+    </div>`;
+  });
+  
+  wrap.innerHTML=`<div class="eng-graduated">
+    <div class="eng-grad-h" onclick="toggleGraduated()">
+      <div class="eng-grad-t"><span>🏆</span><span>졸업한 영상</span></div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="eng-grad-cnt">${list.length}개</span>
+        <span id="eng-grad-arr" style="font-size:11px;color:var(--ink3);transition:transform .2s;">▼</span>
+      </div>
+    </div>
+    <div class="eng-grad-body" id="eng-grad-body">${items}</div>
+  </div>`;
+}
 
 if('serviceWorker' in navigator){
   navigator.serviceWorker.getRegistrations().then(regs=>{
