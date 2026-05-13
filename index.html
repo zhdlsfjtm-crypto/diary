@@ -325,14 +325,6 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .eng-s-lbl{font-size:10px;color:#A8761A;font-weight:600;letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
 .eng-s-inp{width:100%;border:none;background:transparent;font-size:15px;font-family:'Nanum Myeongjo',serif;color:var(--ink);resize:none;line-height:1.7;outline:none;font-style:italic;}
 .eng-s-inp::placeholder{color:#C4AA70;font-size:13px;}
-.eng-heat{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px;}
-.eng-heat-c{aspect-ratio:1;border-radius:3px;background:var(--line);cursor:default;}
-.eng-heat-c.l1{background:#FFE5C2;}
-.eng-heat-c.l2{background:#FFC080;}
-.eng-heat-c.l3{background:#FF9040;}
-.eng-heat-c.l4{background:#E06010;}
-.eng-heat-c.l5{background:#A03800;}
-.eng-heat-c.today{outline:2px solid var(--accent);outline-offset:1px;}
 .eng-rule{background:var(--paper);border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden;}
 .eng-rule-h{padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600;}
 .eng-rule-b{padding:0 16px 16px;display:none;font-size:13px;color:var(--ink2);line-height:2;}
@@ -956,24 +948,6 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
         <div class="notice" id="ennotice"></div>
       </div>
 
-      <!-- 잔디밭 히트맵 -->
-      <div class="card">
-        <div class="ch"><span class="ci">🌱</span><span class="ct">학습 잔디밭</span><span class="cd">최근 8주</span></div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:10px;color:var(--ink3);">
-          <span>적게</span>
-          <div style="display:flex;gap:2px;">
-            <div style="width:10px;height:10px;border-radius:2px;background:var(--line);"></div>
-            <div style="width:10px;height:10px;border-radius:2px;background:#FFE5C2;"></div>
-            <div style="width:10px;height:10px;border-radius:2px;background:#FFC080;"></div>
-            <div style="width:10px;height:10px;border-radius:2px;background:#FF9040;"></div>
-            <div style="width:10px;height:10px;border-radius:2px;background:#E06010;"></div>
-            <div style="width:10px;height:10px;border-radius:2px;background:#A03800;"></div>
-          </div>
-          <span>많이</span>
-        </div>
-        <div class="eng-heat" id="eng-heat"></div>
-      </div>
-
       <!-- 핵심 원칙 (접기/펼치기) -->
       <div class="eng-rule">
         <div class="eng-rule-h" onclick="toggleEngRule('rule1')">
@@ -1465,7 +1439,7 @@ function goTab(t){
   }
   if(t==='goals')loadGoals();
   if(t==='quarterly')loadQuarterlyData();
-  if(t==='english'){renderEnglish();renderEngHeat();}
+  if(t==='english'){renderEnglish();}
   if(t==='all'){allPage=1;renderAll();}
 }
 
@@ -2387,34 +2361,6 @@ function renderEngHero(){
   const trEl=document.getElementById('eng-total-reps');if(trEl)trEl.textContent=totalReps;
 }
 
-function renderEngHeat(){
-  const heat=document.getElementById('eng-heat');
-  if(!heat)return;
-  heat.innerHTML='';
-  const today=new Date();today.setHours(0,0,0,0);
-  const dow=today.getDay();
-  const days=56;
-  const start=new Date(today);
-  start.setDate(today.getDate()-(days-1-(6-dow)));
-  for(let i=0;i<days;i++){
-    const d=new Date(start);
-    d.setDate(start.getDate()+i);
-    const ds=fmtD(d);
-    const e=englishHistory[ds];
-    const reps=e?(e.stages||[]).reduce((a,arr)=>a+(arr||[]).filter(Boolean).length,0):0;
-    const cell=document.createElement('div');
-    cell.className='eng-heat-c';
-    if(reps>=1&&reps<=4)cell.classList.add('l1');
-    else if(reps>=5&&reps<=8)cell.classList.add('l2');
-    else if(reps>=9&&reps<=12)cell.classList.add('l3');
-    else if(reps>=13&&reps<=16)cell.classList.add('l4');
-    else if(reps>=17)cell.classList.add('l5');
-    if(ds===td())cell.classList.add('today');
-    cell.title=ds+' · '+reps+'/20회';
-    heat.appendChild(cell);
-  }
-}
-
 function toggleEngRule(key){
   const body=document.getElementById(key+'-body');
   const arr=document.getElementById(key+'-arr');
@@ -2469,7 +2415,6 @@ async function saveEnglish(silent){
     setSync('ok');
     if(!silent)notice('ennotice','저장되었어요 ✓','ok');
     renderEngHero();
-    renderEngHeat();
   }catch(err){
     setSync('e');
     if(!silent)notice('ennotice','저장 실패: '+err.message,'err');
