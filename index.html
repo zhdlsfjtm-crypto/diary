@@ -2502,6 +2502,26 @@ async function loadEnglish(){
     const rows=await sbGet('goals?goal_key=like.eng_*&select=*&order=goal_key.desc&limit=400');
     if(rows&&rows.length>0){
       rows.forEach(r=>{
+        // 특수 키: eng_links (영어 공부 바로가기)
+        if(r.goal_key==='eng_links'){
+          try{
+            const data=JSON.parse(r.retrospect||'[]');
+            if(Array.isArray(data))engLinksCache=data;
+          }catch(e){}
+          return;
+        }
+        // 특수 키: eng_video_data (영상 트래커)
+        if(r.goal_key==='eng_video_data'){
+          try{
+            const data=JSON.parse(r.retrospect||'{}');
+            engVideoCache={
+              current:data.current||null,
+              graduated:Array.isArray(data.graduated)?data.graduated:[]
+            };
+          }catch(e){}
+          return;
+        }
+        // 일별 영어 학습 기록 (eng_YYYY-MM-DD)
         const ds=r.goal_key.replace('eng_','');
         try{
           const data=JSON.parse(r.retrospect||'{}');
@@ -2509,6 +2529,10 @@ async function loadEnglish(){
         }catch(e){}
       });
     }
+    // 캐시가 아직 비어있으면 기본값으로
+    if(engLinksCache===null)engLinksCache=[...DEFAULT_ENG_LINKS];
+    if(engVideoCache===null)engVideoCache={current:null,graduated:[]};
+    
     const todayData=englishHistory[td()];
     if(todayData){
       englishToday={
@@ -2558,27 +2582,36 @@ if(window.visualViewport){
 
 function setupDailyEditListeners(){}
 
-/* ===== 영어 학습 링크 관리 ===== */
-const ENG_LINKS_KEY='eng_study_links';
+/* ===== 영어 학습 링크 관리 (Supabase 동기화) ===== */
 const DEFAULT_ENG_LINKS=[
-  {icon:'🎬',name:'YouTube',url:'https://www.youtube.com'},
-  {icon:'📺',name:'Netflix',url:'https://www.netflix.com'},
-  {icon:'📰',name:'BBC Learning',url:'https://www.bbc.co.uk/learningenglish'},
-  {icon:'🎙️',name:'TED Talks',url:'https://www.ted.com'}
+  {icon:'🎬',name:'YouTube',url:'https://www.youtube.com'}
 ];
+let engLinksCache=null; // 서버에서 로드한 데이터 캐시
 let engLinkEditMode=false;
 let engLinkEditIndex=-1;
 
 function getEngLinks(){
-  try{
-    const saved=localStorage.getItem(ENG_LINKS_KEY);
-    if(saved)return JSON.parse(saved);
-  }catch(e){}
+  if(engLinksCache!==null)return engLinksCache;
   return [...DEFAULT_ENG_LINKS];
 }
 
-function saveEngLinks(links){
-  try{localStorage.setItem(ENG_LINKS_KEY,JSON.stringify(links));}catch(e){console.error('링크 저장 실패',e);}
+async function saveEngLinks(links){
+  engLinksCache=links;
+  setSync('s');
+  try{
+    await sbRPC('upsert_goals',{
+      p_goal_key:'eng_links',
+      p_year_goals:[],
+      p_month_goals:[],
+      p_week_goals:[],
+      p_retrospect:JSON.stringify(links)
+    });
+    setSync('ok');
+  }catch(err){
+    setSync('e');
+    console.error('영어 링크 저장 실패',err);
+    notice('ennotice','링크 저장 실패: '+err.message,'err');
+  }
 }
 
 function renderEngLinks(){
@@ -2643,21 +2676,22 @@ function editEngLink(i){
   document.getElementById('eng-link-form').classList.add('on');
 }
 
-function saveEngLink(){
+async function saveEngLink(){
   const icon=document.getElementById('eng-link-icon-input').value.trim()||'🔗';
   const name=document.getElementById('eng-link-name-input').value.trim();
   let url=document.getElementById('eng-link-url-input').value.trim();
   if(!name){alert('이름을 입력해주세요');return;}
   if(!url){alert('URL을 입력해주세요');return;}
   if(!/^https?:\/\//i.test(url))url='https://'+url;
-  const links=getEngLinks();
+  const links=[...getEngLinks()];
   if(engLinkEditIndex>=0){
     links[engLinkEditIndex]={icon,name,url};
   }else{
     links.push({icon,name,url});
   }
-  saveEngLinks(links);
   cancelEngLink();
+  renderEngLinks();
+  await saveEngLinks(links);
   renderEngLinks();
 }
 
@@ -2667,30 +2701,43 @@ function cancelEngLink(){
   if(form)form.classList.remove('on');
 }
 
-function deleteEngLink(i){
+async function deleteEngLink(i){
   if(!confirm('이 링크를 삭제할까요?'))return;
-  const links=getEngLinks();
+  const links=[...getEngLinks()];
   links.splice(i,1);
-  saveEngLinks(links);
+  renderEngLinks();
+  await saveEngLinks(links);
   renderEngLinks();
 }
 
-/* ===== 영상 학습 트래커 ===== */
-const ENG_VIDEO_KEY='eng_video_tracker';
+/* ===== 영상 학습 트래커 (Supabase 동기화) ===== */
 const STAGE_TARGETS=[4,3,1,9,3]; // 단계별 일일 목표
 const STAGE_NAMES=['듣기','자막ON','한글','영어ONLY','쉐도잉'];
+let engVideoCache=null; // 서버에서 로드한 데이터 캐시
 let engVideoEditMode=false;
 
 function getEngVideoData(){
-  try{
-    const saved=localStorage.getItem(ENG_VIDEO_KEY);
-    if(saved)return JSON.parse(saved);
-  }catch(e){}
+  if(engVideoCache!==null)return engVideoCache;
   return {current:null,graduated:[]};
 }
 
-function saveEngVideoData(data){
-  try{localStorage.setItem(ENG_VIDEO_KEY,JSON.stringify(data));}catch(e){console.error('영상 저장 실패',e);}
+async function saveEngVideoData(data){
+  engVideoCache=data;
+  setSync('s');
+  try{
+    await sbRPC('upsert_goals',{
+      p_goal_key:'eng_video_data',
+      p_year_goals:[],
+      p_month_goals:[],
+      p_week_goals:[],
+      p_retrospect:JSON.stringify(data)
+    });
+    setSync('ok');
+  }catch(err){
+    setSync('e');
+    console.error('영상 데이터 저장 실패',err);
+    notice('ennotice','영상 저장 실패: '+err.message,'err');
+  }
 }
 
 function daysBetween(d1,d2){
@@ -2731,7 +2778,7 @@ function cancelEngVideo(){
   engVideoEditMode=false;
 }
 
-function saveEngVideo(){
+async function saveEngVideo(){
   const title=document.getElementById('eng-video-title-input').value.trim();
   let url=document.getElementById('eng-video-url-input').value.trim();
   const duration=parseInt(document.getElementById('eng-video-duration-input').value)||7;
@@ -2745,12 +2792,12 @@ function saveEngVideo(){
   }else{
     data.current={title,url,duration,startDate:td()};
   }
-  saveEngVideoData(data);
   cancelEngVideo();
   renderEngVideo();
+  await saveEngVideoData(data);
 }
 
-function graduateEngVideo(){
+async function graduateEngVideo(){
   const data=getEngVideoData();
   if(!data.current)return;
   const stats=getVideoStats(data.current);
@@ -2770,12 +2817,12 @@ function graduateEngVideo(){
     round:round
   });
   data.current=null;
-  saveEngVideoData(data);
   renderEngVideo();
+  await saveEngVideoData(data);
 }
 
 // 졸업한 영상을 다시 학습 시작 (새 기록으로)
-function restartGraduated(idx){
+async function restartGraduated(idx){
   const data=getEngVideoData();
   const g=data.graduated[idx];
   if(!g)return;
@@ -2790,29 +2837,29 @@ function restartGraduated(idx){
     duration:g.duration,
     startDate:td()
   };
-  saveEngVideoData(data);
   renderEngVideo();
   // 화면을 영상 카드로 스크롤
   setTimeout(()=>{
     const el=document.getElementById('eng-video-wrap');
     if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
   },100);
+  await saveEngVideoData(data);
 }
 
-function changeEngVideo(){
+async function changeEngVideo(){
   if(!confirm('현재 영상을 졸업 처리하지 않고 새 영상으로 바꿀까요?\n(현재 영상 기록은 사라집니다)'))return;
   const data=getEngVideoData();
   data.current=null;
-  saveEngVideoData(data);
   showEngVideoForm(false);
+  await saveEngVideoData(data);
 }
 
-function deleteGraduated(idx){
+async function deleteGraduated(idx){
   if(!confirm('이 졸업 기록을 삭제할까요?'))return;
   const data=getEngVideoData();
   data.graduated.splice(idx,1);
-  saveEngVideoData(data);
   renderEngVideo();
+  await saveEngVideoData(data);
 }
 
 function toggleGraduated(){
