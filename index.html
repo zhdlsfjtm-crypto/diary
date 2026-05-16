@@ -53,6 +53,26 @@
 :root.dark .autosave-badge.saving{color:#FAC775;background:#2D2618;border-color:#5A4530;}
 :root.dark .autosave-badge.error{color:#E07070;background:#3D1F1F;border-color:#5A2D2D;}
 
+/* 다크 모드: 인라인 어두운 색상 보완 (가독성) */
+:root.dark [style*="color:#3C3489"],:root.dark [style*="color: #3C3489"]{color:#A89AE5 !important;}
+:root.dark [style*="color:#3B6D11"],:root.dark [style*="color: #3B6D11"]{color:#9FD66B !important;}
+:root.dark [style*="color:#0F6E56"],:root.dark [style*="color: #0F6E56"]{color:#65D4AC !important;}
+:root.dark [style*="color:#085041"],:root.dark [style*="color: #085041"]{color:#5DB498 !important;}
+:root.dark [style*="color:#7A4A1A"],:root.dark [style*="color: #7A4A1A"]{color:#E0C58A !important;}
+:root.dark [style*="color:#534AB7"],:root.dark [style*="color: #534AB7"]{color:#9A91E5 !important;}
+:root.dark [style*="color:#C4956A"],:root.dark [style*="color: #C4956A"]{color:#E0B585 !important;}
+:root.dark [style*="color:#6BA090"],:root.dark [style*="color: #6BA090"]{color:#8BC8B0 !important;}
+:root.dark [style*="color:#88A870"],:root.dark [style*="color: #88A870"]{color:#B8D898 !important;}
+:root.dark [style*="color:#A8761A"],:root.dark [style*="color: #A8761A"]{color:#D8A858 !important;}
+/* 다크 모드: 인라인 밝은 배경 보완 */
+:root.dark [style*="background:#F0EAF8"]{background:#2D243D !important;}
+:root.dark [style*="background:#EAF3DE"]{background:#1F2D17 !important;}
+:root.dark [style*="background:#FFFBF0"]{background:#2D2618 !important;}
+:root.dark [style*="background:#FFF4E6"]{background:#2D2520 !important;}
+:root.dark [style*="background:#E8F0F8"]{background:#1F2D3D !important;}
+:root.dark [style*="background:linear-gradient(135deg,#F0EAF8,#EAF3DE)"]{background:linear-gradient(135deg,#2D243D,#1F2D17) !important;}
+:root.dark [style*="background:linear-gradient(135deg,#F0EAF8,#E8F0F8)"]{background:linear-gradient(135deg,#2D243D,#1F2D3D) !important;}
+
 /* 🚀 FAB (Floating Action Button) */
 .fab{position:fixed;right:18px;bottom:calc(var(--nh) + 18px);width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:24px;box-shadow:0 4px 16px rgba(196,98,45,0.4);z-index:50;display:flex;align-items:center;justify-content:center;transition:all .2s;}
 .fab:active{transform:scale(0.92);}
@@ -3017,7 +3037,7 @@ function schedGoalSave(){
     }catch(err){
       setAutosaveStatus('goals','error','⚠️ 저장 실패');
     }
-  },1500);
+  },1000);
 }
 
 async function loadGoals(){
@@ -3285,7 +3305,7 @@ function schedEngSave(){
     }catch(err){
       setAutosaveStatus('english','error','⚠️ 저장 실패');
     }
-  },1500);
+  },1000);
 }
 
 function renderEnglish(){
@@ -3584,9 +3604,12 @@ function attachAutosave(fieldIds,tabKey,saveFn){
 async function autosaveDaily(){
   const d=wDate||td();
   const core=gv('core'),text=gv('dtx');
-  // 둘 다 비어있으면 저장 안 함
-  if(!core&&!text)return;
-  const e={date:d,mood:'',emotion:'',text,core,dWhat:gv('dwhat'),dWhy:gv('dwhy'),mistake:gv('dmistake'),question:gv('dq'),answer:gv('da'),insight:gv('dins'),tags:''};
+  const dwhat=gv('dwhat'),dwhy=gv('dwhy'),mistake=gv('dmistake');
+  const dq=gv('dq'),da=gv('da'),dins=gv('dins');
+  // 모든 필드가 비어있을 때만 저장 안 함 (자세한 입력만 있을 때도 저장하도록)
+  const hasAnyContent=core||text||dwhat||dwhy||mistake||dq||da||dins;
+  if(!hasAnyContent)return;
+  const e={date:d,mood:'',emotion:'',text,core,dWhat:dwhat,dWhy:dwhy,mistake,question:dq,answer:da,insight:dins,tags:''};
   setSync('s');
   try{
     await sbRPC('upsert_diary',e2r(e));
