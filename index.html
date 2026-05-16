@@ -381,6 +381,16 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .eng-grad-restart{background:var(--accent);border:none;color:#fff;font-size:13px;cursor:pointer;padding:4px 8px;border-radius:8px;flex-shrink:0;font-weight:600;transition:all .15s;}
 .eng-grad-restart:active{transform:scale(0.92);opacity:.8;}
 
+/* 자동 저장 상태 표시 (탭 상단 고정) */
+.autosave-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);padding:4px 10px;background:var(--paper);border:1px solid var(--line);border-radius:12px;font-weight:500;transition:all .2s;}
+.autosave-badge.saving{color:#9C7A3E;background:#FFF7E6;border-color:#F0D9A0;}
+.autosave-badge.saved{color:#4A7C3A;background:#EFF7E8;border-color:#B8D9A8;}
+.autosave-badge.error{color:#B33C2E;background:#FBEAE7;border-color:#E5B5AD;}
+.autosave-badge .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.autosave-badge.saving .dot{animation:savePulse 1s infinite;}
+@keyframes savePulse{0%,100%{opacity:.4}50%{opacity:1}}
+.autosave-wrap{display:flex;justify-content:flex-end;margin-bottom:8px;margin-top:-4px;}
+
 .eng-hero{background:linear-gradient(135deg,#1C1A16,#2D2820);border-radius:16px;padding:18px;color:#fff;margin-bottom:12px;text-align:center;}
 .eng-target{font-size:11px;color:#9FE1CB;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
 .eng-dday{font-size:42px;font-weight:700;line-height:1;margin-bottom:4px;}
@@ -596,7 +606,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
         </div>
       </div>
 
-      <button class="bp" id="savebtn" onclick="saveEntry()">저장하기</button>
+      <div class="autosave-wrap"><span class="autosave-badge saved" id="autosave-daily"><span class="dot"></span><span class="txt">저장됨</span></span></div>
       <div class="notice" id="savenotice"></div>
     </div>
 
@@ -744,7 +754,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
         </div>
         <textarea class="ptx" id="mprinciple" rows="2" placeholder="이달 가장 중요하게 깨달은 원칙..."></textarea>
       </div>
-      <button class="bp" id="monthly-save-btn" onclick="saveMonthly()">이달 저장</button>
+      <div class="autosave-wrap"><span class="autosave-badge saved" id="autosave-monthly"><span class="dot"></span><span class="txt">저장됨</span></span></div>
       <div class="notice" id="mnotice"></div>
     </div>
 
@@ -780,7 +790,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
         </div>
         <textarea class="ptx" id="qprinciples" rows="4" placeholder="1. ...\n2. ...\n3. ..."></textarea>
       </div>
-      <button class="bp" onclick="saveQuarterly()">분기 회고 저장</button>
+      <div class="autosave-wrap"><span class="autosave-badge saved" id="autosave-quarterly"><span class="dot"></span><span class="txt">저장됨</span></span></div>
       <div class="notice" id="qnotice"></div>
     </div>
 
@@ -929,7 +939,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
         </div>
       </div>
 
-      <button class="bp" onclick="saveGoals()">목표 저장</button>
+      <div class="autosave-wrap"><span class="autosave-badge saved" id="autosave-goals"><span class="dot"></span><span class="txt">저장됨</span></span></div>
       <div class="notice" id="gnotice"></div>
     </div>
 
@@ -1074,7 +1084,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
           <textarea class="eng-s-inp" id="eng-sentence" rows="2" placeholder='"I realized that fear is not the enemy."' oninput="schedEngSave()"></textarea>
         </div>
 
-        <button class="bp" style="margin-top:12px;" onclick="saveEnglish()">오늘 저장</button>
+        <div class="autosave-wrap"><span class="autosave-badge saved" id="autosave-english"><span class="dot"></span><span class="txt">저장됨</span></span></div>
         <div class="notice" id="ennotice"></div>
       </div>
 
@@ -2023,10 +2033,8 @@ async function delLedger(id){
   }catch(err){toast('삭제 실패: '+err.message);}
 }
 
-async function saveMonthly(){
+async function saveMonthly(silent){
   const p=document.getElementById('mprinciple')?.value||'';
-  const btn=document.getElementById('monthly-save-btn');
-  if(btn){btn.disabled=true;btn.textContent='저장 중...';}
   try{
     await sbRPC('upsert_monthly_budget',{
       p_month_key:lmk(),
@@ -2036,13 +2044,13 @@ async function saveMonthly(){
       p_total_debt:snapDebt,
       p_principle:p
     });
-    notice('mnotice','저장되었어요 ✓','ok');
+    if(!silent)notice('mnotice','저장되었어요 ✓','ok');
     savedPrinciple=p;
   }catch(err){
     console.error('월간 저장 실패',err);
-    notice('mnotice','저장 실패: '+err.message,'err');
+    if(!silent)notice('mnotice','저장 실패: '+err.message,'err');
+    throw err;
   }
-  if(btn){btn.disabled=false;btn.textContent='이달 저장';}
 }
 
 async function loadMonthlyData(){initLedger();}
@@ -2161,8 +2169,17 @@ function chGoalMo(dir){
 
 let goalsAutoSaveTimer=null;
 function schedGoalSave(){
+  setAutosaveStatus('goals','saving','변경됨...');
   clearTimeout(goalsAutoSaveTimer);
-  goalsAutoSaveTimer=setTimeout(saveGoals,1500);
+  goalsAutoSaveTimer=setTimeout(async()=>{
+    setAutosaveStatus('goals','saving','저장 중...');
+    try{
+      await saveGoals(true);
+      setAutosaveStatus('goals','saved','✓ 저장됨');
+    }catch(err){
+      setAutosaveStatus('goals','error','⚠️ 저장 실패');
+    }
+  },1500);
 }
 
 async function loadGoals(){
@@ -2242,7 +2259,7 @@ function updGoalNavLabels(keys){
   }
 }
 
-async function saveGoals(){
+async function saveGoals(silent){
   const retro=document.getElementById('goal-retro')?.value||'';
   const keys=goalKeys(goalWkOffset,goalMoOffset);
   try{
@@ -2251,8 +2268,11 @@ async function saveGoals(){
       sbRPC('upsert_goals',{p_goal_key:keys.mo,p_year_goals:[],p_month_goals:goalsData.mo,p_week_goals:[],p_retrospect:''}),
       sbRPC('upsert_goals',{p_goal_key:keys.main,p_year_goals:[],p_month_goals:[],p_week_goals:goalsData.wk,p_retrospect:retro})
     ]);
-    notice('gnotice','목표 저장되었어요 ✓','ok');
-  }catch(err){notice('gnotice','저장 실패: '+err.message,'err');}
+    if(!silent)notice('gnotice','목표 저장되었어요 ✓','ok');
+  }catch(err){
+    if(!silent)notice('gnotice','저장 실패: '+err.message,'err');
+    throw err;
+  }
 }
 
 function renderGoals(){
@@ -2362,11 +2382,14 @@ function delGoal(type,i){
 });
 
 // ── 분기 ──
-async function saveQuarterly(){
+async function saveQuarterly(silent){
   try{
     await sbRPC('upsert_quarterly',{p_quarter_key:qk(),p_before_text:gv('qbefore'),p_after_text:gv('qafter'),p_mistakes:gv('qmistakes'),p_principles:gv('qprinciples')});
-    notice('qnotice','분기 회고 저장되었어요 ✓','ok');
-  }catch(err){notice('qnotice','저장 실패: '+err.message,'err');}
+    if(!silent)notice('qnotice','분기 회고 저장되었어요 ✓','ok');
+  }catch(err){
+    if(!silent)notice('qnotice','저장 실패: '+err.message,'err');
+    throw err;
+  }
 }
 async function loadQuarterlyData(){
   try{
@@ -2409,13 +2432,22 @@ function toggleEngCircle(stageIdx,i){
 
 let engSaveTimer=null;
 function schedEngSave(){
+  setAutosaveStatus('english','saving','변경됨...');
   clearTimeout(engSaveTimer);
   const s=document.getElementById('eng-sentence');
   englishToday.sentence=s?s.value:'';
   englishToday.date=td();
   englishHistory[td()]={...englishToday,stages:englishToday.stages.map(a=>[...a])};
   renderEngHero();
-  engSaveTimer=setTimeout(()=>saveEnglish(true),1500);
+  engSaveTimer=setTimeout(async()=>{
+    setAutosaveStatus('english','saving','저장 중...');
+    try{
+      await saveEnglish(true);
+      setAutosaveStatus('english','saved','✓ 저장됨');
+    }catch(err){
+      setAutosaveStatus('english','error','⚠️ 저장 실패');
+    }
+  },1500);
 }
 
 function renderEnglish(){
@@ -2580,7 +2612,121 @@ if(window.visualViewport){
   });
 }
 
-function setupDailyEditListeners(){}
+/* ===== 자동 저장 시스템 ===== */
+// 각 탭별 디바운스 타이머 저장소
+const autosaveTimers={};
+// 각 탭별 저장 상태 (마지막 저장 시점)
+const autosaveState={};
+
+// 저장 배지 UI 업데이트
+function setAutosaveStatus(tabKey,status,msg){
+  const badge=document.getElementById('autosave-'+tabKey);
+  if(!badge)return;
+  badge.classList.remove('saving','saved','error');
+  const txt=badge.querySelector('.txt');
+  if(status==='saving'){
+    badge.classList.add('saving');
+    if(txt)txt.textContent=msg||'저장 중...';
+  }else if(status==='saved'){
+    badge.classList.add('saved');
+    if(txt)txt.textContent=msg||'저장됨';
+  }else if(status==='error'){
+    badge.classList.add('error');
+    if(txt)txt.textContent=msg||'저장 실패';
+  }else{
+    badge.classList.add('saved');
+    if(txt)txt.textContent=msg||'저장됨';
+  }
+}
+
+// 디바운스 자동 저장 트리거
+// tabKey: 'daily', 'monthly', 'quarterly', 'goals', 'english'
+// saveFn: 실제 저장을 수행하는 async 함수
+function scheduleAutosave(tabKey,saveFn,delay){
+  delay=delay||1500;
+  setAutosaveStatus(tabKey,'saving','변경됨...');
+  clearTimeout(autosaveTimers[tabKey]);
+  autosaveTimers[tabKey]=setTimeout(async()=>{
+    setAutosaveStatus(tabKey,'saving','저장 중...');
+    try{
+      await saveFn();
+      setAutosaveStatus(tabKey,'saved','✓ 저장됨');
+    }catch(err){
+      console.error('자동 저장 실패 ['+tabKey+']:',err);
+      setAutosaveStatus(tabKey,'error','⚠️ 저장 실패');
+    }
+  },delay);
+}
+
+// 입력 필드들에 자동 저장 이벤트 부착
+function attachAutosave(fieldIds,tabKey,saveFn){
+  fieldIds.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    if(el._autosaveBound)return; // 중복 방지
+    el._autosaveBound=true;
+    el.addEventListener('input',()=>scheduleAutosave(tabKey,saveFn));
+    // 페이지를 벗어나기 직전에 즉시 저장 (blur)
+    el.addEventListener('blur',()=>{
+      if(autosaveTimers[tabKey]){
+        clearTimeout(autosaveTimers[tabKey]);
+        scheduleAutosave(tabKey,saveFn,100); // 거의 즉시
+      }
+    });
+  });
+}
+
+// 일기(오늘) 자동 저장 - 텍스트 입력만 대상 (조용 모드)
+async function autosaveDaily(){
+  const d=wDate||td();
+  const core=gv('core'),text=gv('dtx');
+  // 둘 다 비어있으면 저장 안 함
+  if(!core&&!text)return;
+  const e={date:d,mood:'',emotion:'',text,core,dWhat:gv('dwhat'),dWhy:gv('dwhy'),mistake:gv('dmistake'),question:gv('dq'),answer:gv('da'),insight:gv('dins'),tags:''};
+  setSync('s');
+  try{
+    await sbRPC('upsert_diary',e2r(e));
+    entries[d]=e;
+    setSync('ok');
+    renderWeek();
+  }catch(err){
+    setSync('e');
+    throw err;
+  }
+}
+
+// 월간 자동 저장
+async function autosaveMonthly(){
+  if(typeof saveMonthly==='function')await saveMonthly(true);
+}
+
+// 분기 자동 저장
+async function autosaveQuarterly(){
+  if(typeof saveQuarterly==='function')await saveQuarterly(true);
+}
+
+// 목표 자동 저장
+async function autosaveGoals(){
+  if(typeof saveGoals==='function')await saveGoals(true);
+}
+
+// 영어 자동 저장
+async function autosaveEnglish(){
+  if(typeof saveEnglish==='function')await saveEnglish(true);
+}
+
+function setupDailyEditListeners(){
+  // 일기 탭 텍스트 필드들에 자동 저장 부착
+  attachAutosave(['core','dtx','dwhat','dwhy','dmistake','dq','da','dins'],'daily',autosaveDaily);
+  // 월간 탭
+  attachAutosave(['mprinciple'],'monthly',autosaveMonthly);
+  // 분기 탭
+  attachAutosave(['qbefore','qafter','qmistakes','qprinciples'],'quarterly',autosaveQuarterly);
+  // 목표 탭 (회고 필드만 자동 저장 — 목표 추가/삭제는 버튼으로 즉시 저장됨)
+  attachAutosave(['goal-retro'],'goals',autosaveGoals);
+  // 영어 탭 (영어 문장)
+  attachAutosave(['eng-sentence'],'english',autosaveEnglish);
+}
 
 /* ===== 영어 학습 링크 관리 (Supabase 동기화) ===== */
 const DEFAULT_ENG_LINKS=[
@@ -3106,6 +3252,40 @@ function renderGraduated(list){
     <div class="eng-grad-body" id="eng-grad-body">${items}</div>
   </div>`;
 }
+
+// 페이지를 떠나기 직전: 대기 중인 자동 저장이 있으면 즉시 실행
+window.addEventListener('beforeunload',(e)=>{
+  let hasPending=false;
+  for(const k in autosaveTimers){
+    if(autosaveTimers[k]){
+      hasPending=true;
+      // 타이머 클리어하고 즉시 저장 시도 (sync 보장 안 되지만 시도)
+      clearTimeout(autosaveTimers[k]);
+    }
+  }
+  if(goalsAutoSaveTimer){hasPending=true;clearTimeout(goalsAutoSaveTimer);}
+  if(engSaveTimer){hasPending=true;clearTimeout(engSaveTimer);}
+  if(hasPending){
+    // 브라우저에 안전한 종료를 위한 경고 (모바일에서는 제한적)
+    e.preventDefault();
+    e.returnValue='저장 중인 내용이 있습니다.';
+    return e.returnValue;
+  }
+});
+
+// 페이지가 백그라운드로 갈 때 (모바일 앱 전환 등) 자동 저장 즉시 실행
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'){
+    // 대기 중인 자동 저장 즉시 실행
+    if(autosaveTimers['daily']){clearTimeout(autosaveTimers['daily']);autosaveDaily().catch(()=>{});}
+    if(autosaveTimers['monthly']){clearTimeout(autosaveTimers['monthly']);autosaveMonthly().catch(()=>{});}
+    if(autosaveTimers['quarterly']){clearTimeout(autosaveTimers['quarterly']);autosaveQuarterly().catch(()=>{});}
+    if(autosaveTimers['goals']){clearTimeout(autosaveTimers['goals']);autosaveGoals().catch(()=>{});}
+    if(autosaveTimers['english']){clearTimeout(autosaveTimers['english']);autosaveEnglish().catch(()=>{});}
+    if(goalsAutoSaveTimer){clearTimeout(goalsAutoSaveTimer);saveGoals(true).catch(()=>{});}
+    if(engSaveTimer){clearTimeout(engSaveTimer);saveEnglish(true).catch(()=>{});}
+  }
+});
 
 if('serviceWorker' in navigator){
   navigator.serviceWorker.getRegistrations().then(regs=>{
