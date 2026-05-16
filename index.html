@@ -2643,7 +2643,7 @@ function setAutosaveStatus(tabKey,status,msg){
 // tabKey: 'daily', 'monthly', 'quarterly', 'goals', 'english'
 // saveFn: 실제 저장을 수행하는 async 함수
 function scheduleAutosave(tabKey,saveFn,delay){
-  delay=delay||1500;
+  delay=delay||1000;
   setAutosaveStatus(tabKey,'saving','변경됨...');
   clearTimeout(autosaveTimers[tabKey]);
   autosaveTimers[tabKey]=setTimeout(async()=>{
@@ -2970,7 +2970,7 @@ function showEngVideoForm(isEdit){
     engVideoEditMode=false;
   }
   form.classList.add('on');
-  form.scrollIntoView({behavior:'smooth',block:'center'});
+  if(form.scrollIntoView)form.scrollIntoView({behavior:'smooth',block:'center'});
 }
 
 function cancelEngVideo(){
@@ -3042,7 +3042,7 @@ async function restartGraduated(idx){
   // 화면을 영상 카드로 스크롤
   setTimeout(()=>{
     const el=document.getElementById('eng-video-wrap');
-    if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+    if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'center'});
   },100);
   await saveEngVideoData(data);
 }
@@ -3253,24 +3253,32 @@ function renderGraduated(list){
   </div>`;
 }
 
-// 페이지를 떠나기 직전: 대기 중인 자동 저장이 있으면 즉시 실행
-window.addEventListener('beforeunload',(e)=>{
-  let hasPending=false;
-  for(const k in autosaveTimers){
-    if(autosaveTimers[k]){
-      hasPending=true;
-      // 타이머 클리어하고 즉시 저장 시도 (sync 보장 안 되지만 시도)
-      clearTimeout(autosaveTimers[k]);
-    }
-  }
-  if(goalsAutoSaveTimer){hasPending=true;clearTimeout(goalsAutoSaveTimer);}
-  if(engSaveTimer){hasPending=true;clearTimeout(engSaveTimer);}
-  if(hasPending){
-    // 브라우저에 안전한 종료를 위한 경고 (모바일에서는 제한적)
-    e.preventDefault();
-    e.returnValue='저장 중인 내용이 있습니다.';
-    return e.returnValue;
-  }
+// 페이지를 떠나기 직전: 대기 중인 자동 저장이 있으면 즉시 실행 (조용히, 경고 없이)
+// 자동 저장이 잘 작동하므로 사용자에게 경고는 띄우지 않음
+window.addEventListener('beforeunload',()=>{
+  // 대기 중인 자동 저장 즉시 실행 (sync 보장은 안 되지만 시도)
+  try{
+    if(autosaveTimers['daily']){clearTimeout(autosaveTimers['daily']);autosaveDaily().catch(()=>{});}
+    if(autosaveTimers['monthly']){clearTimeout(autosaveTimers['monthly']);autosaveMonthly().catch(()=>{});}
+    if(autosaveTimers['quarterly']){clearTimeout(autosaveTimers['quarterly']);autosaveQuarterly().catch(()=>{});}
+    if(autosaveTimers['goals']){clearTimeout(autosaveTimers['goals']);autosaveGoals().catch(()=>{});}
+    if(autosaveTimers['english']){clearTimeout(autosaveTimers['english']);autosaveEnglish().catch(()=>{});}
+    if(typeof goalsAutoSaveTimer!=='undefined'&&goalsAutoSaveTimer){clearTimeout(goalsAutoSaveTimer);saveGoals(true).catch(()=>{});}
+    if(typeof engSaveTimer!=='undefined'&&engSaveTimer){clearTimeout(engSaveTimer);saveEnglish(true).catch(()=>{});}
+  }catch(e){/* silent */}
+});
+
+// pagehide 이벤트도 추가 (iOS Safari에서 더 안정적)
+window.addEventListener('pagehide',()=>{
+  try{
+    if(autosaveTimers['daily']){clearTimeout(autosaveTimers['daily']);autosaveDaily().catch(()=>{});}
+    if(autosaveTimers['monthly']){clearTimeout(autosaveTimers['monthly']);autosaveMonthly().catch(()=>{});}
+    if(autosaveTimers['quarterly']){clearTimeout(autosaveTimers['quarterly']);autosaveQuarterly().catch(()=>{});}
+    if(autosaveTimers['goals']){clearTimeout(autosaveTimers['goals']);autosaveGoals().catch(()=>{});}
+    if(autosaveTimers['english']){clearTimeout(autosaveTimers['english']);autosaveEnglish().catch(()=>{});}
+    if(typeof goalsAutoSaveTimer!=='undefined'&&goalsAutoSaveTimer){clearTimeout(goalsAutoSaveTimer);saveGoals(true).catch(()=>{});}
+    if(typeof engSaveTimer!=='undefined'&&engSaveTimer){clearTimeout(engSaveTimer);saveEnglish(true).catch(()=>{});}
+  }catch(e){/* silent */}
 });
 
 // 페이지가 백그라운드로 갈 때 (모바일 앱 전환 등) 자동 저장 즉시 실행
