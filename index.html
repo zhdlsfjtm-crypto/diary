@@ -1763,7 +1763,13 @@ function toggleDataManage(){
   if(arrow)arrow.style.transform=body.classList.contains('on')?'rotate(180deg)':'';
 }
 
+let exportSubmitting=false;
 async function exportAllData(){
+  if(exportSubmitting){
+    toast('이미 내보내기 진행 중이에요 ⏳');
+    return;
+  }
+  exportSubmitting=true;
   try{
     // 최신 데이터 보장을 위해 모든 데이터 새로 로드
     const loadingMsg='데이터 수집 중...';
@@ -1839,6 +1845,8 @@ async function exportAllData(){
   }catch(err){
     console.error('내보내기 실패',err);
     alert('내보내기 실패: '+err.message);
+  }finally{
+    exportSubmitting=false;
   }
 }
 
@@ -2127,12 +2135,20 @@ function selectQuickCat(cat){
   renderQuickLedgerCats();
 }
 
+let qledgerSubmitting=false; // 중복 제출 방지 플래그
+
 async function submitQuickLedger(){
+  if(qledgerSubmitting)return; // 🛡️ 진행 중이면 무시
   const amount=parseInt(document.getElementById('qledger-amount').value)||0;
   const memo=document.getElementById('qledger-memo').value.trim();
   const date=document.getElementById('qledger-date').value||td();
   if(!amount){alert('금액을 입력해주세요');return;}
   if(!qledgerCat){alert('카테고리를 선택해주세요');return;}
+  
+  qledgerSubmitting=true;
+  // 제출 버튼 비활성화 (시각적 피드백)
+  const submitBtn=document.querySelector('#qledger-modal .qmodal-btn.primary');
+  if(submitBtn){submitBtn.disabled=true;submitBtn.textContent='추가 중...';}
   
   // 해당 날짜의 month_key 계산
   const d=new Date(date+'T00:00:00');
@@ -2155,6 +2171,9 @@ async function submitQuickLedger(){
   }catch(err){
     setSync('e');
     alert('추가 실패: '+err.message);
+  }finally{
+    qledgerSubmitting=false;
+    if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='추가하기';}
   }
 }
 
@@ -2820,12 +2839,19 @@ function toggleBudgetEdit(){
   el.style.display=open?'block':'none';
 }
 
+let ledgerAddSubmitting=false;
 async function addLedger(){
+  if(ledgerAddSubmitting)return; // 🛡️ 중복 제출 방지
   const date=document.getElementById('l-date').value||td();
   const cat=document.getElementById('l-cat').value;
   const amount=parseInt(document.getElementById('l-amount').value)||0;
   const memo=document.getElementById('l-memo').value.trim();
   if(!amount){notice('lnotice','금액을 입력해주세요.','err');return;}
+  
+  ledgerAddSubmitting=true;
+  const addBtn=document.getElementById('ledger-add-btn');
+  const originalText=addBtn?.textContent;
+  if(addBtn){addBtn.disabled=true;addBtn.textContent=editingLedger?'수정 중...':'추가 중...';}
 
   if(editingLedger){
     try{
@@ -2837,6 +2863,10 @@ async function addLedger(){
       cancelEditLedger();
       await loadLedgerData();
     }catch(err){notice('lnotice','수정 실패: '+err.message,'err');}
+    finally{
+      ledgerAddSubmitting=false;
+      if(addBtn){addBtn.disabled=false;addBtn.textContent=originalText||'추가하기';}
+    }
     return;
   }
 
@@ -2850,6 +2880,10 @@ async function addLedger(){
     notice('lnotice','추가되었어요 ✓','ok');
     await loadLedgerData();
   }catch(err){notice('lnotice','추가 실패: '+err.message,'err');}
+  finally{
+    ledgerAddSubmitting=false;
+    if(addBtn){addBtn.disabled=false;addBtn.textContent=originalText||'추가하기';}
+  }
 }
 
 function editLedger(i){
