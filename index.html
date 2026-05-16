@@ -29,6 +29,61 @@
   /* 영어 5단계 색상 */
   --en1:#FFB84D;--en2:#4DB6FF;--en3:#9D4DFF;--en4:#4DD4A8;--en5:#FF6B6B;
 }
+/* 🌙 다크 모드 */
+:root.dark{
+  --bg:#1A1816;--paper:#252220;--ink:#E8E4DC;--ink2:#B8B3A8;--ink3:#807A6F;
+  --accent:#E08550;--a2:#3D2E22;--line:#3A352E;--sh:rgba(0,0,0,0.3);
+  --ok-bg:#1F2D17;--ok:#7AB446;--err-bg:#3D1F1F;--err:#E07070;
+  --q:#5A8EC4;--q2:#1F2D3D;
+  --core:#9A75D0;--c2:#2D243D;
+  --dec:#C47A55;--d2:#3D2A22;
+  --mis:#55A088;--m2:#1F2D27;
+  --asset:#4A8AC4;
+  /* 영어 5단계는 다크에서도 잘 보이게 살짝 조정 */
+  --en1:#FFA830;--en2:#3DA8FF;--en3:#A867E8;--en4:#3DC498;--en5:#FF7878;
+}
+/* 다크 모드에서 살짝 더 부드러운 그라데이션 카드들 */
+:root.dark .eng-video{background:linear-gradient(135deg,#2D2520,#3D2E22);border-color:#5A4530;}
+:root.dark .eng-hero{background:linear-gradient(135deg,#0D0B08,#1A1612);}
+:root.dark .data-manage{background:linear-gradient(135deg,#2D2520,#3D2E22);border-color:#5A4530;}
+:root.dark .data-manage-t,:root.dark .data-manage-info-t,:root.dark .data-manage-info-d{color:#E0C58A !important;}
+:root.dark .data-manage-btn{background:#1F1B18;border-color:#3A352E;color:#E0C58A;}
+/* 다크 모드 자동 저장 배지 */
+:root.dark .autosave-badge.saved{color:#7AB446;background:#1F2D17;border-color:#3A4D25;}
+:root.dark .autosave-badge.saving{color:#FAC775;background:#2D2618;border-color:#5A4530;}
+:root.dark .autosave-badge.error{color:#E07070;background:#3D1F1F;border-color:#5A2D2D;}
+
+/* 🚀 FAB (Floating Action Button) */
+.fab{position:fixed;right:18px;bottom:calc(var(--nh) + 18px);width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:24px;box-shadow:0 4px 16px rgba(196,98,45,0.4);z-index:50;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.fab:active{transform:scale(0.92);}
+.fab.open{transform:rotate(45deg);background:#A35422;}
+.fab-menu{position:fixed;right:18px;bottom:calc(var(--nh) + 80px);display:flex;flex-direction:column;gap:10px;z-index:49;opacity:0;pointer-events:none;transition:all .2s;transform:translateY(8px);}
+.fab-menu.on{opacity:1;pointer-events:auto;transform:translateY(0);}
+.fab-item{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:24px;padding:10px 14px;cursor:pointer;box-shadow:0 2px 8px var(--sh);transition:all .15s;color:var(--ink);font-size:13px;font-weight:500;font-family:'Pretendard',sans-serif;}
+.fab-item:active{transform:scale(0.95);}
+.fab-item-icon{font-size:18px;}
+
+/* 빠른 입력 모달 */
+.qmodal{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:none;align-items:flex-end;justify-content:center;}
+.qmodal.on{display:flex;animation:fi .15s ease;}
+.qmodal-body{background:var(--paper);width:100%;max-width:500px;border-radius:20px 20px 0 0;padding:20px;box-shadow:0 -4px 20px rgba(0,0,0,0.2);max-height:85vh;overflow-y:auto;}
+.qmodal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.qmodal-t{font-family:'Nanum Myeongjo',serif;font-size:18px;color:var(--ink);}
+.qmodal-x{background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink3);padding:4px;}
+.qmodal-type-row{display:flex;gap:8px;margin-bottom:10px;}
+.qmodal-type-btn{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink2);cursor:pointer;font-size:13px;font-weight:600;font-family:'Pretendard',sans-serif;transition:all .15s;}
+.qmodal-type-btn.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+.qmodal-field{margin-bottom:10px;}
+.qmodal-lbl{font-size:11px;color:var(--ink3);margin-bottom:4px;}
+.qmodal-input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:15px;background:var(--bg);color:var(--ink);font-family:'Pretendard',sans-serif;outline:none;}
+.qmodal-input:focus{border-color:var(--accent);}
+.qmodal-cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px;}
+.qmodal-cat-btn{padding:8px 4px;border-radius:8px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink2);cursor:pointer;font-size:12px;font-family:'Pretendard',sans-serif;transition:all .15s;}
+.qmodal-cat-btn.on{background:var(--a2);color:var(--accent);border-color:var(--accent);font-weight:600;}
+.qmodal-actions{display:flex;gap:8px;margin-top:14px;}
+.qmodal-btn{flex:1;padding:12px;border-radius:10px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:'Pretendard',sans-serif;}
+.qmodal-btn.primary{background:var(--accent);color:#fff;}
+.qmodal-btn.secondary{background:var(--bg);color:var(--ink2);border:1px solid var(--line);}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--ink);overflow:hidden;}
 #app{height:100%;display:flex;flex-direction:column;}
@@ -236,12 +291,21 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .efld:focus{border-color:var(--accent);}
 
 /* 하단 네비 */
-.bnav{position:fixed;bottom:0;left:0;right:0;height:var(--nh);background:var(--paper);border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;padding-bottom:env(safe-area-inset-bottom);z-index:100;overflow-x:auto;}
+.bnav{position:fixed;bottom:0;left:0;right:0;height:var(--nh);background:var(--paper);border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;padding-bottom:env(safe-area-inset-bottom);z-index:100;}
 .nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px;border:none;background:transparent;cursor:pointer;min-width:48px;}
-.nb .ni{font-size:17px;color:var(--ink3);}
-.nb .nl{font-size:9px;color:var(--ink3);font-family:'Pretendard',sans-serif;}
+.nb .ni{font-size:18px;color:var(--ink3);}
+.nb .nl{font-size:10px;color:var(--ink3);font-family:'Pretendard',sans-serif;}
 .nb.on .ni{color:var(--accent);}
 .nb.on .nl{color:var(--accent);font-weight:600;}
+
+/* 더보기 메뉴 */
+.more-menu{position:fixed;bottom:calc(var(--nh) + 8px);right:8px;background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,0.12);z-index:101;display:none;min-width:160px;overflow:hidden;}
+.more-menu.on{display:block;animation:fi .15s ease;}
+.more-item{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;color:var(--ink);font-size:13px;border-bottom:1px solid var(--line);font-family:'Pretendard',sans-serif;}
+.more-item:last-child{border-bottom:none;}
+.more-item:active{background:var(--a2);}
+.more-item.on{background:var(--a2);color:var(--accent);font-weight:600;}
+.more-item-icon{font-size:18px;}
 
 /* 토스트 */
 .toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:rgba(28,26,22,.85);color:#fff;font-size:13px;padding:10px 18px;border-radius:20px;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;}
@@ -457,9 +521,12 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 <div id="app">
   <div class="tb">
     <div class="tb-brand">📔 나의 일기장</div>
-    <div class="sync" onclick="onSyncClick()">
-      <div class="dot" id="dot"></div>
-      <span id="slbl">연결 중...</span>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button id="theme-toggle" onclick="toggleTheme()" style="background:none;border:none;cursor:pointer;font-size:18px;padding:4px;color:var(--ink2);" title="테마 변경">🌙</button>
+      <div class="sync" onclick="onSyncClick()">
+        <div class="dot" id="dot"></div>
+        <span id="slbl">연결 중...</span>
+      </div>
     </div>
   </div>
 
@@ -583,7 +650,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
         <div class="afoot"><span class="cc"><span id="cc">0</span>자</span></div>
       </div>
 
-      <button class="xbtn" id="xbtn" onclick="toggleX()">+ 더 쓰기 — 결정 · 배움 · 질문 · 영감</button>
+      <button class="xbtn" id="xbtn" onclick="toggleX()">+ 자세히 쓰기 (결정·배움·질문·영감)</button>
       <div class="xbody" id="xbody">
         <div class="dcard">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="font-size:16px;">⚖️</span><span style="font-size:13px;font-weight:600;color:var(--dec);">오늘의 결정</span><span style="font-size:11px;color:#C4956A;margin-left:auto;">달리오 방식</span></div>
@@ -1210,13 +1277,16 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 
   <nav class="bnav">
     <button class="nb on" id="nb-daily" onclick="goTab('daily')"><span class="ni">✏️</span><span class="nl">오늘</span></button>
-    <button class="nb" id="nb-weekly" onclick="goTab('weekly')"><span class="ni">📅</span><span class="nl">주간</span></button>
     <button class="nb" id="nb-monthly" onclick="goTab('monthly')"><span class="ni">💰</span><span class="nl">월간</span></button>
     <button class="nb" id="nb-goals" onclick="goTab('goals')"><span class="ni">🎯</span><span class="nl">목표</span></button>
     <button class="nb" id="nb-english" onclick="goTab('english')"><span class="ni">🇺🇸</span><span class="nl">영어</span></button>
-    <button class="nb" id="nb-quarterly" onclick="goTab('quarterly')"><span class="ni">🔄</span><span class="nl">분기</span></button>
-    <button class="nb" id="nb-all" onclick="goTab('all')"><span class="ni">📚</span><span class="nl">전체</span></button>
+    <button class="nb" id="nb-more" onclick="toggleMoreMenu(event)"><span class="ni">⋯</span><span class="nl">더보기</span></button>
   </nav>
+  <div class="more-menu" id="more-menu">
+    <div class="more-item" id="more-weekly" onclick="goTabAndCloseMore('weekly')"><span class="more-item-icon">📅</span><span>주간 정리</span></div>
+    <div class="more-item" id="more-quarterly" onclick="goTabAndCloseMore('quarterly')"><span class="more-item-icon">🔄</span><span>분기 회고</span></div>
+    <div class="more-item" id="more-all" onclick="goTabAndCloseMore('all')"><span class="more-item-icon">📚</span><span>전체 기록</span></div>
+  </div>
 </div>
 
 <!-- 상세 팝업 -->
@@ -1310,6 +1380,54 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       </div>
       <div class="autosave-wrap" style="margin-top:6px;"><span class="autosave-badge saved" id="autosave-edit"><span class="dot"></span><span class="txt">저장됨</span></span></div>
       <div class="notice" id="enotice" style="margin-top:8px;"></div>
+  </div>
+</div>
+
+<!-- 🚀 FAB (빠른 입력) -->
+<button class="fab" id="fab" onclick="toggleFab()" title="빠른 입력">＋</button>
+<div class="fab-menu" id="fab-menu">
+  <div class="fab-item" onclick="openQuickLedger('expense')">
+    <span class="fab-item-icon">💸</span><span>지출 빠른 입력</span>
+  </div>
+  <div class="fab-item" onclick="openQuickLedger('income')">
+    <span class="fab-item-icon">💰</span><span>수입 빠른 입력</span>
+  </div>
+  <div class="fab-item" onclick="goTab('daily');closeFab();">
+    <span class="fab-item-icon">📝</span><span>오늘 일기</span>
+  </div>
+</div>
+
+<!-- 빠른 가계부 입력 모달 -->
+<div class="qmodal" id="qledger-modal" onclick="if(event.target===this)closeQuickLedger()">
+  <div class="qmodal-body">
+    <div class="qmodal-h">
+      <div class="qmodal-t" id="qledger-title">💸 빠른 지출 입력</div>
+      <button class="qmodal-x" onclick="closeQuickLedger()">✕</button>
+    </div>
+    <div class="qmodal-type-row">
+      <button class="qmodal-type-btn" id="qledger-tbtn-ex" onclick="qledgerSetType('expense')">💸 지출</button>
+      <button class="qmodal-type-btn" id="qledger-tbtn-in" onclick="qledgerSetType('income')">💰 수입</button>
+    </div>
+    <div class="qmodal-field">
+      <div class="qmodal-lbl">금액 (만원)</div>
+      <input type="number" id="qledger-amount" class="qmodal-input" placeholder="예: 5" inputmode="numeric" autofocus>
+    </div>
+    <div class="qmodal-field">
+      <div class="qmodal-lbl">카테고리</div>
+      <div class="qmodal-cat-grid" id="qledger-cats"></div>
+    </div>
+    <div class="qmodal-field">
+      <div class="qmodal-lbl">메모 (선택)</div>
+      <input type="text" id="qledger-memo" class="qmodal-input" placeholder="예: 점심" style="font-size:13px;">
+    </div>
+    <div class="qmodal-field">
+      <div class="qmodal-lbl">날짜</div>
+      <input type="date" id="qledger-date" class="qmodal-input" style="font-size:13px;">
+    </div>
+    <div class="qmodal-actions">
+      <button class="qmodal-btn secondary" onclick="closeQuickLedger()">취소</button>
+      <button class="qmodal-btn primary" onclick="submitQuickLedger()">추가하기</button>
+    </div>
   </div>
 </div>
 
@@ -1534,6 +1652,7 @@ async function init(){
 
   await Promise.all([loadMonthlyData(),loadQuarterlyData(),loadGoals(),loadEnglish()]);
   initEnglishUI();
+  restoreDailyMode(); // 사용자의 일기 모드 선호 복원
   
   // 🛡️ 저장 안 된 백업 확인 + 복구 제안
   setTimeout(()=>checkAndOfferRestore(),1000);
@@ -1865,8 +1984,169 @@ function toggleGoalSection(key){
 function toggleX(){
   const b=document.getElementById('xbody'),btn=document.getElementById('xbtn');
   const o=b.classList.toggle('on');
-  btn.textContent=o?'− 접기':'+ 더 쓰기 — 결정 · 배움 · 질문 · 영감';
+  btn.textContent=o?'− 간단히 (핵심 + 본문만)':'+ 자세히 쓰기 (결정·배움·질문·영감)';
+  // 사용자 선호 저장 (자세한 모드를 한 번 켜면 다음에도 펼쳐서 시작)
+  try{localStorage.setItem('daily_detail_mode',o?'1':'0');}catch(e){}
 }
+
+// 페이지 로드 시 사용자 선호 복원
+function restoreDailyMode(){
+  try{
+    const pref=localStorage.getItem('daily_detail_mode');
+    if(pref==='1'){
+      const b=document.getElementById('xbody'),btn=document.getElementById('xbtn');
+      if(b&&btn){
+        b.classList.add('on');
+        btn.textContent='− 간단히 (핵심 + 본문만)';
+      }
+    }
+  }catch(e){}
+}
+
+// 🌙 다크 모드 토글
+function toggleTheme(){
+  const isDark=document.documentElement.classList.toggle('dark');
+  try{localStorage.setItem('theme',isDark?'dark':'light');}catch(e){}
+  updateThemeButton(isDark);
+  // theme-color 메타도 변경 (모바일 상단바 색)
+  const themeColor=document.querySelector('meta[name="theme-color"]');
+  if(themeColor)themeColor.content=isDark?'#1A1816':'#C4622D';
+}
+
+function updateThemeButton(isDark){
+  const btn=document.getElementById('theme-toggle');
+  if(btn)btn.textContent=isDark?'☀️':'🌙';
+}
+
+// 페이지 로드 시 사용자 테마 선호 적용 (init보다 빨리 - 화면 깜빡임 방지)
+(function applyInitialTheme(){
+  try{
+    const saved=localStorage.getItem('theme');
+    let isDark=false;
+    if(saved==='dark')isDark=true;
+    else if(saved==='light')isDark=false;
+    else{
+      // 저장된 선호가 없으면 OS 설정 따라감
+      isDark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    if(isDark)document.documentElement.classList.add('dark');
+    // 버튼 텍스트는 DOM 로드 후
+    setTimeout(()=>updateThemeButton(isDark),0);
+    const themeColor=document.querySelector('meta[name="theme-color"]');
+    if(themeColor)themeColor.content=isDark?'#1A1816':'#C4622D';
+  }catch(e){}
+})();
+
+// 🚀 FAB (빠른 입력) 관리
+function toggleFab(){
+  const fab=document.getElementById('fab');
+  const menu=document.getElementById('fab-menu');
+  if(!fab||!menu)return;
+  const isOpen=fab.classList.toggle('open');
+  menu.classList.toggle('on',isOpen);
+}
+function closeFab(){
+  const fab=document.getElementById('fab');
+  const menu=document.getElementById('fab-menu');
+  if(fab)fab.classList.remove('open');
+  if(menu)menu.classList.remove('on');
+}
+
+// 빠른 가계부 입력 모달
+let qledgerType='expense';
+let qledgerCat='';
+
+function openQuickLedger(type){
+  closeFab();
+  qledgerType=type||'expense';
+  qledgerCat='';
+  qledgerSetType(qledgerType);
+  document.getElementById('qledger-amount').value='';
+  document.getElementById('qledger-memo').value='';
+  document.getElementById('qledger-date').value=td();
+  document.getElementById('qledger-modal').classList.add('on');
+  setTimeout(()=>{
+    const amt=document.getElementById('qledger-amount');
+    if(amt)amt.focus();
+  },100);
+}
+
+function closeQuickLedger(){
+  document.getElementById('qledger-modal').classList.remove('on');
+}
+
+function qledgerSetType(type){
+  qledgerType=type;
+  qledgerCat='';
+  const exBtn=document.getElementById('qledger-tbtn-ex');
+  const inBtn=document.getElementById('qledger-tbtn-in');
+  const title=document.getElementById('qledger-title');
+  if(type==='expense'){
+    exBtn?.classList.add('on');
+    inBtn?.classList.remove('on');
+    if(title)title.textContent='💸 빠른 지출 입력';
+  }else{
+    inBtn?.classList.add('on');
+    exBtn?.classList.remove('on');
+    if(title)title.textContent='💰 빠른 수입 입력';
+  }
+  renderQuickLedgerCats();
+}
+
+function renderQuickLedgerCats(){
+  const cats=qledgerType==='income'?CATS_IN:CATS_EX;
+  const wrap=document.getElementById('qledger-cats');
+  if(!wrap)return;
+  // 첫 카테고리를 기본 선택
+  if(!qledgerCat||!cats.includes(qledgerCat))qledgerCat=cats[0];
+  wrap.innerHTML=cats.map(c=>`<button class="qmodal-cat-btn ${c===qledgerCat?'on':''}" onclick="selectQuickCat('${c}')">${c}</button>`).join('');
+}
+
+function selectQuickCat(cat){
+  qledgerCat=cat;
+  renderQuickLedgerCats();
+}
+
+async function submitQuickLedger(){
+  const amount=parseInt(document.getElementById('qledger-amount').value)||0;
+  const memo=document.getElementById('qledger-memo').value.trim();
+  const date=document.getElementById('qledger-date').value||td();
+  if(!amount){alert('금액을 입력해주세요');return;}
+  if(!qledgerCat){alert('카테고리를 선택해주세요');return;}
+  
+  // 해당 날짜의 month_key 계산
+  const d=new Date(date+'T00:00:00');
+  const mk=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  
+  setSync('s');
+  try{
+    await sbFetchDirect('ledger_entries',{
+      method:'POST',
+      body:JSON.stringify({entry_date:date,month_key:mk,type:qledgerType,category:qledgerCat,amount,memo})
+    });
+    setSync('ok');
+    toast(`${qledgerType==='income'?'수입':'지출'} ${amount}만원 추가됨 ✓`);
+    closeQuickLedger();
+    // 가계부 탭이 열려있으면 즉시 새로고침
+    const monthlyPn=document.getElementById('pn-monthly');
+    if(monthlyPn&&monthlyPn.classList.contains('on')){
+      try{await loadLedgerData();}catch(e){}
+    }
+  }catch(err){
+    setSync('e');
+    alert('추가 실패: '+err.message);
+  }
+}
+
+// FAB 외부 클릭 시 닫기
+document.addEventListener('click',(e)=>{
+  const fab=document.getElementById('fab');
+  const menu=document.getElementById('fab-menu');
+  if(!fab||!menu)return;
+  if(!fab.classList.contains('open'))return;
+  if(fab.contains(e.target)||menu.contains(e.target))return;
+  closeFab();
+});
 
 // ── 일기 저장 ──
 async function saveEntry(){
@@ -1894,6 +2174,18 @@ function goTab(t){
     if(pn)pn.classList.toggle('on',x===t);
     if(nb)nb.classList.toggle('on',x===t);
   });
+  
+  // 더보기 메뉴에 있는 탭(weekly/quarterly/all)이면 "더보기" 버튼 활성화
+  const moreTabs=['weekly','quarterly','all'];
+  const moreBtn=document.getElementById('nb-more');
+  if(moreBtn)moreBtn.classList.toggle('on',moreTabs.includes(t));
+  
+  // 더보기 메뉴 항목 활성화 상태 업데이트
+  const moreItems=document.querySelectorAll('.more-item');
+  moreItems.forEach(el=>{
+    el.classList.toggle('on',el.id==='more-'+t);
+  });
+  
   document.getElementById('scr').scrollTop=0;
   if(t==='weekly')renderWeek();
   if(t==='monthly'){
@@ -1909,6 +2201,34 @@ function goTab(t){
   if(t==='english'){renderEnglish();}
   if(t==='all'){allPage=1;renderAll();}
 }
+
+// 더보기 메뉴 토글
+function toggleMoreMenu(event){
+  if(event)event.stopPropagation();
+  const menu=document.getElementById('more-menu');
+  if(!menu)return;
+  menu.classList.toggle('on');
+}
+
+function closeMoreMenu(){
+  const menu=document.getElementById('more-menu');
+  if(menu)menu.classList.remove('on');
+}
+
+function goTabAndCloseMore(t){
+  closeMoreMenu();
+  goTab(t);
+}
+
+// 외부 클릭으로 더보기 메뉴 닫기
+document.addEventListener('click',(e)=>{
+  const menu=document.getElementById('more-menu');
+  const btn=document.getElementById('nb-more');
+  if(!menu||!btn)return;
+  if(!menu.classList.contains('on'))return;
+  if(menu.contains(e.target)||btn.contains(e.target))return;
+  closeMoreMenu();
+});
 
 // ── 상세 팝업 ──
 function openV(e){
@@ -2005,7 +2325,10 @@ async function saveE(){
 
 // ── 전체 기록 ──
 let elist=[], allPage=1, allSearch='', PAGE_SIZE=20;
+let allDateFrom='', allDateTo='';
 let totalEntryCount=0, searchFromDB=false;
+let advancedSearchOpen=false;
+let wordCloudOpen=false;
 
 async function fetchTotalCount(){
   try{
@@ -2021,19 +2344,31 @@ async function renderAll(){
   const listEl=document.getElementById('elist');
   const subEl=document.getElementById('asub');
 
-  const searchHTML=`<div style="margin-bottom:12px;position:relative;">
-    <input type="text" id="all-search" class="linp" placeholder="🔍 날짜, 키워드로 검색..." value="${allSearch.replace(/"/g,'&quot;')}" oninput="onSearch(this.value)" style="font-size:14px;padding-right:36px;">
-    ${allSearch?`<button onclick="clearSearch()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink3);">✕</button>`:''}
+  const hasDateFilter=allDateFrom||allDateTo;
+  const dateFilterBadge=hasDateFilter?` <span style="background:var(--accent);color:#fff;font-size:10px;padding:2px 6px;border-radius:8px;margin-left:4px;">날짜</span>`:'';
+  
+  const searchHTML=`<div style="margin-bottom:12px;">
+    <div style="position:relative;margin-bottom:6px;">
+      <input type="text" id="all-search" class="linp" placeholder="🔍 키워드로 검색..." value="${allSearch.replace(/"/g,'&quot;')}" oninput="onSearch(this.value)" style="font-size:14px;padding-right:36px;">
+      ${allSearch?`<button onclick="clearSearch()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink3);">✕</button>`:''}
+    </div>
+    <div style="display:flex;gap:6px;font-size:11px;">
+      <button onclick="toggleAdvancedSearch()" style="flex:1;background:${advancedSearchOpen||hasDateFilter?'var(--a2)':'var(--paper)'};border:1px solid var(--line);border-radius:8px;padding:6px 8px;cursor:pointer;color:var(--ink2);font-family:'Pretendard',sans-serif;">📅 날짜 필터${dateFilterBadge}</button>
+      <button onclick="toggleWordCloud()" style="flex:1;background:${wordCloudOpen?'var(--a2)':'var(--paper)'};border:1px solid var(--line);border-radius:8px;padding:6px 8px;cursor:pointer;color:var(--ink2);font-family:'Pretendard',sans-serif;">☁️ 자주 쓴 단어</button>
+    </div>
+    ${advancedSearchOpen?renderDateFilterUI():''}
+    ${wordCloudOpen?renderWordCloudUI():''}
   </div>`;
 
   if(allSearch&&allSearch.length>=1){
     listEl.innerHTML=searchHTML+'<div style="text-align:center;padding:20px;color:var(--ink3);">검색 중...</div>';
     try{
       const enc=encodeURIComponent(allSearch);
+      const dateFilter=buildDateFilter();
       const [r1,r2,r3]=await Promise.all([
-        sbGet(`diary_entries?select=*&core=ilike.*${enc}*&order=date.desc&limit=50`),
-        sbGet(`diary_entries?select=*&text=ilike.*${enc}*&order=date.desc&limit=50`),
-        sbGet(`diary_entries?select=*&date=ilike.*${enc}*&order=date.desc&limit=50`)
+        sbGet(`diary_entries?select=*&core=ilike.*${enc}*${dateFilter}&order=date.desc&limit=50`),
+        sbGet(`diary_entries?select=*&text=ilike.*${enc}*${dateFilter}&order=date.desc&limit=50`),
+        sbGet(`diary_entries?select=*&date=ilike.*${enc}*${dateFilter}&order=date.desc&limit=50`)
       ]);
       const seen=new Set();
       const merged=[...r1,...r2,...r3].filter(r=>{if(seen.has(r.date))return false;seen.add(r.date);return true;});
@@ -2041,6 +2376,20 @@ async function renderAll(){
       elist=merged.map(r=>r2e(r));
       if(subEl)subEl.textContent=`검색 결과 ${elist.length}개 (전체 ${totalEntryCount}개 중)`;
       if(!elist.length){listEl.innerHTML=searchHTML+'<div class="empty">검색 결과가 없어요.</div>';return;}
+      renderEntryList(searchHTML);
+    }catch(err){listEl.innerHTML=searchHTML+'<div class="empty">검색 오류가 발생했어요.</div>';}
+    return;
+  }
+  
+  // 키워드 없이 날짜 필터만 있을 때
+  if(hasDateFilter){
+    listEl.innerHTML=searchHTML+'<div style="text-align:center;padding:20px;color:var(--ink3);">검색 중...</div>';
+    try{
+      const dateFilter=buildDateFilter();
+      const rows=await sbGet(`diary_entries?select=*${dateFilter}&order=date.desc&limit=100`);
+      elist=(rows||[]).map(r=>r2e(r));
+      if(subEl)subEl.textContent=`기간 검색 ${elist.length}개`;
+      if(!elist.length){listEl.innerHTML=searchHTML+'<div class="empty">해당 기간에 기록이 없어요.</div>';return;}
       renderEntryList(searchHTML);
     }catch(err){listEl.innerHTML=searchHTML+'<div class="empty">검색 오류가 발생했어요.</div>';}
     return;
@@ -2055,6 +2404,135 @@ async function renderAll(){
   if(subEl)subEl.textContent=countLabel;
   if(!sorted.length){listEl.innerHTML=searchHTML+'<div class="empty">아직 기록이 없어요.<br>오늘 핵심 한 줄부터 써보세요 ✏️</div>';return;}
   renderEntryList(searchHTML);
+}
+
+// 날짜 필터 UI
+function renderDateFilterUI(){
+  return `<div style="margin-top:8px;padding:10px;background:var(--paper);border:1px solid var(--line);border-radius:10px;">
+    <div style="display:flex;gap:8px;align-items:center;">
+      <div style="flex:1;">
+        <div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">시작일</div>
+        <input type="date" id="date-from" value="${allDateFrom}" onchange="setDateFilter('from',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px;background:var(--bg);color:var(--ink);font-family:'Pretendard',sans-serif;">
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">종료일</div>
+        <input type="date" id="date-to" value="${allDateTo}" onchange="setDateFilter('to',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px;background:var(--bg);color:var(--ink);font-family:'Pretendard',sans-serif;">
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:8px;font-size:11px;">
+      <button onclick="setDateRange('week')" style="flex:1;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px;cursor:pointer;color:var(--ink2);font-family:'Pretendard',sans-serif;">최근 1주</button>
+      <button onclick="setDateRange('month')" style="flex:1;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px;cursor:pointer;color:var(--ink2);font-family:'Pretendard',sans-serif;">최근 1달</button>
+      <button onclick="setDateRange('3month')" style="flex:1;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px;cursor:pointer;color:var(--ink2);font-family:'Pretendard',sans-serif;">최근 3달</button>
+      <button onclick="setDateRange('clear')" style="background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--err);font-family:'Pretendard',sans-serif;">초기화</button>
+    </div>
+  </div>`;
+}
+
+// 단어 클라우드 UI
+function renderWordCloudUI(){
+  const cloudHtml=computeWordCloud();
+  return `<div style="margin-top:8px;padding:12px;background:var(--paper);border:1px solid var(--line);border-radius:10px;">
+    <div style="font-size:11px;color:var(--ink3);margin-bottom:8px;">📊 일기에서 자주 등장한 단어 (Top 30)</div>
+    ${cloudHtml}
+  </div>`;
+}
+
+// 단어 빈도 계산 (간단한 한글 분석)
+function computeWordCloud(){
+  const sorted=Object.values(entries||{});
+  if(!sorted.length)return '<div style="color:var(--ink3);font-size:12px;text-align:center;padding:10px;">아직 분석할 일기가 없어요.</div>';
+  
+  // 한글 1-3자 단어 추출 (간단한 토큰화)
+  const stopWords=new Set(['그리고','하지만','그래서','그러나','이것','저것','그것','우리','너무','정말','오늘','어제','오늘은','그냥','그게','그건','했다','했음','하다','된다','있다','없다','되는','하는','이다','이었','였다','했고','했지만','싶다','같다','보다','이런','저런','그런','어떤','무슨','계속','조금','많이','다시','한번','한참','이제','아직','이미','벌써','진짜','완전','거의','약간','매우','대해','대한','대해서','부터','까지','이번','다음','지난','이렇','저렇','그렇','이번주','이번에','등이','때문','때문에','자체','자체로','정도','정말로','진짜로','그리','그런','이런','저런','자기','자신','마치','이런','저런','어느','이러','저러','그러','이것','저것','그것','자꾸','자주','함께','같이']);
+  
+  // 흔한 조사들 (단어 끝에서 제거)
+  const particles=['으로','로서','로써','이라','라고','이다','입니다','였다','하고','한테','에게','에서','에는','에도','에만','으로','으며','으면','이며','이면','이고','이라','이다','다가','다는','다고','부터','까지','마다','조차','이라도','라도','이나','이나마','이며','이지만','이지만','일지','일지도','이라','으니','으니까','니까','이니까','으면서','면서'];
+  const shortParticles=['은','는','이','가','을','를','에','의','와','과','도','만','나','랑','며','요','죠','걸','거','뿐','다','고','면','지','써','로','네','데','래','자','야','며','데서','구나','네','죠','요','다','지','요','잖','래','자','니','음','임','다','은','지','네','요'];
+  
+  function stripParticle(w){
+    // 2-3자 조사 먼저 제거
+    for(const p of particles){
+      if(w.length>p.length+1&&w.endsWith(p)){
+        return w.slice(0,-p.length);
+      }
+    }
+    // 1자 조사 제거 (최소 2자는 남겨야 함)
+    if(w.length>=3){
+      const last=w.slice(-1);
+      if(shortParticles.includes(last))return w.slice(0,-1);
+    }
+    return w;
+  }
+  
+  const counts={};
+  sorted.forEach(e=>{
+    const text=[e.core,e.text,e.dWhat,e.dWhy,e.mistake,e.question,e.answer,e.insight].filter(Boolean).join(' ');
+    // 한글 2-5자 단어 추출
+    const words=text.match(/[\uAC00-\uD7AF]{2,5}/g)||[];
+    words.forEach(rawW=>{
+      let w=stripParticle(rawW);
+      if(w.length<2)return;
+      if(stopWords.has(w))return;
+      counts[w]=(counts[w]||0)+1;
+    });
+  });
+  
+  // 상위 30개 추출 (2회 이상 등장한 것만)
+  const top=Object.entries(counts).filter(([w,c])=>c>=2).sort((a,b)=>b[1]-a[1]).slice(0,30);
+  if(!top.length)return '<div style="color:var(--ink3);font-size:12px;text-align:center;padding:10px;">반복된 단어가 충분하지 않아요. (최소 2회 이상)</div>';
+  
+  const maxCount=top[0][1];
+  return `<div style="display:flex;flex-wrap:wrap;gap:6px;line-height:1.8;">${top.map(([w,c])=>{
+    const size=10+Math.round((c/maxCount)*10); // 10-20px
+    const opacity=0.5+(c/maxCount)*0.5;
+    return `<span onclick="onSearch('${w}')" style="font-size:${size}px;color:var(--accent);opacity:${opacity};cursor:pointer;padding:2px 6px;background:var(--a2);border-radius:6px;display:inline-block;" title="${c}회 등장">${w}</span>`;
+  }).join('')}</div>`;
+}
+
+// 검색 도우미 함수들
+function toggleAdvancedSearch(){
+  advancedSearchOpen=!advancedSearchOpen;
+  if(advancedSearchOpen)wordCloudOpen=false;
+  renderAll();
+}
+
+function toggleWordCloud(){
+  wordCloudOpen=!wordCloudOpen;
+  if(wordCloudOpen)advancedSearchOpen=false;
+  renderAll();
+}
+
+function setDateFilter(type,value){
+  if(type==='from')allDateFrom=value;
+  else allDateTo=value;
+  allPage=1;
+  renderAll();
+}
+
+function setDateRange(range){
+  const today=new Date();
+  const fmt=(d)=>d.toISOString().slice(0,10);
+  if(range==='clear'){
+    allDateFrom='';allDateTo='';
+  }else if(range==='week'){
+    const from=new Date(today);from.setDate(from.getDate()-7);
+    allDateFrom=fmt(from);allDateTo=fmt(today);
+  }else if(range==='month'){
+    const from=new Date(today);from.setMonth(from.getMonth()-1);
+    allDateFrom=fmt(from);allDateTo=fmt(today);
+  }else if(range==='3month'){
+    const from=new Date(today);from.setMonth(from.getMonth()-3);
+    allDateFrom=fmt(from);allDateTo=fmt(today);
+  }
+  allPage=1;
+  renderAll();
+}
+
+function buildDateFilter(){
+  let f='';
+  if(allDateFrom)f+=`&date=gte.${allDateFrom}`;
+  if(allDateTo)f+=`&date=lte.${allDateTo}`;
+  return f;
 }
 
 function renderEntryList(searchHTML){
