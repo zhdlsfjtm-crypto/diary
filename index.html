@@ -73,6 +73,37 @@
 :root.dark [style*="background:linear-gradient(135deg,#F0EAF8,#EAF3DE)"]{background:linear-gradient(135deg,#2D243D,#1F2D17) !important;}
 :root.dark [style*="background:linear-gradient(135deg,#F0EAF8,#E8F0F8)"]{background:linear-gradient(135deg,#2D243D,#1F2D3D) !important;}
 
+/* 🎯 목표 위젯 다크 모드 전용 보완 (가독성 강화) */
+:root.dark #daily-goals-widget,
+:root.dark #weekly-goals-widget{
+  border-color:#5A4D7A !important;
+}
+/* 위젯 상단 라벨 색 */
+:root.dark #daily-goals-widget span[style*="color:var(--core)"],
+:root.dark #weekly-goals-widget span[style*="color:var(--core)"]{
+  color:#A89AE5 !important;
+}
+:root.dark #daily-goals-widget span[style*="color:var(--ink3)"],
+:root.dark #weekly-goals-widget span[style*="color:var(--ink3)"],
+:root.dark #daily-goals-widget div[style*="color:var(--ink3)"]{
+  color:#B0AAA0 !important;
+}
+/* 위젯 내부 동그라미 테두리 (#C9AADC) 보완 */
+:root.dark #daily-goals-widget div[style*="#C9AADC"]{
+  border-color:#9A8AC8 !important;
+}
+/* 위젯 내부 구분선 보완 */
+:root.dark #daily-goals-widget div[style*="rgba(201,170,220,.3)"]{
+  border-bottom-color:rgba(154,138,200,.5) !important;
+}
+:root.dark #daily-goals-widget div[style*="border-top:1px solid #C9AADC"]{
+  border-top-color:#5A4D7A !important;
+}
+/* 목표 항목 텍스트 명확히 */
+:root.dark #daily-goal-items span[style*="color:var(--ink)"]{
+  color:var(--ink) !important;
+}
+
 /* 🚀 FAB (Floating Action Button) */
 .fab{position:fixed;right:18px;bottom:calc(var(--nh) + 18px);width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:24px;box-shadow:0 4px 16px rgba(196,98,45,0.4);z-index:50;display:flex;align-items:center;justify-content:center;transition:all .2s;}
 .fab:active{transform:scale(0.92);}
