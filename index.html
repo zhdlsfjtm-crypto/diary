@@ -540,7 +540,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 <body>
 <div id="app">
   <div class="tb">
-    <div class="tb-brand">📔 나의 일기장</div>
+    <div class="tb-brand" onclick="onBrandTap()" style="cursor:pointer;user-select:none;">📔 나의 일기장</div>
     <div style="display:flex;align-items:center;gap:12px;">
       <button id="theme-toggle" onclick="toggleTheme()" style="background:none;border:none;cursor:pointer;font-size:18px;padding:4px;color:var(--ink2);" title="테마 변경">🌙</button>
       <div class="sync" onclick="onSyncClick()">
@@ -1451,6 +1451,38 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
   </div>
 </div>
 
+<!-- 🐛 디버그 패널 (로고 5번 탭으로 열림) -->
+<div class="ov" id="debug-modal" style="display:none;z-index:200;" onclick="if(event.target===this)closeDebug()">
+  <div class="md" style="max-width:600px;max-height:85vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-family:'Nanum Myeongjo',serif;font-size:18px;color:var(--ink);">🐛 디버그 패널</div>
+      <button class="mx" onclick="closeDebug()">✕</button>
+    </div>
+    
+    <div style="background:var(--bg);padding:10px 12px;border-radius:10px;margin-bottom:10px;font-size:12px;">
+      <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">📊 현재 상태</div>
+      <div id="debug-state" style="font-family:monospace;font-size:11px;color:var(--ink2);white-space:pre-wrap;"></div>
+    </div>
+    
+    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+      <button class="bp" style="flex:1;font-size:12px;padding:8px;" onclick="refreshDebugInfo()">🔄 새로고침</button>
+      <button class="bp" style="flex:1;font-size:12px;padding:8px;" onclick="copyDebugLogs()">📋 로그 복사</button>
+      <button class="bp" style="flex:1;font-size:12px;padding:8px;" onclick="downloadDebugLogs()">💾 다운로드</button>
+      <button class="bp" style="flex:1;font-size:12px;padding:8px;background:var(--err);border-color:var(--err);" onclick="clearAllDebugLogs()">🗑 비우기</button>
+    </div>
+    
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px;">
+      <div style="font-weight:600;color:var(--ink2);font-size:12px;margin-bottom:6px;">📝 최근 로그 (최신순)</div>
+      <div id="debug-logs" style="font-family:monospace;font-size:10px;color:var(--ink2);max-height:400px;overflow-y:auto;background:var(--bg);padding:8px;border-radius:6px;white-space:pre-wrap;word-break:break-all;line-height:1.5;"></div>
+    </div>
+    
+    <div style="margin-top:10px;padding:10px;background:#FFF8E1;border-radius:8px;font-size:11px;color:#7A4A1A;">
+      💡 문제가 있을 때: "📋 로그 복사" 또는 "💾 다운로드" 버튼으로 로그를 보내주세요.<br>
+      🔍 콘솔에서: <code>getDebugLogs()</code>, <code>exportDebugLogs()</code>, <code>clearDebugLogs()</code> 사용 가능
+    </div>
+  </div>
+</div>
+
 <!-- 맞춤법 교정 팝업 -->
 <div class="ov" id="spell-modal" style="display:none" onclick="if(event.target===this)closeSpell()">
   <div class="modal" style="max-height:88vh;">
@@ -1678,6 +1710,14 @@ async function init(){
   setTimeout(()=>checkAndOfferRestore(),1000);
   // 📦 주간 자동 백업 (필요 시)
   setTimeout(()=>maybeWeeklyBackup(),3000);
+  
+  // 🐛 디버그: 시작 로그
+  if(window.dlog)dlog('INIT','앱 시작 완료',{
+    entriesCount:Object.keys(entries||{}).length,
+    today:td(),
+    online:navigator.onLine,
+    darkMode:document.documentElement.classList.contains('dark'),
+  });
 }
 
 // 저장 안 된 백업이 있으면 복구 제안
@@ -1968,9 +2008,13 @@ function onDP(v){if(!v)return;wDate=v;updDHeader();loadDay(v);document.getElemen
 function pickToday(){wDate=null;updDHeader();loadDay(td());document.getElementById('dpwrap').style.display='none';}
 function updDHeader(){
   const d=wDate||td(),it=d===td();
-  document.getElementById('dtitle').textContent=it?'오늘의 일기':fd(d)+' 일기';
-  document.getElementById('dsub').textContent=it?fd(td()):'과거 날짜 — 저장하면 해당 날짜로 기록돼요.';
-  document.getElementById('savebtn').textContent=it?'저장하기':fd(d)+' 저장';
+  const dtitleEl=document.getElementById('dtitle');
+  const dsubEl=document.getElementById('dsub');
+  if(dtitleEl)dtitleEl.textContent=it?'오늘의 일기':fd(d)+' 일기';
+  if(dsubEl)dsubEl.textContent=it?fd(td()):'과거 날짜 — 자동 저장으로 해당 날짜에 기록돼요.';
+  // savebtn은 자동 저장 도입으로 제거됨 - 안전하게 null 체크
+  const savebtnEl=document.getElementById('savebtn');
+  if(savebtnEl)savebtnEl.textContent=it?'저장하기':fd(d)+' 저장';
 }
 function loadDay(ds){
   ['core','dtx','dwhat','dwhy','dmistake','dq','da','dins'].forEach(id=>sv(id,''));
@@ -1987,6 +2031,84 @@ function loadDay(ds){
     }
   }
 }
+
+// 🚨 [중요 버그 수정] 날짜 변경 감지 시스템
+// 자정 넘어가서 다른 날짜의 데이터가 화면에 남아있는 채 저장되는 문제 방지
+let lastSeenDate=td();
+let dailyDirty=false; // 마지막 저장 이후 변경사항이 있는지
+let dailySessionDate=null; // 현재 작성 세션의 날짜 (잠금) - 자정 넘어도 이 날짜로 저장
+
+function markDailyDirty(){
+  dailyDirty=true;
+  // 첫 입력 시 세션 날짜 잠금 (자정 넘어도 이 날짜로 저장됨)
+  if(!dailySessionDate)dailySessionDate=wDate||lastSeenDate||td();
+}
+function clearDailyDirty(){
+  dailyDirty=false;
+  dailySessionDate=null; // 저장 완료 시 세션 종료
+}
+
+function checkDateChange(force){
+  const currentDate=td();
+  // 날짜가 바뀌었고, 사용자가 특정 날짜를 선택한 상태가 아님
+  if(currentDate!==lastSeenDate&&!wDate){
+    console.log('[날짜 변경 감지]',lastSeenDate,'→',currentDate);
+    if(window.dlog)dlog('DATE_CHANGE','날짜 변경 감지',{from:lastSeenDate,to:currentDate,session:dailySessionDate});
+    const previousDate=lastSeenDate;
+    
+    // 대기 중인 자동 저장 즉시 실행 (이전 날짜 데이터로 강제)
+    if(autosaveTimers['daily']){
+      clearTimeout(autosaveTimers['daily']);
+      autosaveTimers['daily']=null;
+      // 세션 날짜가 있으면 그걸 사용, 아니면 이전 날짜
+      const saveDate=dailySessionDate||previousDate;
+      const savedWDate=wDate;
+      wDate=saveDate;
+      autosaveDaily(true).catch((e)=>{console.error('자정 저장 실패',e);}).finally(()=>{
+        wDate=savedWDate;
+        dailySessionDate=null; // 세션 종료
+      });
+    }
+    
+    lastSeenDate=currentDate;
+    
+    // 화면 강제 초기화 (잔재 데이터 방지) - 약간 지연 후
+    setTimeout(()=>{
+      const dailyPn=document.getElementById('pn-daily');
+      if(dailyPn&&dailyPn.classList.contains('on')&&!wDate){
+        // 모든 일기 필드 강제 비움 (잔재 데이터 차단)
+        ['core','dtx','dwhat','dwhy','dmistake','dq','da','dins'].forEach(id=>{
+          const el=document.getElementById(id);
+          if(el)el.value='';
+        });
+        const xb=document.getElementById('xbody');
+        if(xb)xb.classList.remove('on');
+        const xbtn=document.getElementById('xbtn');
+        if(xbtn)xbtn.textContent='+ 자세히 쓰기 (결정·배움·질문·영감)';
+        if(typeof loadDay==='function')loadDay(currentDate);
+        if(typeof updDHeader==='function')updDHeader();
+        try{toast('🌅 새로운 날이 시작됐어요. 오늘 일기로 갱신했어요.');}catch(e){}
+      }
+      dailyDirty=false;
+      dailySessionDate=null;
+    },150);
+    return true;
+  }
+  return false;
+}
+
+// 페이지 다시 보일 때 날짜 체크 (모바일 앱 백그라운드에서 돌아올 때)
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){
+    if(window.dlog)dlog('VISIBILITY','페이지 다시 보임');
+    checkDateChange();
+  }else{
+    if(window.dlog)dlog('VISIBILITY','페이지 숨김 (백그라운드)');
+  }
+});
+
+// 1분마다 백그라운드 체크 (자정 넘어가는 순간 잡기)
+setInterval(()=>{checkDateChange();},60*1000);
 function openFlashback(){if(fbEntry)openV(fbEntry);}
 
 // ── 나의 철학 토글 ──
@@ -2031,6 +2153,67 @@ function restoreDailyMode(){
   }catch(e){}
 }
 
+// 🐛 디버그 로그 시스템 (문제 발생 시 원인 추적용)
+// 사용법: 일기장 로고 5번 빠르게 탭 → 디버그 패널 열림
+const DEBUG_LOG_KEY='diary_debug_log';
+const DEBUG_LOG_MAX=200; // 최근 200개 로그만 유지
+
+window.dlog=function(category,message,data){
+  try{
+    const logs=JSON.parse(localStorage.getItem(DEBUG_LOG_KEY)||'[]');
+    const entry={
+      t:new Date().toISOString(),
+      c:category,
+      m:message,
+      d:data||null,
+      // 컨텍스트 정보
+      ctx:{
+        td:typeof td==='function'?td():null,
+        wDate:typeof wDate!=='undefined'?wDate:null,
+        lastSeen:typeof lastSeenDate!=='undefined'?lastSeenDate:null,
+        session:typeof dailySessionDate!=='undefined'?dailySessionDate:null,
+        url:location.pathname,
+      }
+    };
+    logs.push(entry);
+    // 200개 초과 시 오래된 것 삭제
+    while(logs.length>DEBUG_LOG_MAX)logs.shift();
+    localStorage.setItem(DEBUG_LOG_KEY,JSON.stringify(logs));
+    // 콘솔에도 출력 (F12로 확인 가능)
+    if(category==='ERROR')console.error('[dlog]',category,message,data);
+    else console.log('[dlog]',category,message,data||'');
+  }catch(e){/* localStorage 가득 차거나 다른 에러는 무시 */}
+};
+
+// 로그 가져오기
+window.getDebugLogs=function(){
+  try{return JSON.parse(localStorage.getItem(DEBUG_LOG_KEY)||'[]');}catch(e){return [];}
+};
+
+// 로그 클리어
+window.clearDebugLogs=function(){
+  try{localStorage.removeItem(DEBUG_LOG_KEY);return true;}catch(e){return false;}
+};
+
+// 로그 내보내기 (텍스트로)
+window.exportDebugLogs=function(){
+  const logs=getDebugLogs();
+  if(logs.length===0)return '로그 없음';
+  return logs.map(l=>{
+    const data=l.d?' | '+JSON.stringify(l.d):'';
+    const ctx=l.ctx?` [td:${l.ctx.td}, wDate:${l.ctx.wDate||'-'}, lastSeen:${l.ctx.lastSeen||'-'}, session:${l.ctx.session||'-'}]`:'';
+    return `${l.t} ${l.c}: ${l.m}${data}${ctx}`;
+  }).join('\n');
+};
+
+// 전역 에러 핸들러 - 모든 JS 에러를 디버그 로그로
+window.addEventListener('error',(e)=>{
+  try{dlog('ERROR','JS 에러',{msg:e.message,file:e.filename,line:e.lineno,col:e.colno});}catch(_){}
+});
+window.addEventListener('unhandledrejection',(e)=>{
+  try{dlog('ERROR','Promise 거부',{reason:String(e.reason).slice(0,200)});}catch(_){}
+});
+
 // 🌙 다크 모드 토글
 function toggleTheme(){
   const isDark=document.documentElement.classList.toggle('dark');
@@ -2064,6 +2247,106 @@ function updateThemeButton(isDark){
     if(themeColor)themeColor.content=isDark?'#1A1816':'#C4622D';
   }catch(e){}
 })();
+
+// 🐛 디버그 패널 (로고 5번 탭)
+let brandTapCount=0;
+let brandTapTimer=null;
+function onBrandTap(){
+  brandTapCount++;
+  if(brandTapTimer)clearTimeout(brandTapTimer);
+  brandTapTimer=setTimeout(()=>{brandTapCount=0;},2000);
+  if(brandTapCount>=5){
+    brandTapCount=0;
+    openDebug();
+  }
+}
+
+function openDebug(){
+  const m=document.getElementById('debug-modal');
+  if(!m)return;
+  m.style.display='flex';
+  refreshDebugInfo();
+  if(window.dlog)dlog('UI','디버그 패널 열림');
+}
+
+function closeDebug(){
+  const m=document.getElementById('debug-modal');
+  if(m)m.style.display='none';
+}
+
+function refreshDebugInfo(){
+  // 현재 상태
+  const state={
+    '오늘 (td)':typeof td==='function'?td():'?',
+    'wDate (선택된 날짜)':typeof wDate!=='undefined'?(wDate||'null'):'?',
+    'lastSeenDate':typeof lastSeenDate!=='undefined'?lastSeenDate:'?',
+    'dailySessionDate':typeof dailySessionDate!=='undefined'?(dailySessionDate||'null'):'?',
+    'dailyDirty':typeof dailyDirty!=='undefined'?dailyDirty:'?',
+    '다크 모드':document.documentElement.classList.contains('dark')?'ON':'OFF',
+    '연결 상태':document.getElementById('slbl')?.textContent||'?',
+    'entries 개수':typeof entries!=='undefined'?Object.keys(entries||{}).length:'?',
+    '백업 항목':(function(){try{return Object.keys(JSON.parse(localStorage.getItem('diary_offline_backup')||'{}').entries||{}).length;}catch(e){return '?';}})(),
+    '주간 백업':(function(){try{const ts=localStorage.getItem('diary_weekly_backup_at');return ts?new Date(parseInt(ts)).toLocaleString('ko-KR'):'없음';}catch(e){return '?';}})(),
+    'User Agent':navigator.userAgent.substring(0,80),
+    '화면 크기':`${window.innerWidth}x${window.innerHeight}`,
+    '온라인':navigator.onLine?'YES':'NO',
+  };
+  const stateEl=document.getElementById('debug-state');
+  if(stateEl){
+    stateEl.textContent=Object.entries(state).map(([k,v])=>`${k}: ${v}`).join('\n');
+  }
+  
+  // 로그
+  const logs=getDebugLogs();
+  const logsEl=document.getElementById('debug-logs');
+  if(logsEl){
+    if(logs.length===0){
+      logsEl.textContent='(로그 없음)';
+    }else{
+      // 최신순으로 표시
+      logsEl.textContent=logs.slice(-50).reverse().map(l=>{
+        const time=new Date(l.t).toLocaleTimeString('ko-KR');
+        const cat=(l.c||'').padEnd(12);
+        const data=l.d?' | '+JSON.stringify(l.d):'';
+        return `[${time}] ${cat} ${l.m}${data}`;
+      }).join('\n');
+    }
+  }
+}
+
+async function copyDebugLogs(){
+  const text=exportDebugLogs();
+  try{
+    await navigator.clipboard.writeText(text);
+    toast('📋 로그 복사됨!');
+  }catch(e){
+    // 클립보드 API 실패 시 다운로드로 폴백
+    downloadDebugLogs();
+  }
+}
+
+function downloadDebugLogs(){
+  const text=exportDebugLogs();
+  const stateText=document.getElementById('debug-state')?.textContent||'';
+  const fullText=`=== 일기장 디버그 로그 ===\n생성: ${new Date().toLocaleString('ko-KR')}\n\n--- 현재 상태 ---\n${stateText}\n\n--- 로그 (${getDebugLogs().length}개) ---\n${text}`;
+  const blob=new Blob([fullText],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`diary-debug-${new Date().toISOString().slice(0,19).replace(/[:.]/g,'-')}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('💾 디버그 파일 다운로드됨');
+}
+
+function clearAllDebugLogs(){
+  if(!confirm('정말 모든 로그를 삭제할까요?'))return;
+  clearDebugLogs();
+  refreshDebugInfo();
+  toast('🗑 로그 비워짐');
+}
 
 // 🚀 FAB (빠른 입력) 관리
 function toggleFab(){
@@ -2155,6 +2438,7 @@ async function submitQuickLedger(){
   const mk=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   
   setSync('s');
+  if(window.dlog)dlog('LEDGER','빠른 가계부 추가 시도',{date,mk,type:qledgerType,cat:qledgerCat,amount});
   try{
     await sbFetchDirect('ledger_entries',{
       method:'POST',
@@ -2162,6 +2446,7 @@ async function submitQuickLedger(){
     });
     setSync('ok');
     toast(`${qledgerType==='income'?'수입':'지출'} ${amount}만원 추가됨 ✓`);
+    if(window.dlog)dlog('LEDGER','가계부 저장 성공');
     closeQuickLedger();
     // 가계부 탭이 열려있으면 즉시 새로고침
     const monthlyPn=document.getElementById('pn-monthly');
@@ -2170,6 +2455,7 @@ async function submitQuickLedger(){
     }
   }catch(err){
     setSync('e');
+    if(window.dlog)dlog('ERROR','가계부 저장 실패',{error:String(err).slice(0,100)});
     alert('추가 실패: '+err.message);
   }finally{
     qledgerSubmitting=false;
@@ -2187,13 +2473,14 @@ document.addEventListener('click',(e)=>{
   closeFab();
 });
 
-// ── 일기 저장 ──
+// ── 일기 저장 (deprecated - 자동 저장이 처리. 호환성 위해 남겨둠) ──
 async function saveEntry(){
   const d=wDate||td();
   const core=gv('core'),text=gv('dtx');
   if(!core&&!text){notice('savenotice','핵심 한 줄이나 내용을 입력해주세요.','err');return;}
   const btn=document.getElementById('savebtn');
-  btn.disabled=true;btn.textContent='저장 중...';setSync('s');
+  if(btn){btn.disabled=true;btn.textContent='저장 중...';}
+  setSync('s');
   const e={date:d,mood:'',emotion:'',text,core,dWhat:gv('dwhat'),dWhy:gv('dwhy'),mistake:gv('dmistake'),question:gv('dq'),answer:gv('da'),insight:gv('dins'),tags:''};
   try{
     await sbRPC('upsert_diary',e2r(e));
@@ -2202,11 +2489,17 @@ async function saveEntry(){
     renderWeek();
     setupDailyEditListeners();
   }catch(err){setSync('e');notice('savenotice','저장 실패: '+err.message,'err');}
-  btn.disabled=false;btn.textContent=d===td()?'저장하기':fd(d)+' 저장';
+  if(btn){btn.disabled=false;btn.textContent=d===td()?'저장하기':fd(d)+' 저장';}
 }
 
 // ── 탭 전환 ──
 function goTab(t){
+  // 🚨 [중요] 일기 탭 진입 시 날짜 변경 체크 (자정 넘어갔는지)
+  if(t==='daily'){
+    checkDateChange();
+  }
+  if(window.dlog)dlog('UI','탭 전환',{to:t});
+  
   tabs.forEach(x=>{
     const pn=document.getElementById('pn-'+x);
     const nb=document.getElementById('nb-'+x);
@@ -3623,7 +3916,11 @@ function attachAutosave(fieldIds,tabKey,saveFn){
     if(!el)return;
     if(el._autosaveBound)return; // 중복 방지
     el._autosaveBound=true;
-    el.addEventListener('input',()=>scheduleAutosave(tabKey,saveFn));
+    el.addEventListener('input',()=>{
+      // 일기 탭일 때 세션 날짜 잠금 (자정 안전 처리)
+      if(tabKey==='daily'&&typeof markDailyDirty==='function')markDailyDirty();
+      scheduleAutosave(tabKey,saveFn);
+    });
     // 페이지를 벗어나기 직전에 즉시 저장 (blur)
     el.addEventListener('blur',()=>{
       if(autosaveTimers[tabKey]){
@@ -3635,25 +3932,39 @@ function attachAutosave(fieldIds,tabKey,saveFn){
 }
 
 // 일기(오늘) 자동 저장 - 텍스트 입력만 대상 (조용 모드)
-async function autosaveDaily(){
-  const d=wDate||td();
+async function autosaveDaily(force){
+  // 🚨 [자정 안전] 세션 날짜 우선 사용 (자정 넘어도 작성 시작 날짜 유지)
+  const d=wDate||dailySessionDate||td();
+  
+  // 🚨 [안전 장치] force가 아닐 때 + wDate 없을 때만 날짜 체크
+  // 세션 날짜가 잠겨있으면 그걸 신뢰 (자정 넘어도 OK)
+  if(!force&&!wDate&&!dailySessionDate&&lastSeenDate&&lastSeenDate!==td()){
+    console.warn('[자동 저장 차단] 세션도 없는데 날짜 변경 감지. checkDateChange 트리거');
+    if(window.dlog)dlog('SAVE_BLOCKED','날짜 변경 감지로 저장 차단',{lastSeen:lastSeenDate,today:td()});
+    checkDateChange();
+    return;
+  }
+  
   const core=gv('core'),text=gv('dtx');
   const dwhat=gv('dwhat'),dwhy=gv('dwhy'),mistake=gv('dmistake');
   const dq=gv('dq'),da=gv('da'),dins=gv('dins');
-  // 모든 필드가 비어있을 때만 저장 안 함 (자세한 입력만 있을 때도 저장하도록)
   const hasAnyContent=core||text||dwhat||dwhy||mistake||dq||da||dins;
   if(!hasAnyContent)return;
   const e={date:d,mood:'',emotion:'',text,core,dWhat:dwhat,dWhy:dwhy,mistake,question:dq,answer:da,insight:dins,tags:''};
+  if(window.dlog)dlog('SAVE','일기 자동 저장 시작',{date:d,len:(core||'').length+(text||'').length,force});
   setSync('s');
   try{
     await sbRPC('upsert_diary',e2r(e));
     entries[d]=e;
     setSync('ok');
-    clearLocalBackup('diary_'+d); // 성공 시 백업 제거
+    clearLocalBackup('diary_'+d);
+    clearDailyDirty();
+    if(window.dlog)dlog('SAVE','일기 저장 성공',{date:d});
     renderWeek();
   }catch(err){
     setSync('e');
-    backupToLocalStorage('diary_'+d,e); // 🛡️ 실패 시 백업
+    backupToLocalStorage('diary_'+d,e);
+    if(window.dlog)dlog('ERROR','일기 저장 실패 - 백업됨',{date:d,error:String(err).slice(0,100)});
     throw err;
   }
 }
