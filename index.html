@@ -73,35 +73,79 @@
 :root.dark [style*="background:linear-gradient(135deg,#F0EAF8,#EAF3DE)"]{background:linear-gradient(135deg,#2D243D,#1F2D17) !important;}
 :root.dark [style*="background:linear-gradient(135deg,#F0EAF8,#E8F0F8)"]{background:linear-gradient(135deg,#2D243D,#1F2D3D) !important;}
 
-/* 🎯 목표 위젯 다크 모드 전용 보완 (가독성 강화) */
+/* 🎯 목표 위젯 다크 모드 - 강력 적용 (가독성 최우선) */
 :root.dark #daily-goals-widget,
 :root.dark #weekly-goals-widget{
-  border-color:#5A4D7A !important;
+  background:#2D243D !important;
+  border:1px solid #5A4D7A !important;
 }
-/* 위젯 상단 라벨 색 */
-:root.dark #daily-goals-widget span[style*="color:var(--core)"],
-:root.dark #weekly-goals-widget span[style*="color:var(--core)"]{
-  color:#A89AE5 !important;
+/* 위젯 내부 모든 요소 텍스트 강제 밝은 색 */
+:root.dark #daily-goals-widget,
+:root.dark #daily-goals-widget *,
+:root.dark #weekly-goals-widget,
+:root.dark #weekly-goals-widget *{
+  color:#E8E4DC !important;
 }
-:root.dark #daily-goals-widget span[style*="color:var(--ink3)"],
-:root.dark #weekly-goals-widget span[style*="color:var(--ink3)"],
-:root.dark #daily-goals-widget div[style*="color:var(--ink3)"]{
+/* 위젯 상단 "⚡ 이번 주 목표" 라벨 - 강조색 */
+:root.dark #daily-goals-widget > div > span:first-child,
+:root.dark #weekly-goals-widget > div > span:first-child{
+  color:#B89AE5 !important;
+}
+/* 위젯 우상단 완료율 텍스트 - 살짝 흐리게 */
+:root.dark #daily-goal-pct,
+:root.dark #weekly-goal-pct{
   color:#B0AAA0 !important;
 }
-/* 위젯 내부 동그라미 테두리 (#C9AADC) 보완 */
-:root.dark #daily-goals-widget div[style*="#C9AADC"]{
+/* 위젯 내부 동그라미 (체크박스) - 미완료 상태 */
+:root.dark #daily-goal-items > div > div[style*="#C9AADC"]{
   border-color:#9A8AC8 !important;
+  background:transparent !important;
 }
-/* 위젯 내부 구분선 보완 */
-:root.dark #daily-goals-widget div[style*="rgba(201,170,220,.3)"]{
-  border-bottom-color:rgba(154,138,200,.5) !important;
+/* 완료된 동그라미는 녹색 유지 */
+:root.dark #daily-goal-items > div > div[style*="var(--ok)"]{
+  background:#7AB446 !important;
+  border-color:#7AB446 !important;
 }
-:root.dark #daily-goals-widget div[style*="border-top:1px solid #C9AADC"]{
+/* 위젯 내부 구분선 */
+:root.dark #daily-goal-items > div{
+  border-bottom-color:rgba(154,138,200,.3) !important;
+}
+/* "목표 탭에서 관리 →" 링크 */
+:root.dark #daily-goals-widget > div:last-child{
   border-top-color:#5A4D7A !important;
+  color:#B0AAA0 !important;
 }
-/* 목표 항목 텍스트 명확히 */
-:root.dark #daily-goal-items span[style*="color:var(--ink)"]{
-  color:var(--ink) !important;
+/* 완료된 목표 (취소선) 텍스트도 보이게 */
+:root.dark #daily-goal-items span[style*="line-through"]{
+  color:#B0AAA0 !important;
+  opacity:0.7 !important;
+}
+
+/* 🎯 목표 탭 (pn-goals) 목록 다크 모드 가독성 */
+:root.dark #pn-goals .goal-text,
+:root.dark #yr-goals-list .goal-text,
+:root.dark #mo-goals-list .goal-text,
+:root.dark #wk-goals-list .goal-text{
+  color:#E8E4DC !important;
+}
+/* 완료된 목표의 취소선 텍스트도 보이게 */
+:root.dark #pn-goals .goal-text[style*="line-through"]{
+  color:#9A948A !important;
+}
+/* 목표 입력란 */
+:root.dark #pn-goals input[type="text"],
+:root.dark #pn-goals input.linp{
+  background:var(--bg) !important;
+  color:#E8E4DC !important;
+  border-color:#3A352E !important;
+}
+:root.dark #pn-goals input[type="text"]::placeholder{
+  color:#807A6F !important;
+}
+/* 편집 모드 입력란 */
+:root.dark .goal-edit-inp{
+  background:var(--paper) !important;
+  color:#E8E4DC !important;
 }
 
 /* 🚀 FAB (Floating Action Button) */
