@@ -852,7 +852,14 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
     <!-- 주간 -->
     <div class="pn" id="pn-weekly">
       <div class="ptitle">주간 정리</div>
-      <div class="psub" id="wsub"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div class="psub" id="wsub" style="margin-bottom:0;"></div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button onclick="chWeek(-1)" style="padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:13px;">◀</button>
+          <button onclick="chWeek(0)" id="wk-this-btn" style="padding:5px 10px;border-radius:6px;border:1px solid var(--accent);background:var(--a2);cursor:pointer;font-size:12px;color:var(--accent);">이번주</button>
+          <button onclick="chWeek(1)" style="padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:13px;">▶</button>
+        </div>
+      </div>
 
       <!-- 이번 주 목표 달성률 연결 -->
       <div id="weekly-goals-widget" style="display:none;background:linear-gradient(135deg,#F0EAF8,#EAF3DE);border-radius:14px;padding:14px;margin-bottom:12px;">
@@ -877,11 +884,14 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
         <div class="sc"><div class="sv" id="sdec">—</div><div class="sl">결정</div></div>
         <div class="sc"><div class="sv" id="smis">—</div><div class="sl">배움</div></div>
       </div>
-      <div class="card">
-        <div class="ch"><span class="ci">🤖</span><span class="ct">AI 주간 정리</span></div>
-        <div class="aibox" id="aibox">버튼을 누르면 이번 주를 따뜻하게 정리해드려요.</div>
+      <!-- 🤖 AI 주간 정리 (현재 미사용 - display:none) -->
+      <div id="ai-weekly-section" style="display:none;">
+        <div class="card">
+          <div class="ch"><span class="ci">🤖</span><span class="ct">AI 주간 정리</span></div>
+          <div class="aibox" id="aibox">버튼을 누르면 이번 주를 따뜻하게 정리해드려요.</div>
+        </div>
+        <button class="bg" id="aibtn" onclick="genAI()">이번 주 AI 정리 받기 ↗</button>
       </div>
-      <button class="bg" id="aibtn" onclick="genAI()">이번 주 AI 정리 받기 ↗</button>
     </div>
 
     <!-- 월간 -->
@@ -1000,7 +1010,15 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
     <!-- 분기 -->
     <div class="pn" id="pn-quarterly">
       <div class="ptitle">분기 회고</div>
-      <div class="psub" id="qsub"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div class="psub" id="qsub" style="margin-bottom:0;"></div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button onclick="chQuarter(-1)" style="padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:13px;">◀</button>
+          <button onclick="chQuarter(0)" id="q-this-btn" style="padding:5px 10px;border-radius:6px;border:1px solid var(--accent);background:var(--a2);cursor:pointer;font-size:12px;color:var(--accent);">이번 분기</button>
+          <button onclick="chQuarter(1)" style="padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:13px;">▶</button>
+        </div>
+      </div>
+      <div id="q-readonly-banner" style="display:none;background:var(--a2);color:var(--accent);font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:10px;">📖 과거 분기 — 읽기 전용 (수정하려면 '이번 분기'로)</div>
       <div class="cmpcard">
         <div class="ch"><span class="ci">🔄</span><span class="ct">3개월 전 나 vs 지금 나</span></div>
         <div style="margin-bottom:10px;">
@@ -1707,18 +1725,44 @@ function td(){const d=new Date();return `${d.getFullYear()}-${p2(d.getMonth()+1)
 function p2(n){return String(n).padStart(2,'0');}
 function fd(s){if(!s)return'날짜 없음';const d=new Date(s+'T00:00:00');return `${d.getFullYear()}년 ${MOS[d.getMonth()]} ${d.getDate()}일 (${DAYS[d.getDay()]})`;}
 function fmtD(d){return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;}
-function wdates(){
+// 주간 정리 탭의 주차 오프셋 (0=이번주, -1=지난주, +1=다음주)
+let weeklyOffset=0;
+
+function wdates(offset){
+  // offset 인자 우선, 없으면 weeklyOffset 사용
+  const off=(offset!==undefined)?offset:weeklyOffset;
   const t=new Date();
   const dow=t.getDay();
   const diffToMon=dow===0?-6:1-dow;
   return Array.from({length:7},(_,i)=>{
     const d=new Date(t);
-    d.setDate(t.getDate()+diffToMon+i);
+    d.setDate(t.getDate()+diffToMon+i+(off*7));
     return fmtD(d);
   });
 }
 function mk(){const d=new Date();return `m_${d.getFullYear()}_${d.getMonth()+1}`;}
-function qk(){const d=new Date(),q=Math.ceil((d.getMonth()+1)/3);return `q_${d.getFullYear()}_Q${q}`;}
+
+// 분기 회고 탭의 분기 오프셋 (0=이번분기, -1=지난분기)
+let quarterlyOffset=0;
+
+function qk(offset){
+  const off=(offset!==undefined)?offset:0;
+  const d=new Date();
+  // 현재 분기 번호 (1~4) 기준으로 오프셋 적용
+  let totalQ=d.getFullYear()*4+Math.ceil((d.getMonth()+1)/3)-1; // 0-indexed 절대 분기
+  totalQ+=off;
+  const year=Math.floor(totalQ/4);
+  const q=(totalQ%4)+1;
+  return `q_${year}_Q${q}`;
+}
+
+// 분기 키 → 사람이 읽는 라벨
+function qkLabel(offset){
+  const key=qk(offset);
+  const m=key.match(/q_(\d+)_Q(\d)/);
+  if(!m)return key;
+  return `${m[1]}년 ${m[2]}분기`;
+}
 function gv(id){return(document.getElementById(id)?.value||'').trim();}
 function sv(id,v){const e=document.getElementById(id);if(e)e.value=v||'';}
 function sh(id,v){const e=document.getElementById(id);if(e)e.style.display=v?'block':'none';}
@@ -1818,7 +1862,7 @@ async function init(){
   document.getElementById('msub').textContent=`${now.getFullYear()}년 ${MOS[now.getMonth()]} 가계부`;
   const wd=wdates();
   const f=new Date(wd[0]+'T00:00:00'),l=new Date(wd[6]+'T00:00:00');
-  document.getElementById('wsub').textContent=`${f.getMonth()+1}월 ${f.getDate()}일(월) — ${l.getMonth()+1}월 ${l.getDate()}일(일)`;
+  document.getElementById('wsub').textContent=`${f.getMonth()+1}월 ${f.getDate()}일(월) — ${l.getMonth()+1}월 ${l.getDate()}일(일) · 이번 주`;
 
   setSync('s');
   try{
@@ -3074,8 +3118,66 @@ async function delE(date){
 }
 
 // ── 주간 ──
+// 주간 정리 — 주차 이동
+async function chWeek(dir){
+  if(dir===0){weeklyOffset=0;}
+  else{weeklyOffset+=dir;}
+  if(weeklyOffset>1)weeklyOffset=1;
+  
+  // 해당 주의 데이터가 메모리에 있는지 확인, 없으면 서버에서 로드
+  const dates=wdates();
+  const missing=dates.filter(ds=>entries[ds]===undefined);
+  if(missing.length>0&&weeklyOffset<0){
+    // 과거 주이고 일부 데이터가 메모리에 없으면 서버 조회
+    try{
+      const from=dates[0],to=dates[6];
+      const rows=await sbGet(`diary_entries?select=*&date=gte.${from}&date=lte.${to}&order=date.desc`);
+      if(rows&&rows.length>0){
+        rows.forEach(r=>{entries[r.date]=r2e(r);});
+      }
+      // 조회 후에도 없는 날짜는 '기록 없음'으로 마킹 (재조회 방지)
+      missing.forEach(ds=>{
+        if(entries[ds]===undefined)entries[ds]=null;
+      });
+    }catch(err){
+      console.error('주간 데이터 로드 실패',err);
+      if(window.dlog)dlog('ERROR','주간 데이터 로드 실패',{error:String(err).slice(0,100)});
+    }
+  }
+  
+  renderWeek();
+  updWeekSub();
+  const thisBtn=document.getElementById('wk-this-btn');
+  if(thisBtn){
+    if(weeklyOffset===0){
+      thisBtn.style.background='var(--a2)';
+      thisBtn.style.color='var(--accent)';
+      thisBtn.style.borderColor='var(--accent)';
+    }else{
+      thisBtn.style.background='var(--bg)';
+      thisBtn.style.color='var(--ink2)';
+      thisBtn.style.borderColor='var(--line)';
+    }
+  }
+  if(window.dlog)dlog('UI','주간 이동',{offset:weeklyOffset});
+}
+
+function updWeekSub(){
+  const wd=wdates();
+  const f=new Date(wd[0]+'T00:00:00'),l=new Date(wd[6]+'T00:00:00');
+  const sub=document.getElementById('wsub');
+  if(!sub)return;
+  let label=`${f.getMonth()+1}월 ${f.getDate()}일(월) — ${l.getMonth()+1}월 ${l.getDate()}일(일)`;
+  if(weeklyOffset===0)label+=' · 이번 주';
+  else if(weeklyOffset===-1)label+=' · 지난 주';
+  else if(weeklyOffset<-1)label+=` · ${-weeklyOffset}주 전`;
+  else if(weeklyOffset===1)label+=' · 다음 주';
+  sub.textContent=label;
+}
+
 function renderWeek(){
   const dates=wdates(),today=td(),grid=document.getElementById('wgrid');
+  if(!grid)return;
   grid.innerHTML='';
   dates.forEach(ds=>{
     const d=new Date(ds+'T00:00:00'),e=entries[ds];
@@ -3086,9 +3188,15 @@ function renderWeek(){
     grid.appendChild(cell);
   });
   const we=dates.map(d=>entries[d]).filter(Boolean);
-  document.getElementById('scnt').textContent=we.length+'/7';
-  document.getElementById('sdec').textContent=we.filter(e=>e.dWhat).length+'건';
-  document.getElementById('smis').textContent=we.filter(e=>e.mistake).length+'건';
+  const scnt=document.getElementById('scnt');
+  const sdec=document.getElementById('sdec');
+  const smis=document.getElementById('smis');
+  if(scnt)scnt.textContent=we.length+'/7';
+  if(sdec)sdec.textContent=we.filter(e=>e.dWhat).length+'건';
+  if(smis)smis.textContent=we.filter(e=>e.mistake).length+'건';
+  // 선택한 날 박스 초기화
+  const wdetail=document.getElementById('wdetail');
+  if(wdetail)wdetail.textContent='날짜를 탭하면 일기가 표시됩니다.';
 }
 function showWE(ds){
   const e=entries[ds],box=document.getElementById('wdetail');
@@ -4175,21 +4283,84 @@ function delGoal(type,i){
 
 // ── 분기 ──
 async function saveQuarterly(silent){
+  // 과거 분기를 보고 있으면 저장 안 함 (읽기 전용)
+  if(quarterlyOffset!==0){
+    if(window.dlog)dlog('UI','과거 분기 저장 차단',{offset:quarterlyOffset});
+    return;
+  }
   try{
-    await sbRPC('upsert_quarterly',{p_quarter_key:qk(),p_before_text:gv('qbefore'),p_after_text:gv('qafter'),p_mistakes:gv('qmistakes'),p_principles:gv('qprinciples')});
+    await sbRPC('upsert_quarterly',{p_quarter_key:qk(0),p_before_text:gv('qbefore'),p_after_text:gv('qafter'),p_mistakes:gv('qmistakes'),p_principles:gv('qprinciples')});
     if(!silent)notice('qnotice','분기 회고 저장되었어요 ✓','ok');
   }catch(err){
     if(!silent)notice('qnotice','저장 실패: '+err.message,'err');
     throw err;
   }
 }
+
 async function loadQuarterlyData(){
   try{
-    const rows=await sbGet('quarterly_notes?quarter_key=eq.'+qk()+'&select=*');
+    const rows=await sbGet('quarterly_notes?quarter_key=eq.'+qk(quarterlyOffset)+'&select=*');
     if(rows&&rows.length>0){
-      const r=rows[0];sv('qbefore',r.before_text);sv('qafter',r.after_text);sv('qmistakes',r.mistakes);sv('qprinciples',r.principles);
+      const r=rows[0];
+      sv('qbefore',r.before_text);sv('qafter',r.after_text);
+      sv('qmistakes',r.mistakes);sv('qprinciples',r.principles);
+    }else{
+      // 기록 없는 분기 → 입력란 비움
+      sv('qbefore','');sv('qafter','');sv('qmistakes','');sv('qprinciples','');
     }
+    updQuarterUI();
   }catch(err){console.error('분기 로드 실패',err);}
+}
+
+// 분기 이동
+async function chQuarter(dir){
+  if(dir===0){quarterlyOffset=0;}
+  else{quarterlyOffset+=dir;}
+  // 미래 분기로는 못 감
+  if(quarterlyOffset>0)quarterlyOffset=0;
+  await loadQuarterlyData();
+  if(window.dlog)dlog('UI','분기 이동',{offset:quarterlyOffset,key:qk(quarterlyOffset)});
+}
+
+// 분기 UI 갱신 (라벨, 읽기 전용 배너, 입력란 활성화)
+function updQuarterUI(){
+  // 부제 라벨
+  const sub=document.getElementById('qsub');
+  if(sub){
+    let label=qkLabel(quarterlyOffset);
+    if(quarterlyOffset===0)label+=' · 이번 분기';
+    else if(quarterlyOffset===-1)label+=' · 지난 분기';
+    else label+=` · ${-quarterlyOffset}분기 전`;
+    sub.textContent=label;
+  }
+  
+  // 읽기 전용 배너
+  const banner=document.getElementById('q-readonly-banner');
+  if(banner)banner.style.display=quarterlyOffset!==0?'block':'none';
+  
+  // 입력란 readonly 처리
+  const readOnly=quarterlyOffset!==0;
+  ['qbefore','qafter','qmistakes','qprinciples'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){
+      el.readOnly=readOnly;
+      el.style.opacity=readOnly?'0.75':'1';
+    }
+  });
+  
+  // '이번 분기' 버튼 강조
+  const thisBtn=document.getElementById('q-this-btn');
+  if(thisBtn){
+    if(quarterlyOffset===0){
+      thisBtn.style.background='var(--a2)';
+      thisBtn.style.color='var(--accent)';
+      thisBtn.style.borderColor='var(--accent)';
+    }else{
+      thisBtn.style.background='var(--bg)';
+      thisBtn.style.color='var(--ink2)';
+      thisBtn.style.borderColor='var(--line)';
+    }
+  }
 }
 
 // ──────────────── 영어 학습 트래커 ────────────────
