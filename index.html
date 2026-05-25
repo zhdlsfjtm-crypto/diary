@@ -333,15 +333,17 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .fb-hint{font-size:10px;color:var(--accent);margin-top:6px;opacity:.7;}
 
 /* 주간 */
-.wgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px;}
-.dc{border:1px solid var(--line);border-radius:10px;padding:6px 2px;text-align:center;cursor:pointer;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--paper);}
+.wgrid{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;}
+.wgrid::-webkit-scrollbar{height:5px;}
+.wgrid::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
+.dc{border:1px solid var(--line);border-radius:10px;padding:8px 4px;text-align:center;cursor:pointer;min-height:78px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;background:var(--paper);flex:0 0 84px;scroll-snap-align:start;}
 .dc.has{border-color:#D4956A;}
 .dc.sel{background:var(--a2);border-color:var(--accent);}
 .dc.td{border-color:var(--accent);border-width:2px;}
-.dn{font-size:9px;color:var(--ink3);}
-.dd{font-size:14px;font-weight:600;}
-.dm{font-size:16px;}
-.dcore{font-size:8px;color:var(--core);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;padding:0 3px;text-align:center;}
+.dn{font-size:10px;color:var(--ink3);}
+.dd{font-size:16px;font-weight:600;}
+.dm{font-size:17px;}
+.dcore{font-size:9px;color:var(--core);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;padding:0 3px;text-align:center;}
 .ebox{background:var(--bg);border-radius:10px;padding:12px;font-size:14px;font-family:'Nanum Myeongjo',serif;color:var(--ink2);line-height:2;min-height:56px;white-space:pre-wrap;}
 .srow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
 .sc{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 6px;text-align:center;}
@@ -3197,6 +3199,55 @@ function renderWeek(){
   // 선택한 날 박스 초기화
   const wdetail=document.getElementById('wdetail');
   if(wdetail)wdetail.textContent='날짜를 탭하면 일기가 표시됩니다.';
+  // 🎯 해당 주의 목표 달성률 위젯 갱신
+  renderWeeklyGoalWidget();
+}
+
+// 주간 정리 탭의 목표 위젯 — 보고 있는 주차에 맞춰 갱신
+async function renderWeeklyGoalWidget(){
+  const wwid=document.getElementById('weekly-goals-widget');
+  const wbar=document.getElementById('weekly-goal-bar');
+  const wpct=document.getElementById('weekly-goal-pct');
+  const witems=document.getElementById('weekly-goal-items');
+  if(!wwid)return;
+  
+  let weekGoals=[];
+  
+  if(weeklyOffset===0){
+    // 이번 주는 메모리의 goalsData.wk 사용
+    weekGoals=goalsData.wk||[];
+  }else{
+    // 다른 주는 서버에서 해당 주차 목표 조회
+    try{
+      const keys=goalKeys(weeklyOffset,0);
+      const rows=await sbGet(`goals?goal_key=eq.${keys.main}&select=*`);
+      weekGoals=(rows&&rows.length>0)?(rows[0].week_goals||[]):[];
+    }catch(err){
+      console.error('주차 목표 로드 실패',err);
+      weekGoals=[];
+    }
+  }
+  
+  // 위젯 제목도 주차에 맞춰 변경
+  const titleSpan=wwid.querySelector('span');
+  if(titleSpan){
+    if(weeklyOffset===0)titleSpan.textContent='🎯 이번 주 목표 달성률';
+    else if(weeklyOffset===-1)titleSpan.textContent='🎯 지난 주 목표 달성률';
+    else if(weeklyOffset<-1)titleSpan.textContent=`🎯 ${-weeklyOffset}주 전 목표 달성률`;
+    else if(weeklyOffset===1)titleSpan.textContent='🎯 다음 주 목표 달성률';
+  }
+  
+  if(weekGoals.length>0){
+    const done=weekGoals.filter(g=>g.done).length;
+    const pct=Math.round((done/weekGoals.length)*100);
+    if(wpct)wpct.textContent=`${pct}%`;
+    if(wbar)wbar.style.width=pct+'%';
+    if(witems)witems.innerHTML=weekGoals.map(g=>`
+      <span style="font-size:11px;padding:3px 8px;border-radius:20px;background:${g.done?'var(--ok-bg)':'var(--line)'};color:${g.done?'var(--ok)':'var(--ink3)'};text-decoration:${g.done?'line-through':'none'};">${g.text.replace(/</g,'&lt;')}</span>`).join('');
+    wwid.style.display='block';
+  }else{
+    wwid.style.display='none';
+  }
 }
 function showWE(ds){
   const e=entries[ds],box=document.getElementById('wdetail');
@@ -3530,20 +3581,10 @@ function renderGoalWidgets(){
     widget.style.display='none';
   }
 
-  const wwid=document.getElementById('weekly-goals-widget');
-  const wbar=document.getElementById('weekly-goal-bar');
-  const wpct=document.getElementById('weekly-goal-pct');
-  const witems=document.getElementById('weekly-goal-items');
-  if(wk.length>0&&wwid){
-    const done=wk.filter(g=>g.done).length;
-    const pct=Math.round((done/wk.length)*100);
-    if(wpct)wpct.textContent=`${pct}%`;
-    if(wbar)wbar.style.width=pct+'%';
-    if(witems)witems.innerHTML=wk.map(g=>`
-      <span style="font-size:11px;padding:3px 8px;border-radius:20px;background:${g.done?'var(--ok-bg)':'var(--line)'};color:${g.done?'var(--ok)':'var(--ink3)'};text-decoration:${g.done?'line-through':'none'};">${g.text.replace(/</g,'&lt;')}</span>`).join('');
-    wwid.style.display='block';
-  } else if(wwid){
-    wwid.style.display='none';
+  // 주간 정리 탭 위젯은 renderWeeklyGoalWidget이 담당 (주차 연동)
+  // 단, 이번 주 목표를 체크/변경했을 때 주간 탭이 이번 주를 보고 있으면 동기화
+  if(typeof weeklyOffset!=='undefined'&&weeklyOffset===0&&typeof renderWeeklyGoalWidget==='function'){
+    renderWeeklyGoalWidget();
   }
 
   const mwid=document.getElementById('monthly-goals-widget');
