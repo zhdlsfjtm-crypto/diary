@@ -2891,13 +2891,18 @@ async function renderAll(){
     try{
       const enc=encodeURIComponent(allSearch);
       const dateFilter=buildDateFilter();
-      const [r1,r2,r3]=await Promise.all([
-        sbGet(`diary_entries?select=*&core=ilike.*${enc}*${dateFilter}&order=date.desc&limit=50`),
-        sbGet(`diary_entries?select=*&text=ilike.*${enc}*${dateFilter}&order=date.desc&limit=50`),
-        sbGet(`diary_entries?select=*&date=ilike.*${enc}*${dateFilter}&order=date.desc&limit=50`)
+      const [r1,r2,r3,r4,r5,r6,r7,r8]=await Promise.all([
+        sbGet(`diary_entries?select=*&core=ilike.*${enc}*${dateFilter}&order=date.desc&limit=100`),
+        sbGet(`diary_entries?select=*&text=ilike.*${enc}*${dateFilter}&order=date.desc&limit=100`),
+        sbGet(`diary_entries?select=*&date=ilike.*${enc}*${dateFilter}&order=date.desc&limit=100`),
+        sbGet(`diary_entries?select=*&question=ilike.*${enc}*${dateFilter}&order=date.desc&limit=100`),
+        sbGet(`diary_entries?select=*&answer=ilike.*${enc}*${dateFilter}&order=date.desc&limit=100`),
+        sbGet(`diary_entries?select=*&insight=ilike.*${enc}*${dateFilter}&order=date.desc&limit=100`),
+        sbGet(`diary_entries?select=*&decision_what=ilike.*${enc}*${dateFilter}&order=date.desc&limit=100`),
+        sbGet(`diary_entries?select=*&mistake=ilike.*${enc}*${dateFilter}&order=date.desc&limit=100`)
       ]);
       const seen=new Set();
-      const merged=[...r1,...r2,...r3].filter(r=>{if(seen.has(r.date))return false;seen.add(r.date);return true;});
+      const merged=[...r1,...r2,...r3,...r4,...r5,...r6,...r7,...r8].filter(r=>{if(seen.has(r.date))return false;seen.add(r.date);return true;});
       merged.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
       elist=merged.map(r=>r2e(r));
       if(subEl)subEl.textContent=`검색 결과 ${elist.length}개 (전체 ${totalEntryCount}개 중)`;
