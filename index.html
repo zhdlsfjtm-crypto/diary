@@ -3619,8 +3619,7 @@ function goalKeys(wkOff=0, moOff=0){
   const now=new Date();
   const yr=now.getFullYear();
 
-  const moDate=new Date(now);
-  moDate.setMonth(moDate.getMonth()+moOff);
+  const moDate=new Date(now.getFullYear(),now.getMonth()+moOff,1);
   const mo=moDate.getMonth()+1;
   const moYr=moDate.getFullYear();
 
