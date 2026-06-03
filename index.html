@@ -1244,6 +1244,33 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       <div class="notice" id="gnotice"></div>
     </div>
 
+    <!-- 업무 노트 -->
+    <div class="pn" id="pn-work">
+      <div class="ptitle">💼 업무 노트</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button onclick="chWorkDate(-1)" style="padding:4px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:13px;">◀</button>
+          <span id="work-date-label" style="font-size:14px;font-weight:600;color:var(--ink);"></span>
+          <button onclick="chWorkDate(1)" id="work-next-btn" style="padding:4px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:13px;">▶</button>
+        </div>
+        <button onclick="chWorkDate(0)" style="padding:4px 10px;border-radius:8px;border:1px solid var(--accent);background:var(--a2);cursor:pointer;font-size:11px;color:var(--accent);">오늘</button>
+      </div>
+
+      <div class="ch"><span class="ci">🔴</span><span class="ct">당장</span></div>
+      <textarea id="work-urgent" class="efld" rows="5" placeholder="지금 당장 해야 할 것들..." oninput="schedWorkSave()"></textarea>
+
+      <div class="ch" style="margin-top:16px;"><span class="ci">🟠</span><span class="ct">이번 주</span></div>
+      <textarea id="work-week" class="efld" rows="5" placeholder="이번 주 안에 할 것들..." oninput="schedWorkSave()"></textarea>
+
+      <div class="ch" style="margin-top:16px;"><span class="ci">🟡</span><span class="ct">큰 그림</span></div>
+      <textarea id="work-bigpicture" class="efld" rows="4" placeholder="장기 방향, 큰 결정들..." oninput="schedWorkSave()"></textarea>
+
+      <div class="ch" style="margin-top:16px;"><span class="ci">📌</span><span class="ct">핵심 메모</span></div>
+      <textarea id="work-memo" class="efld" rows="4" placeholder="결정 맥락, 보류 이유 등..." oninput="schedWorkSave()"></textarea>
+
+      <div class="autosave-wrap"><span class="autosave-badge saved" id="autosave-work"><span class="dot"></span><span class="txt">저장됨</span></span></div>
+    </div>
+
     <!-- 영어 학습 트래커 -->
     <div class="pn" id="pn-english">
       <div class="ptitle">CES 라스베가스 영어 루틴</div>
@@ -1467,6 +1494,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
     <div class="more-item" id="more-weekly" onclick="goTabAndCloseMore('weekly')"><span class="more-item-icon">📅</span><span>주간 정리</span></div>
     <div class="more-item" id="more-quarterly" onclick="goTabAndCloseMore('quarterly')"><span class="more-item-icon">🔄</span><span>분기 회고</span></div>
     <div class="more-item" id="more-all" onclick="goTabAndCloseMore('all')"><span class="more-item-icon">📚</span><span>전체 기록</span></div>
+    <div class="more-item" id="more-work" onclick="goTabAndCloseMore('work')"><span class="more-item-icon">💼</span><span>업무 노트</span></div>
   </div>
 </div>
 
@@ -1684,7 +1712,7 @@ const SECS={re:{u:'억',c:'av-a'},fi:{u:'억',c:'av-a'},co:{u:'억',c:'av-a'},et
 
 // ── 상태 ──
 let entries={}, vEntry=null, eEntry=null, wDate=null, fbEntry=null;
-let tabs=['daily','weekly','monthly','goals','english','quarterly','all'];
+let tabs=['daily','weekly','monthly','goals','english','quarterly','all','work'];
 let goalsData={yr:[],mo:[],wk:[]};
 
 // 🔁 반복 목표 시스템
@@ -2726,6 +2754,7 @@ function goTab(t){
   if(t==='quarterly')loadQuarterlyData();
   if(t==='english'){renderEnglish();}
   if(t==='all'){allPage=1;renderAll();}
+  if(t==='work')loadWorkNotes();
 }
 
 // 더보기 메뉴 토글
@@ -4325,6 +4354,87 @@ function delGoal(type,i){
     }
   });
 });
+
+
+// ── 업무 노트 ──
+let workDateOffset = 0;
+let workAutoSaveTimer = null;
+
+function workDateStr(offset = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().slice(0, 10);
+}
+
+function workDateLabel(offset = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const dow = ['일','월','화','수','목','금','토'][d.getDay()];
+  if (offset === 0) return `오늘 (${m}/${day} ${dow})`;
+  if (offset === -1) return `어제 (${m}/${day} ${dow})`;
+  return `${m}/${day} (${dow})`;
+}
+
+function chWorkDate(dir) {
+  if (dir === 0) { workDateOffset = 0; }
+  else { workDateOffset += dir; }
+  // 오늘 이후는 이동 불가
+  if (workDateOffset > 0) workDateOffset = 0;
+  loadWorkNotes();
+}
+
+async function loadWorkNotes() {
+  const ds = workDateStr(workDateOffset);
+  const lbl = document.getElementById('work-date-label');
+  if (lbl) lbl.textContent = workDateLabel(workDateOffset);
+  const nextBtn = document.getElementById('work-next-btn');
+  if (nextBtn) nextBtn.disabled = workDateOffset >= 0;
+  if (nextBtn) nextBtn.style.opacity = workDateOffset >= 0 ? '0.3' : '1';
+
+  const fields = ['work-urgent','work-week','work-bigpicture','work-memo'];
+  fields.forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  setAutosaveStatus('work','saved','저장됨');
+
+  try {
+    const rows = await sbGet(`work_notes?note_date=eq.${ds}&select=*`);
+    if (rows && rows.length > 0) {
+      const r = rows[0];
+      const u = document.getElementById('work-urgent'); if(u) u.value = r.urgent || '';
+      const w = document.getElementById('work-week'); if(w) w.value = r.this_week || '';
+      const b = document.getElementById('work-bigpicture'); if(b) b.value = r.big_picture || '';
+      const m = document.getElementById('work-memo'); if(m) m.value = r.memo || '';
+    }
+  } catch(e) { console.error('업무 노트 로드 실패', e); }
+}
+
+function schedWorkSave() {
+  if (workDateOffset !== 0) return; // 과거는 저장 안 함
+  setAutosaveStatus('work','saving','변경됨...');
+  clearTimeout(workAutoSaveTimer);
+  workAutoSaveTimer = setTimeout(async () => {
+    setAutosaveStatus('work','saving','저장 중...');
+    try {
+      const ds = workDateStr(0);
+      const urgent = document.getElementById('work-urgent')?.value || '';
+      const this_week = document.getElementById('work-week')?.value || '';
+      const big_picture = document.getElementById('work-bigpicture')?.value || '';
+      const memo = document.getElementById('work-memo')?.value || '';
+      await sbRPC('upsert_work_note', {
+        p_date: ds,
+        p_urgent: urgent,
+        p_this_week: this_week,
+        p_big_picture: big_picture,
+        p_memo: memo
+      });
+      setAutosaveStatus('work','saved','✓ 저장됨');
+    } catch(e) {
+      console.error('업무 노트 저장 실패', e);
+      setAutosaveStatus('work','error','저장 실패');
+    }
+  }, 1200);
+}
 
 // ── 분기 ──
 async function saveQuarterly(silent){
