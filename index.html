@@ -3508,7 +3508,7 @@ async function loadLedgerData(){
   try{
     const [rows,brows]=await Promise.all([
       sbGet(`ledger_entries?month_key=eq.${key}&select=*&order=entry_date.desc,created_at.desc`),
-      sbGet(`monthly_budgets?month_key=eq.${key}&select=*`)
+      sbGet(`monthly_budget?month_key=eq.${key}&select=*`)
     ]);
     ledgerData=rows||[];
     if(brows&&brows.length>0){
