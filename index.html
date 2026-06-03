@@ -999,7 +999,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
           <select id="l-cat" class="linp" style="font-size:13px;"></select>
         </div>
         <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px;">
-          <input type="number" id="l-amount" class="linp" placeholder="금액 (만원)" style="font-size:15px;font-weight:600;">
+          <input type="number" id="l-amount" class="linp" placeholder="금액 (원, 예: 44200)" style="font-size:15px;font-weight:600;">
           <span style="display:flex;align-items:center;font-size:13px;color:var(--ink3);">만원</span>
         </div>
         <input type="text" id="l-memo" class="linp" placeholder="메모 (선택)" style="font-size:13px;margin-bottom:10px;">
@@ -1671,8 +1671,8 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       <button class="qmodal-type-btn" id="qledger-tbtn-in" onclick="qledgerSetType('income')">💰 수입</button>
     </div>
     <div class="qmodal-field">
-      <div class="qmodal-lbl">금액 (만원)</div>
-      <input type="number" id="qledger-amount" class="qmodal-input" placeholder="예: 5" inputmode="numeric" autofocus>
+      <div class="qmodal-lbl">금액 (원)</div>
+      <input type="number" id="qledger-amount" class="qmodal-input" placeholder="예: 44200" inputmode="numeric" autofocus>
     </div>
     <div class="qmodal-field">
       <div class="qmodal-lbl">카테고리</div>
@@ -2697,7 +2697,8 @@ let qledgerSubmitting=false; // 중복 제출 방지 플래그
 
 async function submitQuickLedger(){
   if(qledgerSubmitting)return; // 🛡️ 진행 중이면 무시
-  const amount=parseInt(document.getElementById('qledger-amount').value)||0;
+  const amountWon=parseInt(document.getElementById('qledger-amount').value)||0;
+  const amount=Math.round(amountWon/10000*100)/100; // 원→만원 변환
   const memo=document.getElementById('qledger-memo').value.trim();
   const date=document.getElementById('qledger-date').value||td();
   if(!amount){alert('금액을 입력해주세요');return;}
@@ -2720,7 +2721,7 @@ async function submitQuickLedger(){
       body:JSON.stringify({entry_date:date,month_key:mk,type:qledgerType,category:qledgerCat,amount,memo})
     });
     setSync('ok');
-    toast(`${qledgerType==='income'?'수입':'지출'} ${amount}만원 추가됨 ✓`);
+    toast(`${qledgerType==='income'?'수입':'지출'} ${amountWon.toLocaleString()}원 추가됨 ✓`);
     if(window.dlog)dlog('LEDGER','가계부 저장 성공');
     closeQuickLedger();
     // 가계부 탭이 열려있으면 즉시 새로고침
@@ -3610,9 +3611,10 @@ async function addLedger(){
   if(ledgerAddSubmitting)return; // 🛡️ 중복 제출 방지
   const date=document.getElementById('l-date').value||td();
   const cat=document.getElementById('l-cat').value;
-  const amount=parseInt(document.getElementById('l-amount').value)||0;
+  const amountWon=parseInt(document.getElementById('l-amount').value)||0;
+  const amount=Math.round(amountWon/10000*100)/100;
   const memo=document.getElementById('l-memo').value.trim();
-  if(!amount){notice('lnotice','금액을 입력해주세요.','err');return;}
+  if(!amountWon){notice('lnotice','금액을 입력해주세요.','err');return;}
   
   ledgerAddSubmitting=true;
   const addBtn=document.getElementById('ledger-add-btn');
@@ -3658,7 +3660,7 @@ function editLedger(i){
   setType(r.type);
   document.getElementById('l-date').value=r.entry_date;
   setTimeout(()=>{const sel=document.getElementById('l-cat');if(sel)sel.value=r.category;},50);
-  document.getElementById('l-amount').value=r.amount;
+  document.getElementById('l-amount').value=Math.round(r.amount*10000);
   document.getElementById('l-memo').value=r.memo||'';
   const addBtn=document.getElementById('ledger-add-btn');
   const cancelBtn=document.getElementById('ledger-cancel-btn');
