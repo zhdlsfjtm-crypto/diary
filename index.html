@@ -4444,13 +4444,15 @@ function renderWorkSection(section) {
   const items = workData[section] || [];
   // 미완료 먼저, 완료 나중
   const sorted = [...items.map((it,i) => ({...it, _i:i}))].sort((a,b) => a.done - b.done);
-  list.innerHTML = sorted.map(it => `
-    <div class="work-item${it.done?' done':''}">
-      <div class="work-item-check${it.done?' checked':''}" onclick="${isReadOnly?'':'workToggle(''+section+'','+it._i+')'}"></div>
-      <div class="work-item-text">${it.text.replace(/</g,'&lt;')}</div>
-      ${isReadOnly?'':'<div class="work-item-del" onclick="workDelete(''+section+'','+it._i+')">✕</div>'}
-    </div>
-  `).join('');
+  list.innerHTML = sorted.map(it => {
+    const doneClass = it.done ? ' done' : '';
+    const checkedClass = it.done ? ' checked' : '';
+    const toggleBtn = isReadOnly ? '' : `<div class="work-item-del" onclick="workDelete('${section}',${it._i})">✕</div>`;
+    const delBtn = isReadOnly ? '' : toggleBtn;
+    const onclk = isReadOnly ? '' : `onclick="workToggle('${section}',${it._i})"`;
+    const safeText = it.text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<div class="work-item${doneClass}"><div class="work-item-check${checkedClass}" ${onclk}></div><div class="work-item-text">${safeText}</div>${delBtn}</div>`;
+  }).join('');
 }
 
 function renderWorkAll() {
