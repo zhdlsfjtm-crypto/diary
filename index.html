@@ -3436,8 +3436,14 @@ async function confirmLedgerImport() {
   const today = td();
   const curKey = lmk();
 
+  // 현재 이달 내역과 중복 체크
+  const existingKeys = new Set(ledgerData.map(r => `${r.type}|${r.category}|${r.amount}|${r.memo||''}`));
+  const toAdd = selected.filter(it => !existingKeys.has(`${it.type}|${it.category}|${it.amount}|${it.memo||''}`));
+
+  if (toAdd.length === 0) { showToast('이미 모두 추가되어 있어요'); return; }
+
   try {
-    for (const it of selected) {
+    for (const it of toAdd) {
       await fetch(SBU + '/rest/v1/ledger_entries', {
         method: 'POST',
         headers: { ...H, 'Prefer': 'return=minimal' },
@@ -3451,9 +3457,10 @@ async function confirmLedgerImport() {
         })
       });
     }
+    const skipped = selected.length - toAdd.length;
     closeLedgerImport();
     await loadLedgerData();
-    showToast(`${selected.length}개 항목을 가져왔어요`);
+    showToast(skipped > 0 ? `${toAdd.length}개 추가 (${skipped}개 중복 건너뜀)` : `${toAdd.length}개 항목을 가져왔어요`);
   } catch(e) {
     console.error('가져오기 실패', e);
     showToast('가져오기 실패');
@@ -3522,8 +3529,21 @@ async function loadLedgerData(){
       const mp=document.getElementById('mprinciple');
       if(mp)mp.value=savedPrinciple;
     }else{
-      budgets={};snapAsset=0;snapDebt=0;savedPrinciple='';
+      budgets={};savedPrinciple='';
       const mp=document.getElementById('mprinciple');if(mp)mp.value='';
+      // 지난달 스냅샷 가져오기
+      try{
+        const prevM=ledgerM===0?11:ledgerM-1;
+        const prevY=ledgerM===0?ledgerY-1:ledgerY;
+        const prevKey=`m_${prevY}_${prevM+1}`;
+        const prows=await sbGet(`monthly_budget?month_key=eq.${prevKey}&select=*`);
+        if(prows&&prows.length>0){
+          snapAsset=prows[0].total_asset||0;
+          snapDebt=prows[0].total_debt||0;
+        }else{snapAsset=0;snapDebt=0;}
+      }catch(e){snapAsset=0;snapDebt=0;}
+      const sa=document.getElementById('snap-asset');if(sa)sa.value=snapAsset||'';
+      const sd=document.getElementById('snap-debt');if(sd)sd.value=snapDebt||'';
     }
     calcNet();renderLedger();renderCatBars();renderBudgetInputs();
   }catch(err){console.error('가계부 로드 실패',err);}
