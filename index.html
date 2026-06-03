@@ -464,6 +464,23 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .more-item.on{background:var(--a2);color:var(--accent);font-weight:600;}
 .more-item-icon{font-size:18px;}
 
+/* 업무 노트 체크리스트 */
+.work-checklist{display:flex;flex-direction:column;gap:2px;min-height:32px;margin-bottom:4px;}
+.work-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--paper);border:1px solid var(--line);transition:opacity .2s;}
+.work-item.done{opacity:0.45;}
+.work-item-check{width:18px;height:18px;border-radius:5px;border:2px solid var(--ink3);background:transparent;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.work-item-check.checked{background:var(--accent);border-color:var(--accent);}
+.work-item-check.checked::after{content:'✓';color:#fff;font-size:11px;font-weight:700;}
+.work-item-text{flex:1;font-size:14px;color:var(--ink);font-family:'Pretendard',sans-serif;line-height:1.4;word-break:break-all;}
+.work-item.done .work-item-text{text-decoration:line-through;color:var(--ink3);}
+.work-item-del{font-size:14px;color:var(--ink3);cursor:pointer;padding:2px 4px;opacity:0;transition:opacity .15s;}
+.work-item:hover .work-item-del{opacity:1;}
+.work-add-row{padding:4px 0;}
+.work-add-inp{width:100%;border:none;border-bottom:1px solid var(--line);background:transparent;font-size:14px;color:var(--ink);padding:6px 4px;outline:none;font-family:'Pretendard',sans-serif;}
+.work-add-inp::placeholder{color:var(--ink3);}
+.work-add-inp:focus{border-color:var(--accent);}
+:root.dark .work-item{background:var(--paper);border-color:var(--line);}
+
 /* 토스트 */
 .toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:rgba(28,26,22,.85);color:#fff;font-size:13px;padding:10px 18px;border-radius:20px;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;}
 .toast.on{opacity:1;}
@@ -1253,20 +1270,32 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
           <span id="work-date-label" style="font-size:14px;font-weight:600;color:var(--ink);"></span>
           <button onclick="chWorkDate(1)" id="work-next-btn" style="padding:4px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:13px;">▶</button>
         </div>
-        <button onclick="chWorkDate(0)" style="padding:4px 10px;border-radius:8px;border:1px solid var(--accent);background:var(--a2);cursor:pointer;font-size:11px;color:var(--accent);">오늘</button>
+        <div style="display:flex;gap:6px;">
+          <button onclick="importYesterday()" id="work-import-btn" style="padding:4px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:11px;color:var(--ink2);">어제 미완료 가져오기</button>
+          <button onclick="chWorkDate(0)" style="padding:4px 10px;border-radius:8px;border:1px solid var(--accent);background:var(--a2);cursor:pointer;font-size:11px;color:var(--accent);">오늘</button>
+        </div>
       </div>
 
       <div class="ch"><span class="ci">🔴</span><span class="ct">당장</span></div>
-      <textarea id="work-urgent" class="efld" rows="5" placeholder="지금 당장 해야 할 것들..." oninput="schedWorkSave()"></textarea>
+      <div id="work-urgent-list" class="work-checklist"></div>
+      <div class="work-add-row" id="work-urgent-add">
+        <input class="work-add-inp" placeholder="+ 항목 추가..." onkeydown="workAddItem(event,'urgent')" />
+      </div>
 
       <div class="ch" style="margin-top:16px;"><span class="ci">🟠</span><span class="ct">이번 주</span></div>
-      <textarea id="work-week" class="efld" rows="5" placeholder="이번 주 안에 할 것들..." oninput="schedWorkSave()"></textarea>
+      <div id="work-week-list" class="work-checklist"></div>
+      <div class="work-add-row" id="work-week-add">
+        <input class="work-add-inp" placeholder="+ 항목 추가..." onkeydown="workAddItem(event,'week')" />
+      </div>
 
       <div class="ch" style="margin-top:16px;"><span class="ci">🟡</span><span class="ct">큰 그림</span></div>
-      <textarea id="work-bigpicture" class="efld" rows="4" placeholder="장기 방향, 큰 결정들..." oninput="schedWorkSave()"></textarea>
+      <div id="work-bigpicture-list" class="work-checklist"></div>
+      <div class="work-add-row" id="work-bigpicture-add">
+        <input class="work-add-inp" placeholder="+ 항목 추가..." onkeydown="workAddItem(event,'bigpicture')" />
+      </div>
 
       <div class="ch" style="margin-top:16px;"><span class="ci">📌</span><span class="ct">핵심 메모</span></div>
-      <textarea id="work-memo" class="efld" rows="4" placeholder="결정 맥락, 보류 이유 등..." oninput="schedWorkSave()"></textarea>
+      <textarea id="work-memo" class="efld" rows="4" placeholder="결정 맥락, 보류 이유 등..." oninput="autoResizeWorkMemo();schedWorkSave();" style="resize:none;overflow:hidden;"></textarea>
 
       <div class="autosave-wrap"><span class="autosave-badge saved" id="autosave-work"><span class="dot"></span><span class="txt">저장됨</span></span></div>
     </div>
@@ -4359,6 +4388,7 @@ function delGoal(type,i){
 // ── 업무 노트 ──
 let workDateOffset = 0;
 let workAutoSaveTimer = null;
+let workData = { urgent: [], week: [], bigpicture: [], memo: '' };
 
 function workDateStr(offset = 0) {
   const d = new Date();
@@ -4380,9 +4410,91 @@ function workDateLabel(offset = 0) {
 function chWorkDate(dir) {
   if (dir === 0) { workDateOffset = 0; }
   else { workDateOffset += dir; }
-  // 오늘 이후는 이동 불가
   if (workDateOffset > 0) workDateOffset = 0;
   loadWorkNotes();
+}
+
+function workAddItem(e, section) {
+  if (e.key !== 'Enter') return;
+  const inp = e.target;
+  const text = inp.value.trim();
+  if (!text) return;
+  workData[section].push({ text, done: false });
+  inp.value = '';
+  renderWorkSection(section);
+  schedWorkSave();
+}
+
+function workToggle(section, idx) {
+  workData[section][idx].done = !workData[section][idx].done;
+  renderWorkSection(section);
+  schedWorkSave();
+}
+
+function workDelete(section, idx) {
+  workData[section].splice(idx, 1);
+  renderWorkSection(section);
+  schedWorkSave();
+}
+
+function renderWorkSection(section) {
+  const list = document.getElementById('work-' + section + '-list');
+  if (!list) return;
+  const isReadOnly = workDateOffset !== 0;
+  const items = workData[section] || [];
+  // 미완료 먼저, 완료 나중
+  const sorted = [...items.map((it,i) => ({...it, _i:i}))].sort((a,b) => a.done - b.done);
+  list.innerHTML = sorted.map(it => `
+    <div class="work-item${it.done?' done':''}">
+      <div class="work-item-check${it.done?' checked':''}" onclick="${isReadOnly?'':'workToggle(''+section+'','+it._i+')'}"></div>
+      <div class="work-item-text">${it.text.replace(/</g,'&lt;')}</div>
+      ${isReadOnly?'':'<div class="work-item-del" onclick="workDelete(''+section+'','+it._i+')">✕</div>'}
+    </div>
+  `).join('');
+}
+
+function renderWorkAll() {
+  ['urgent','week','bigpicture'].forEach(s => renderWorkSection(s));
+  const memo = document.getElementById('work-memo');
+  if (memo) { memo.value = workData.memo || ''; autoResizeWorkMemo(); }
+  // 과거 날짜는 입력창 숨기기
+  ['urgent','week','bigpicture'].forEach(s => {
+    const add = document.getElementById('work-'+s+'-add');
+    if (add) add.style.display = workDateOffset !== 0 ? 'none' : '';
+  });
+  const importBtn = document.getElementById('work-import-btn');
+  if (importBtn) importBtn.style.display = workDateOffset !== 0 ? 'none' : '';
+  if (memo) memo.readOnly = workDateOffset !== 0;
+}
+
+function autoResizeWorkMemo() {
+  const el = document.getElementById('work-memo');
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = Math.max(80, el.scrollHeight) + 'px';
+}
+
+async function importYesterday() {
+  try {
+    const yd = workDateStr(-1);
+    const rows = await sbGet(`work_notes?note_date=eq.${yd}&select=*`);
+    if (!rows || rows.length === 0) { showToast('어제 기록이 없어요'); return; }
+    const r = rows[0];
+    let imported = 0;
+    ['urgent','week','bigpicture'].forEach(s => {
+      const key = s === 'week' ? 'this_week' : s === 'bigpicture' ? 'big_picture' : s;
+      const items = r[key] || [];
+      const undone = items.filter(it => !it.done);
+      if (undone.length > 0) {
+        workData[s] = [...workData[s], ...undone];
+        imported += undone.length;
+      }
+    });
+    if (imported === 0) { showToast('어제 미완료 항목이 없어요'); return; }
+    renderWorkAll();
+    schedWorkSave();
+    showToast(`${imported}개 항목을 가져왔어요`);
+  } catch(e) { console.error('어제 가져오기 실패', e); showToast('가져오기 실패'); }
 }
 
 async function loadWorkNotes() {
@@ -4390,42 +4502,39 @@ async function loadWorkNotes() {
   const lbl = document.getElementById('work-date-label');
   if (lbl) lbl.textContent = workDateLabel(workDateOffset);
   const nextBtn = document.getElementById('work-next-btn');
-  if (nextBtn) nextBtn.disabled = workDateOffset >= 0;
-  if (nextBtn) nextBtn.style.opacity = workDateOffset >= 0 ? '0.3' : '1';
+  if (nextBtn) { nextBtn.disabled = workDateOffset >= 0; nextBtn.style.opacity = workDateOffset >= 0 ? '0.3' : '1'; }
 
-  const fields = ['work-urgent','work-week','work-bigpicture','work-memo'];
-  fields.forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  workData = { urgent: [], week: [], bigpicture: [], memo: '' };
   setAutosaveStatus('work','saved','저장됨');
 
   try {
     const rows = await sbGet(`work_notes?note_date=eq.${ds}&select=*`);
     if (rows && rows.length > 0) {
       const r = rows[0];
-      const u = document.getElementById('work-urgent'); if(u) u.value = r.urgent || '';
-      const w = document.getElementById('work-week'); if(w) w.value = r.this_week || '';
-      const b = document.getElementById('work-bigpicture'); if(b) b.value = r.big_picture || '';
-      const m = document.getElementById('work-memo'); if(m) m.value = r.memo || '';
+      workData.urgent = r.urgent || [];
+      workData.week = r.this_week || [];
+      workData.bigpicture = r.big_picture || [];
+      workData.memo = r.memo || '';
     }
   } catch(e) { console.error('업무 노트 로드 실패', e); }
+  renderWorkAll();
 }
 
 function schedWorkSave() {
-  if (workDateOffset !== 0) return; // 과거는 저장 안 함
+  if (workDateOffset !== 0) return;
   setAutosaveStatus('work','saving','변경됨...');
   clearTimeout(workAutoSaveTimer);
   workAutoSaveTimer = setTimeout(async () => {
     setAutosaveStatus('work','saving','저장 중...');
     try {
       const ds = workDateStr(0);
-      const urgent = document.getElementById('work-urgent')?.value || '';
-      const this_week = document.getElementById('work-week')?.value || '';
-      const big_picture = document.getElementById('work-bigpicture')?.value || '';
       const memo = document.getElementById('work-memo')?.value || '';
+      workData.memo = memo;
       await sbRPC('upsert_work_note', {
         p_date: ds,
-        p_urgent: urgent,
-        p_this_week: this_week,
-        p_big_picture: big_picture,
+        p_urgent: workData.urgent,
+        p_this_week: workData.week,
+        p_big_picture: workData.bigpicture,
         p_memo: memo
       });
       setAutosaveStatus('work','saved','✓ 저장됨');
