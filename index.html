@@ -972,16 +972,16 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 
       <!-- 이달 요약 -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
-        <div class="sum-card income"><div class="sum-lbl">총 수입</div><div class="sum-val" id="sum-income">0</div><div class="sum-unit">만원</div></div>
-        <div class="sum-card expense"><div class="sum-lbl">총 지출</div><div class="sum-val" id="sum-expense">0</div><div class="sum-unit">만원</div></div>
-        <div class="sum-card"><div class="sum-lbl">순현금</div><div class="sum-val" id="sum-net">0</div><div class="sum-unit">만원</div></div>
+        <div class="sum-card income"><div class="sum-lbl">총 수입</div><div class="sum-val" id="sum-income">0</div><div class="sum-unit">원</div></div>
+        <div class="sum-card expense"><div class="sum-lbl">총 지출</div><div class="sum-val" id="sum-expense">0</div><div class="sum-unit">원</div></div>
+        <div class="sum-card"><div class="sum-lbl">순현금</div><div class="sum-val" id="sum-net">0</div><div class="sum-unit">원</div></div>
       </div>
 
       <!-- 예산 대비 -->
       <div class="card">
         <div class="ch"><span class="ci">📊</span><span class="ct">카테고리별 지출</span><span class="cd" style="cursor:pointer;color:var(--accent);" onclick="toggleBudgetEdit()">예산 설정</span></div>
         <div id="budget-edit" style="display:none;margin-bottom:12px;padding:12px;background:var(--bg);border-radius:10px;">
-          <div style="font-size:11px;color:var(--ink3);margin-bottom:8px;">월 예산 설정 (만원)</div>
+          <div style="font-size:11px;color:var(--ink3);margin-bottom:8px;">월 예산 설정 (원)</div>
           <div id="budget-inputs"></div>
         </div>
         <div id="cat-bars"></div>
@@ -1000,7 +1000,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
         </div>
         <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px;">
           <input type="number" id="l-amount" class="linp" placeholder="금액 (원, 예: 44200)" style="font-size:15px;font-weight:600;">
-          <span style="display:flex;align-items:center;font-size:13px;color:var(--ink3);">만원</span>
+          <span style="display:flex;align-items:center;font-size:13px;color:var(--ink3);">원</span>
         </div>
         <input type="text" id="l-memo" class="linp" placeholder="메모 (선택)" style="font-size:13px;margin-bottom:10px;">
         <button class="bp" id="ledger-add-btn" onclick="addLedger()">추가하기</button>
@@ -1761,7 +1761,7 @@ const CES_DATE='2027-01-06';
 const STAGE_REPS=[4,3,1,9,3];
 const DAYS=['일','월','화','수','목','금','토'];
 const MOS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-const SECS={re:{u:'억',c:'av-a'},fi:{u:'억',c:'av-a'},co:{u:'억',c:'av-a'},et:{u:'억',c:'av-a'},de:{u:'억',c:'av-d'},in:{u:'만원',c:'av-i'},ex:{u:'만원',c:'av-e'}};
+const SECS={re:{u:'억',c:'av-a'},fi:{u:'억',c:'av-a'},co:{u:'억',c:'av-a'},et:{u:'억',c:'av-a'},de:{u:'억',c:'av-d'},in:{u:'원',c:'av-i'},ex:{u:'원',c:'av-e'}};
 
 // ── 상태 ──
 let entries={}, vEntry=null, eEntry=null, wDate=null, fbEntry=null;
@@ -2698,7 +2698,7 @@ let qledgerSubmitting=false; // 중복 제출 방지 플래그
 async function submitQuickLedger(){
   if(qledgerSubmitting)return; // 🛡️ 진행 중이면 무시
   const amountWon=parseInt(document.getElementById('qledger-amount').value)||0;
-  const amount=Math.round(amountWon/10000*100)/100; // 원→만원 변환
+  const amount=amountWon; // 원 단위 그대로 저장
   const memo=document.getElementById('qledger-memo').value.trim();
   const date=document.getElementById('qledger-date').value||td();
   if(!amount){alert('금액을 입력해주세요');return;}
@@ -3583,7 +3583,7 @@ function renderCatBars(){
     return `<div class="cat-bar-row">
       <div class="cat-bar-name">
         <span>${cat}</span>
-        <span style="color:${overBudget?'var(--err)':'var(--ink3)'};">${amt.toLocaleString()}만원${budget?` / 예산 ${budget.toLocaleString()}만원`:''}</span>
+        <span style="color:${overBudget?'var(--err)':'var(--ink3)'};">${amt.toLocaleString()}원${budget?` / 예산 ${budget.toLocaleString()}원`:''}</span>
       </div>
       <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%;background:${color};"></div></div>
     </div>`;
@@ -3612,7 +3612,7 @@ async function addLedger(){
   const date=document.getElementById('l-date').value||td();
   const cat=document.getElementById('l-cat').value;
   const amountWon=parseInt(document.getElementById('l-amount').value)||0;
-  const amount=Math.round(amountWon/10000*100)/100;
+  const amount=amountWon; // 원 단위 그대로 저장
   const memo=document.getElementById('l-memo').value.trim();
   if(!amountWon){notice('lnotice','금액을 입력해주세요.','err');return;}
   
@@ -3660,7 +3660,7 @@ function editLedger(i){
   setType(r.type);
   document.getElementById('l-date').value=r.entry_date;
   setTimeout(()=>{const sel=document.getElementById('l-cat');if(sel)sel.value=r.category;},50);
-  document.getElementById('l-amount').value=Math.round(r.amount*10000);
+  document.getElementById('l-amount').value=r.amount;
   document.getElementById('l-memo').value=r.memo||'';
   const addBtn=document.getElementById('ledger-add-btn');
   const cancelBtn=document.getElementById('ledger-cancel-btn');
