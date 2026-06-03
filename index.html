@@ -957,11 +957,11 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
           <div style="text-align:center;">
             <div style="font-size:10px;color:var(--ink3);margin-bottom:4px;">총 자산 (억)</div>
-            <input type="number" id="snap-asset" class="snap-inp" placeholder="0" oninput="calcNet()">
+            <input type="number" id="snap-asset" class="snap-inp" placeholder="0" oninput="calcNet();schedLedgerSave()">
           </div>
           <div style="text-align:center;">
             <div style="font-size:10px;color:var(--ink3);margin-bottom:4px;">부채 (억)</div>
-            <input type="number" id="snap-debt" class="snap-inp av-d" placeholder="0" oninput="calcNet()">
+            <input type="number" id="snap-debt" class="snap-inp av-d" placeholder="0" oninput="calcNet();schedLedgerSave()">
           </div>
           <div style="text-align:center;">
             <div style="font-size:10px;color:var(--ok);margin-bottom:4px;font-weight:600;">순자산 (억)</div>
@@ -3547,6 +3547,23 @@ async function loadLedgerData(){
     }
     calcNet();renderLedger();renderCatBars();renderBudgetInputs();
   }catch(err){console.error('가계부 로드 실패',err);}
+}
+
+let ledgerSaveTimer=null;
+function schedLedgerSave(){
+  clearTimeout(ledgerSaveTimer);
+  ledgerSaveTimer=setTimeout(async()=>{
+    try{
+      await sbRPC('upsert_monthly_budget',{
+        p_month_key:lmk(),
+        p_budgets:budgets,
+        p_net_asset:snapAsset-snapDebt,
+        p_total_asset:snapAsset,
+        p_total_debt:snapDebt,
+        p_principle:document.getElementById('mprinciple')?.value||''
+      });
+    }catch(e){console.error('스냅샷 저장 실패',e);}
+  },1000);
 }
 
 function calcNet(){
