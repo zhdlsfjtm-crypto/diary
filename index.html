@@ -810,7 +810,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       <div class="core-hero">
         <div class="core-lbl">
           <span>✨ 오늘의 핵심 한 줄</span>
-          <button class="spell-btn" onclick="checkSpell('core')"✏️ 맞춤법</button>
+          <button class="spell-btn" onclick="checkSpell('core')">✏️ 맞춤법</button>
         </div>
         <textarea class="core-inp" id="core" rows="2" placeholder="오늘을 한 문장으로 압축하세요..."></textarea>
       </div>
@@ -1215,7 +1215,8 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
           <div class="ch" style="margin-bottom:0;"><span class="ci">📅</span><span class="ct">달 목표</span><span style="font-size:11px;color:var(--ink3);margin-left:6px;" id="mo-nav-label"></span></div>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
             <span class="cd" id="mo-pct">0% 달성</span>
-            <button onclick="importWorkToGoal('mo')" style="padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:11px;color:var(--ink2);">💼 업무 가져오기</button>
+            <button onclick="importWorkToGoal('mo')" style="padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:11px;color:var(--ink2);">💼 업무</button>
+            <button onclick="importPrevGoal('mo')" style="padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:11px;color:var(--ink2);">📅 지난달</button>
             <button onclick="chGoalMo(-1)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:12px;">◀</button>
             <button onclick="chGoalMo(0)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--accent);background:var(--a2);cursor:pointer;font-size:11px;color:var(--accent);">이번달</button>
             <button onclick="chGoalMo(1)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:12px;">▶</button>
@@ -1236,7 +1237,8 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
           <div class="ch" style="margin-bottom:0;"><span class="ci">⚡</span><span class="ct">주 목표</span><span style="font-size:11px;color:var(--ink3);margin-left:6px;" id="wk-nav-label"></span></div>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
             <span class="cd" id="wk-pct">0% 달성</span>
-            <button onclick="importWorkToGoal('wk')" style="padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:11px;color:var(--ink2);">💼 업무 가져오기</button>
+            <button onclick="importWorkToGoal('wk')" style="padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:11px;color:var(--ink2);">💼 업무</button>
+            <button onclick="importPrevGoal('wk')" style="padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:11px;color:var(--ink2);">📅 지난주</button>
             <button onclick="chGoalWk(-1)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:12px;">◀</button>
             <button onclick="chGoalWk(0)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--accent);background:var(--a2);cursor:pointer;font-size:11px;color:var(--accent);">이번주</button>
             <button onclick="chGoalWk(1)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:12px;">▶</button>
@@ -4564,14 +4566,10 @@ async function importWorkToGoal(type) {
     const rows = await sbGet(`work_notes?note_date=eq.${ds}&select=*`);
     if (!rows || rows.length === 0) { showToast('오늘 업무 노트가 없어요'); return; }
     const r = rows[0];
-
-    // 달 목표는 month_goals(이번 주 섹션), 주 목표는 week_goals(당장 섹션) 매핑
     const srcKey = type === 'mo' ? 'this_week' : 'urgent';
     const items = r[srcKey] || [];
     const undone = items.filter(it => !it.done);
     if (undone.length === 0) { showToast('미완료 업무 항목이 없어요'); return; }
-
-    // 기존 목표와 중복 제거 후 추가
     const existing = (goalsData[type] || []).map(g => g.text);
     let added = 0;
     undone.forEach(it => {
@@ -4580,13 +4578,45 @@ async function importWorkToGoal(type) {
         added++;
       }
     });
-
     if (added === 0) { showToast('이미 모두 추가되어 있어요'); return; }
     renderGoalList(type);
     await saveGoals(true);
     showToast(`${added}개 항목을 가져왔어요`);
   } catch(e) {
     console.error('업무 가져오기 실패', e);
+    showToast('가져오기 실패');
+  }
+}
+
+// 이전 기간 목표 → 현재 목표 가져오기
+async function importPrevGoal(type) {
+  try {
+    let prevKey;
+    if (type === 'mo') {
+      prevKey = goalKeys(0, goalMoOffset - 1).mo;
+    } else {
+      prevKey = goalKeys(goalWkOffset - 1, goalMoOffset).main;
+    }
+    const rows = await sbGet(`goals?goal_key=eq.${prevKey}&select=*`);
+    if (!rows || rows.length === 0) { showToast('이전 기간 목표가 없어요'); return; }
+    const r = rows[0];
+    const srcItems = type === 'mo' ? (r.month_goals || []) : (r.week_goals || []);
+    const undone = srcItems.filter(it => !it.done);
+    if (undone.length === 0) { showToast('미완료 목표 항목이 없어요'); return; }
+    const existing = (goalsData[type] || []).map(g => g.text);
+    let added = 0;
+    undone.forEach(it => {
+      if (!existing.includes(it.text)) {
+        goalsData[type].push({ text: it.text, done: false });
+        added++;
+      }
+    });
+    if (added === 0) { showToast('이미 모두 추가되어 있어요'); return; }
+    renderGoalList(type);
+    await saveGoals(true);
+    showToast(`${added}개 항목을 가져왔어요`);
+  } catch(e) {
+    console.error('이전 목표 가져오기 실패', e);
     showToast('가져오기 실패');
   }
 }
