@@ -1290,14 +1290,21 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
         <button onclick="workAddByBtn('urgent')" style="margin-top:4px;padding:4px 12px;border-radius:6px;border:1px solid var(--line);background:var(--bg);font-size:12px;color:var(--ink2);cursor:pointer;">추가</button>
       </div>
 
-      <div class="ch" style="margin-top:16px;"><span class="ci">🟠</span><span class="ct">이번 주</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;margin-bottom:4px;">
+        <div class="ch" style="margin-bottom:0;"><span class="ci">🟠</span><span class="ct">이번 주</span><span id="work-week-label" style="font-size:11px;color:var(--ink3);margin-left:6px;"></span></div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <button onclick="chWorkWeek(-1)" style="padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:12px;">◀</button>
+          <button onclick="chWorkWeek(0)" style="padding:3px 8px;border-radius:6px;border:1px solid var(--accent);background:var(--a2);cursor:pointer;font-size:10px;color:var(--accent);">이번주</button>
+          <button onclick="chWorkWeek(1)" style="padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:12px;">▶</button>
+        </div>
+      </div>
       <div id="work-week-list" class="work-checklist"></div>
       <div class="work-add-row" id="work-week-add">
         <input class="work-add-inp" id="work-week-inp" placeholder="+ 항목 추가..." onkeyup="workAddItem(event,'week')" />
         <button onclick="workAddByBtn('week')" style="margin-top:4px;padding:4px 12px;border-radius:6px;border:1px solid var(--line);background:var(--bg);font-size:12px;color:var(--ink2);cursor:pointer;">추가</button>
       </div>
 
-      <div class="ch" style="margin-top:16px;"><span class="ci">🟡</span><span class="ct">큰 그림</span></div>
+      <div class="ch" style="margin-top:16px;"><span class="ci">🟡</span><span class="ct">큰 그림</span><span style="font-size:10px;color:var(--ink3);margin-left:6px;">항상 고정</span></div>
       <div id="work-bigpicture-list" class="work-checklist"></div>
       <div class="work-add-row" id="work-bigpicture-add">
         <input class="work-add-inp" id="work-bigpicture-inp" placeholder="+ 항목 추가..." onkeyup="workAddItem(event,'bigpicture')" />
@@ -4529,13 +4536,148 @@ function delGoal(type,i){
 
 // ── 업무 노트 ──
 let workDateOffset = 0;
+let workWeekOffset = 0;
 let workAutoSaveTimer = null;
+let workWeekSaveTimer = null;
+let workBigpictureSaveTimer = null;
 let workData = { urgent: [], week: [], bigpicture: [], memo: '' };
+let workWeekData = [];
+let workBigpictureData = [];
 
 function workDateStr(offset = 0) {
   const d = new Date();
   d.setDate(d.getDate() + offset);
   return d.toISOString().slice(0, 10);
+}
+
+function workWeekKey(offset = 0) {
+  const d = new Date();
+  const dow = d.getDay();
+  const diffToMon = dow === 0 ? -6 : 1 - dow;
+  const weekStart = new Date(d);
+  weekStart.setDate(d.getDate() + diffToMon + (offset * 7));
+  const y = weekStart.getFullYear();
+  const m = String(weekStart.getMonth()+1).padStart(2,'0');
+  const day = String(weekStart.getDate()).padStart(2,'0');
+  return `work_week_${y}${m}${day}`;
+}
+
+function workWeekLabel(offset = 0) {
+  const d = new Date();
+  const dow = d.getDay();
+  const diffToMon = dow === 0 ? -6 : 1 - dow;
+  const weekStart = new Date(d);
+  weekStart.setDate(d.getDate() + diffToMon + (offset * 7));
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  const fmt = (d) => `${d.getMonth()+1}/${d.getDate()}`;
+  if (offset === 0) return `이번 주 (${fmt(weekStart)}~${fmt(weekEnd)})`;
+  if (offset === 1) return `다음 주 (${fmt(weekStart)}~${fmt(weekEnd)})`;
+  if (offset === -1) return `지난 주 (${fmt(weekStart)}~${fmt(weekEnd)})`;
+  return `${fmt(weekStart)}~${fmt(weekEnd)}`;
+}
+
+function chWorkWeek(dir) {
+  if (dir === 0) workWeekOffset = 0;
+  else workWeekOffset += dir;
+  loadWorkWeek();
+}
+
+async function loadWorkWeek() {
+  const key = workWeekKey(workWeekOffset);
+  const lbl = document.getElementById('work-week-label');
+  if (lbl) lbl.textContent = workWeekOffset === 0 ? '' : workWeekLabel(workWeekOffset).replace('이번 주 ','').replace('다음 주 ','다음주 ').replace('지난 주 ','지난주 ');
+
+  try {
+    const rows = await sbGet(`work_notes?fixed_key=eq.${key}&select=*`);
+    workWeekData = rows && rows.length > 0 ? (rows[0].week || []) : [];
+  } catch(e) { workWeekData = []; }
+  renderWorkWeekList();
+}
+
+function renderWorkWeekList() {
+  const list = document.getElementById('work-week-list');
+  if (!list) return;
+  const sorted = [...workWeekData.map((it,i)=>({...it,_i:i}))].sort((a,b)=>a.done-b.done);
+  list.innerHTML = sorted.map(it => {
+    const doneClass = it.done ? ' done' : '';
+    const checkedClass = it.done ? ' checked' : '';
+    const onclk = `onclick="workWeekToggle(${it._i})"`;
+    const safeText = it.text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<div class="work-item${doneClass}"><div class="work-item-check${checkedClass}" ${onclk}></div><div class="work-item-text">${safeText}</div><div class="work-item-del" onclick="workWeekDelete(${it._i})">✕</div></div>`;
+  }).join('');
+}
+
+function workWeekToggle(idx) {
+  workWeekData[idx].done = !workWeekData[idx].done;
+  renderWorkWeekList();
+  schedWorkWeekSave();
+}
+
+function workWeekDelete(idx) {
+  workWeekData.splice(idx, 1);
+  renderWorkWeekList();
+  schedWorkWeekSave();
+}
+
+function schedWorkWeekSave() {
+  clearTimeout(workWeekSaveTimer);
+  workWeekSaveTimer = setTimeout(async () => {
+    try {
+      const key = workWeekKey(workWeekOffset);
+      await fetch(SBU+'/rest/v1/work_notes', {
+        method:'POST',
+        headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal','Content-Type':'application/json'},
+        body: JSON.stringify({ fixed_key: key, note_date: workDateStr(0), week: workWeekData, urgent:[], big_picture:[], memo:'' })
+      });
+    } catch(e) { console.error('주간 저장 실패', e); }
+  }, 1000);
+}
+
+async function loadWorkBigpicture() {
+  try {
+    const rows = await sbGet(`work_notes?fixed_key=eq.work_bigpicture_fixed&select=*`);
+    workBigpictureData = rows && rows.length > 0 ? (rows[0].big_picture || []) : [];
+  } catch(e) { workBigpictureData = []; }
+  renderWorkBigpictureList();
+}
+
+function renderWorkBigpictureList() {
+  const list = document.getElementById('work-bigpicture-list');
+  if (!list) return;
+  const sorted = [...workBigpictureData.map((it,i)=>({...it,_i:i}))].sort((a,b)=>a.done-b.done);
+  list.innerHTML = sorted.map(it => {
+    const doneClass = it.done ? ' done' : '';
+    const checkedClass = it.done ? ' checked' : '';
+    const onclk = `onclick="workBigpictureToggle(${it._i})"`;
+    const safeText = it.text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<div class="work-item${doneClass}"><div class="work-item-check${checkedClass}" ${onclk}></div><div class="work-item-text">${safeText}</div><div class="work-item-del" onclick="workBigpictureDelete(${it._i})">✕</div></div>`;
+  }).join('');
+}
+
+function workBigpictureToggle(idx) {
+  workBigpictureData[idx].done = !workBigpictureData[idx].done;
+  renderWorkBigpictureList();
+  schedWorkBigpictureSave();
+}
+
+function workBigpictureDelete(idx) {
+  workBigpictureData.splice(idx, 1);
+  renderWorkBigpictureList();
+  schedWorkBigpictureSave();
+}
+
+function schedWorkBigpictureSave() {
+  clearTimeout(workBigpictureSaveTimer);
+  workBigpictureSaveTimer = setTimeout(async () => {
+    try {
+      await fetch(SBU+'/rest/v1/work_notes', {
+        method:'POST',
+        headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal','Content-Type':'application/json'},
+        body: JSON.stringify({ fixed_key:'work_bigpicture_fixed', note_date: workDateStr(0), big_picture: workBigpictureData, urgent:[], week:[], memo:'' })
+      });
+    } catch(e) { console.error('큰 그림 저장 실패', e); }
+  }, 1000);
 }
 
 function workDateLabel(offset = 0) {
@@ -4546,13 +4688,13 @@ function workDateLabel(offset = 0) {
   const dow = ['일','월','화','수','목','금','토'][d.getDay()];
   if (offset === 0) return `오늘 (${m}/${day} ${dow})`;
   if (offset === -1) return `어제 (${m}/${day} ${dow})`;
+  if (offset === 1) return `내일 (${m}/${day} ${dow})`;
   return `${m}/${day} (${dow})`;
 }
 
 function chWorkDate(dir) {
   if (dir === 0) { workDateOffset = 0; }
   else { workDateOffset += dir; }
-  if (workDateOffset > 0) workDateOffset = 0;
   loadWorkNotes();
 }
 
@@ -4566,10 +4708,22 @@ function workAddByBtn(section) {
   if (!inp) return;
   const text = inp.value.trim();
   if (!text) return;
-  workData[section].push({ text, done: false });
-  inp.value = '';
-  renderWorkSection(section);
-  schedWorkSave();
+  if (section === 'week') {
+    workWeekData.push({ text, done: false });
+    inp.value = '';
+    renderWorkWeekList();
+    schedWorkWeekSave();
+  } else if (section === 'bigpicture') {
+    workBigpictureData.push({ text, done: false });
+    inp.value = '';
+    renderWorkBigpictureList();
+    schedWorkBigpictureSave();
+  } else {
+    workData[section].push({ text, done: false });
+    inp.value = '';
+    renderWorkSection(section);
+    schedWorkSave();
+  }
 }
 
 function workToggle(section, idx) {
@@ -4587,7 +4741,7 @@ function workDelete(section, idx) {
 function renderWorkSection(section) {
   const list = document.getElementById('work-' + section + '-list');
   if (!list) return;
-  const isReadOnly = workDateOffset !== 0;
+  const isReadOnly = false; // 과거/미래 모두 편집 가능
   const items = workData[section] || [];
   // 미완료 먼저, 완료 나중
   const sorted = [...items.map((it,i) => ({...it, _i:i}))].sort((a,b) => a.done - b.done);
@@ -4603,17 +4757,19 @@ function renderWorkSection(section) {
 }
 
 function renderWorkAll() {
-  ['urgent','week','bigpicture'].forEach(s => renderWorkSection(s));
+  ['urgent'].forEach(s => renderWorkSection(s));
+  renderWorkWeekList();
+  renderWorkBigpictureList();
   const memo = document.getElementById('work-memo');
   if (memo) { memo.value = workData.memo || ''; autoResizeWorkMemo(); }
   // 과거 날짜는 입력창 숨기기
-  ['urgent','week','bigpicture'].forEach(s => {
+  ['urgent'].forEach(s => {
     const add = document.getElementById('work-'+s+'-add');
-    if (add) add.style.display = workDateOffset !== 0 ? 'none' : '';
+    if (add) add.style.display = '';
   });
   const importBtn = document.getElementById('work-import-btn');
-  if (importBtn) importBtn.style.display = workDateOffset !== 0 ? 'none' : '';
-  if (memo) memo.readOnly = workDateOffset !== 0;
+  if (importBtn) importBtn.style.display = '';
+  if (memo) memo.readOnly = false;
 }
 
 function autoResizeWorkMemo() {
@@ -4651,9 +4807,9 @@ async function loadWorkNotes() {
   const lbl = document.getElementById('work-date-label');
   if (lbl) lbl.textContent = workDateLabel(workDateOffset);
   const nextBtn = document.getElementById('work-next-btn');
-  if (nextBtn) { nextBtn.disabled = workDateOffset >= 0; nextBtn.style.opacity = workDateOffset >= 0 ? '0.3' : '1'; }
+  if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; }
 
-  workData = { urgent: [], week: [], bigpicture: [], memo: '' };
+  workData = { urgent: [], memo: '' };
   setAutosaveStatus('work','saved','저장됨');
 
   try {
@@ -4661,16 +4817,16 @@ async function loadWorkNotes() {
     if (rows && rows.length > 0) {
       const r = rows[0];
       workData.urgent = r.urgent || [];
-      workData.week = r.this_week || [];
-      workData.bigpicture = r.big_picture || [];
       workData.memo = r.memo || '';
     }
   } catch(e) { console.error('업무 노트 로드 실패', e); }
+
+  // 주간/큰그림은 별도 로드
+  await Promise.all([loadWorkWeek(), loadWorkBigpicture()]);
   renderWorkAll();
 }
 
 function schedWorkSave() {
-  if (workDateOffset !== 0) return;
   setAutosaveStatus('work','saving','변경됨...');
   clearTimeout(workAutoSaveTimer);
   workAutoSaveTimer = setTimeout(async () => {
@@ -4682,8 +4838,8 @@ function schedWorkSave() {
       await sbRPC('upsert_work_note', {
         p_date: ds,
         p_urgent: JSON.parse(JSON.stringify(workData.urgent)),
-        p_this_week: JSON.parse(JSON.stringify(workData.week)),
-        p_big_picture: JSON.parse(JSON.stringify(workData.bigpicture)),
+        p_this_week: [],
+        p_big_picture: [],
         p_memo: memo
       });
       setAutosaveStatus('work','saved','✓ 저장됨');
