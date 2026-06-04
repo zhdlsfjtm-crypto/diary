@@ -1533,12 +1533,12 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
     <button class="nb on" id="nb-daily" onclick="goTab('daily')"><span class="ni">✏️</span><span class="nl">오늘</span></button>
     <button class="nb" id="nb-monthly" onclick="goTab('monthly')"><span class="ni">💰</span><span class="nl">월간</span></button>
     <button class="nb" id="nb-goals" onclick="goTab('goals')"><span class="ni">🎯</span><span class="nl">목표</span></button>
-    <button class="nb" id="nb-english" onclick="goTab('english')"><span class="ni">🇺🇸</span><span class="nl">영어</span></button>
+    <button class="nb" id="nb-work" onclick="goTab('work')"><span class="ni">💼</span><span class="nl">업무</span></button>
     <button class="nb" id="nb-more" onclick="toggleMoreMenu(event)"><span class="ni">⋯</span><span class="nl">더보기</span></button>
   </nav>
   <div class="more-menu" id="more-menu">
     <div class="more-item" id="more-all" onclick="goTabAndCloseMore('all')"><span class="more-item-icon">📚</span><span>전체 기록</span></div>
-    <div class="more-item" id="more-work" onclick="goTabAndCloseMore('work')"><span class="more-item-icon">💼</span><span>업무 노트</span></div>
+    <div class="more-item" id="more-english" onclick="goTabAndCloseMore('english')"><span class="more-item-icon">🇺🇸</span><span>영어</span></div>
   </div>
 </div>
 
@@ -1770,7 +1770,7 @@ const SECS={re:{u:'억',c:'av-a'},fi:{u:'억',c:'av-a'},co:{u:'억',c:'av-a'},et
 
 // ── 상태 ──
 let entries={}, vEntry=null, eEntry=null, wDate=null, fbEntry=null;
-let tabs=['daily','monthly','goals','english','all','work'];
+let tabs=['daily','monthly','goals','work','english','all'];
 let goalsData={yr:[],mo:[],wk:[]};
 
 // 🔁 반복 목표 시스템
