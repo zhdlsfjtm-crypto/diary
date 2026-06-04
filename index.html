@@ -1271,19 +1271,19 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
     <!-- 업무 노트 -->
     <div class="pn" id="pn-work">
       <div class="ptitle">💼 업무 노트</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button onclick="chWorkDate(-1)" style="padding:4px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:13px;">◀</button>
-          <span id="work-date-label" style="font-size:14px;font-weight:600;color:var(--ink);"></span>
-          <button onclick="chWorkDate(1)" id="work-next-btn" style="padding:4px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:13px;">▶</button>
-        </div>
-        <div style="display:flex;gap:6px;">
-          <button onclick="importYesterday()" id="work-import-btn" style="padding:4px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:11px;color:var(--ink2);">어제 미완료 가져오기</button>
-          <button onclick="chWorkDate(0)" style="padding:4px 10px;border-radius:8px;border:1px solid var(--accent);background:var(--a2);cursor:pointer;font-size:11px;color:var(--accent);">오늘</button>
-        </div>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-bottom:16px;">
+        <button onclick="importYesterday()" id="work-import-btn" style="padding:4px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:11px;color:var(--ink2);">어제 미완료 가져오기</button>
       </div>
 
-      <div class="ch"><span class="ci">🔴</span><span class="ct">당장</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div class="ch" style="margin-bottom:0;"><span class="ci">🔴</span><span class="ct">당장</span></div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <button onclick="chWorkDate(-1)" style="padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:12px;">◀</button>
+          <span id="work-date-label" style="font-size:11px;color:var(--ink2);min-width:70px;text-align:center;"></span>
+          <button onclick="chWorkDate(0)" style="padding:3px 8px;border-radius:6px;border:1px solid var(--accent);background:var(--a2);cursor:pointer;font-size:10px;color:var(--accent);">오늘</button>
+          <button onclick="chWorkDate(1)" id="work-next-btn" style="padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:12px;">▶</button>
+        </div>
+      </div>
       <div id="work-urgent-list" class="work-checklist"></div>
       <div class="work-add-row" id="work-urgent-add">
         <input class="work-add-inp" id="work-urgent-inp" placeholder="+ 항목 추가..." onkeyup="workAddItem(event,'urgent')" />
