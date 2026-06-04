@@ -4589,8 +4589,17 @@ async function loadWorkWeek() {
   if (lbl) lbl.textContent = workWeekOffset === 0 ? '' : workWeekLabel(workWeekOffset).replace('이번 주 ','').replace('다음 주 ','다음주 ').replace('지난 주 ','지난주 ');
 
   try {
+    // fixed_key로 저장된 주간 데이터 우선, 없으면 오늘 날짜의 this_week 컬럼 fallback (이전 데이터 호환)
     const rows = await sbGet(`work_notes?fixed_key=eq.${key}&select=*`);
-    workWeekData = rows && rows.length > 0 ? (rows[0].week || []) : [];
+    if (rows && rows.length > 0) {
+      workWeekData = rows[0].week || rows[0].this_week || [];
+    } else if (workWeekOffset === 0) {
+      // 이번 주이고 fixed_key 없으면 오늘 날짜 데이터에서 this_week 읽기
+      const todayRows = await sbGet(`work_notes?note_date=eq.${workDateStr(0)}&select=*`);
+      workWeekData = todayRows && todayRows.length > 0 ? (todayRows[0].this_week || todayRows[0].week || []) : [];
+    } else {
+      workWeekData = [];
+    }
   } catch(e) { workWeekData = []; }
   renderWorkWeekList();
 }
@@ -4625,11 +4634,7 @@ function schedWorkWeekSave() {
   workWeekSaveTimer = setTimeout(async () => {
     try {
       const key = workWeekKey(workWeekOffset);
-      await fetch(SBU+'/rest/v1/work_notes', {
-        method:'POST',
-        headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal','Content-Type':'application/json'},
-        body: JSON.stringify({ fixed_key: key, note_date: workDateStr(0), week: workWeekData, urgent:[], big_picture:[], memo:'' })
-      });
+      await sbRPC('upsert_work_note_fixed', { p_fixed_key: key, p_week: workWeekData });
     } catch(e) { console.error('주간 저장 실패', e); }
   }, 1000);
 }
@@ -4637,7 +4642,13 @@ function schedWorkWeekSave() {
 async function loadWorkBigpicture() {
   try {
     const rows = await sbGet(`work_notes?fixed_key=eq.work_bigpicture_fixed&select=*`);
-    workBigpictureData = rows && rows.length > 0 ? (rows[0].big_picture || []) : [];
+    if (rows && rows.length > 0) {
+      workBigpictureData = rows[0].big_picture || [];
+    } else {
+      // 이전 데이터 호환 - 오늘 날짜의 big_picture 읽기
+      const todayRows = await sbGet(`work_notes?note_date=eq.${workDateStr(0)}&select=*`);
+      workBigpictureData = todayRows && todayRows.length > 0 ? (todayRows[0].big_picture || []) : [];
+    }
   } catch(e) { workBigpictureData = []; }
   renderWorkBigpictureList();
 }
@@ -4671,11 +4682,7 @@ function schedWorkBigpictureSave() {
   clearTimeout(workBigpictureSaveTimer);
   workBigpictureSaveTimer = setTimeout(async () => {
     try {
-      await fetch(SBU+'/rest/v1/work_notes', {
-        method:'POST',
-        headers:{...H,'Prefer':'resolution=merge-duplicates,return=minimal','Content-Type':'application/json'},
-        body: JSON.stringify({ fixed_key:'work_bigpicture_fixed', note_date: workDateStr(0), big_picture: workBigpictureData, urgent:[], week:[], memo:'' })
-      });
+      await sbRPC('upsert_work_note_fixed', { p_fixed_key: 'work_bigpicture_fixed', p_big_picture: workBigpictureData });
     } catch(e) { console.error('큰 그림 저장 실패', e); }
   }, 1000);
 }
