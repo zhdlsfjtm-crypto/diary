@@ -1272,7 +1272,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
     <div class="pn" id="pn-work">
       <div class="ptitle">💼 업무 노트</div>
       <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-bottom:16px;">
-        <button onclick="importYesterday()" id="work-import-btn" style="padding:4px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:11px;color:var(--ink2);">어제 미완료 가져오기</button>
+        <button onclick="importYesterday()" id="work-import-btn" style="padding:4px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:11px;color:var(--ink2);">어제 미완료</button>
       </div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
@@ -1293,6 +1293,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;margin-bottom:4px;">
         <div class="ch" style="margin-bottom:0;"><span class="ci">🟠</span><span class="ct">이번 주</span><span id="work-week-label" style="font-size:11px;color:var(--ink3);margin-left:6px;"></span></div>
         <div style="display:flex;align-items:center;gap:4px;">
+          <button onclick="importPrevWeek()" style="padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:10px;color:var(--ink2);">지난주 미완료</button>
           <button onclick="chWorkWeek(-1)" style="padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:12px;">◀</button>
           <button onclick="chWorkWeek(0)" style="padding:3px 8px;border-radius:6px;border:1px solid var(--accent);background:var(--a2);cursor:pointer;font-size:10px;color:var(--accent);">이번주</button>
           <button onclick="chWorkWeek(1)" style="padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:12px;">▶</button>
@@ -4789,22 +4790,27 @@ async function importYesterday() {
     const yd = workDateStr(-1);
     const rows = await sbGet(`work_notes?note_date=eq.${yd}&select=*`);
     if (!rows || rows.length === 0) { showToast('어제 기록이 없어요'); return; }
-    const r = rows[0];
-    let imported = 0;
-    ['urgent','week','bigpicture'].forEach(s => {
-      const key = s === 'week' ? 'this_week' : s === 'bigpicture' ? 'big_picture' : s;
-      const items = r[key] || [];
-      const undone = items.filter(it => !it.done);
-      if (undone.length > 0) {
-        workData[s] = [...workData[s], ...undone];
-        imported += undone.length;
-      }
-    });
-    if (imported === 0) { showToast('어제 미완료 항목이 없어요'); return; }
-    renderWorkAll();
+    const undone = (rows[0].urgent || []).filter(it => !it.done);
+    if (undone.length === 0) { showToast('어제 미완료 항목이 없어요'); return; }
+    workData.urgent = [...workData.urgent, ...undone];
+    renderWorkSection('urgent');
     schedWorkSave();
-    showToast(`${imported}개 항목을 가져왔어요`);
+    showToast(`${undone.length}개 항목을 가져왔어요`);
   } catch(e) { console.error('어제 가져오기 실패', e); showToast('가져오기 실패'); }
+}
+
+async function importPrevWeek() {
+  try {
+    const prevWkKey = workWeekKey(workWeekOffset - 1);
+    const rows = await sbGet(`work_notes?fixed_key=eq.${prevWkKey}&select=*`);
+    if (!rows || rows.length === 0) { showToast('지난주 기록이 없어요'); return; }
+    const undone = (rows[0].week || rows[0].this_week || []).filter(it => !it.done);
+    if (undone.length === 0) { showToast('지난주 미완료 항목이 없어요'); return; }
+    workWeekData = [...workWeekData, ...undone];
+    renderWorkWeekList();
+    schedWorkWeekSave();
+    showToast(`${undone.length}개 항목을 가져왔어요`);
+  } catch(e) { console.error('지난주 가져오기 실패', e); showToast('가져오기 실패'); }
 }
 
 async function loadWorkNotes() {
