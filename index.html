@@ -4843,7 +4843,7 @@ function schedWorkSave() {
   workAutoSaveTimer = setTimeout(async () => {
     setAutosaveStatus('work','saving','저장 중...');
     try {
-      const ds = workDateStr(0);
+      const ds = workDateStr(workDateOffset);
       const memo = document.getElementById('work-memo')?.value || '';
       workData.memo = memo;
       await sbRPC('upsert_work_note', {
