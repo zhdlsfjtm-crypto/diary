@@ -4628,14 +4628,17 @@ function workWeekDelete(idx) {
   schedWorkWeekSave();
 }
 
-function schedWorkWeekSave() {
+async function schedWorkWeekSave() {
   clearTimeout(workWeekSaveTimer);
-  workWeekSaveTimer = setTimeout(async () => {
-    try {
-      const key = workWeekKey(workWeekOffset);
-      await sbRPC('upsert_work_note_fixed', { p_fixed_key: key, p_week: workWeekData });
-    } catch(e) { console.error('주간 저장 실패', e); }
-  }, 1000);
+  return new Promise(resolve => {
+    workWeekSaveTimer = setTimeout(async () => {
+      try {
+        const key = workWeekKey(workWeekOffset);
+        await sbRPC('upsert_work_note_fixed', { p_fixed_key: key, p_week: workWeekData });
+      } catch(e) { console.error('주간 저장 실패', e); }
+      resolve();
+    }, 500);
+  });
 }
 
 async function loadWorkBigpicture() {
@@ -4809,10 +4812,13 @@ async function importPrevWeek() {
     if (!rows || rows.length === 0) { showToast('지난주 기록이 없어요'); return; }
     const undone = (rows[0].week || rows[0].this_week || []).filter(it => !it.done);
     if (undone.length === 0) { showToast('지난주 미완료 항목이 없어요'); return; }
-    workWeekData = [...workWeekData, ...undone];
+    const existing = new Set(workWeekData.map(it => it.text));
+    const toAdd = undone.filter(it => !existing.has(it.text));
+    if (toAdd.length === 0) { showToast('이미 모두 추가되어 있어요'); return; }
+    workWeekData = [...workWeekData, ...toAdd];
     renderWorkWeekList();
-    schedWorkWeekSave();
-    showToast(`${undone.length}개 항목을 가져왔어요`);
+    await schedWorkWeekSave();
+    showToast(`${toAdd.length}개 항목을 가져왔어요`);
   } catch(e) { console.error('지난주 가져오기 실패', e); showToast('가져오기 실패'); }
 }
 
