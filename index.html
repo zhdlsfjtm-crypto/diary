@@ -3398,14 +3398,14 @@ async function openLedgerImport() {
 
   try {
     const rows = await sbGet(`ledger_entries?month_key=eq.${prevKey}&select=*&order=entry_date.desc`);
-    if (!rows || rows.length === 0) { showToast('지난달 내역이 없어요'); return; }
+    if (!rows || rows.length === 0) { toast('지난달 내역이 없어요'); return; }
 
     ledgerImportItems = rows.map(r => ({ ...r, selected: false }));
     renderLedgerImportList();
     document.getElementById('ledger-import-modal').style.display = 'flex';
   } catch(e) {
     console.error('지난달 내역 로드 실패', e);
-    showToast('불러오기 실패');
+    toast('불러오기 실패');
   }
 }
 
@@ -3437,7 +3437,7 @@ function closeLedgerImport() {
 
 async function confirmLedgerImport() {
   const selected = ledgerImportItems.filter(it => it.selected);
-  if (selected.length === 0) { showToast('항목을 선택해주세요'); return; }
+  if (selected.length === 0) { toast('항목을 선택해주세요'); return; }
 
   const today = td();
   const curKey = lmk();
@@ -3446,7 +3446,7 @@ async function confirmLedgerImport() {
   const existingKeys = new Set(ledgerData.map(r => `${r.type}|${r.category}|${r.amount}|${r.memo||''}`));
   const toAdd = selected.filter(it => !existingKeys.has(`${it.type}|${it.category}|${it.amount}|${it.memo||''}`));
 
-  if (toAdd.length === 0) { showToast('이미 모두 추가되어 있어요'); return; }
+  if (toAdd.length === 0) { toast('이미 모두 추가되어 있어요'); return; }
 
   try {
     for (const it of toAdd) {
@@ -3466,10 +3466,10 @@ async function confirmLedgerImport() {
     const skipped = selected.length - toAdd.length;
     closeLedgerImport();
     await loadLedgerData();
-    showToast(skipped > 0 ? `${toAdd.length}개 추가 (${skipped}개 중복 건너뜀)` : `${toAdd.length}개 항목을 가져왔어요`);
+    toast(skipped > 0 ? `${toAdd.length}개 추가 (${skipped}개 중복 건너뜀)` : `${toAdd.length}개 항목을 가져왔어요`);
   } catch(e) {
     console.error('가져오기 실패', e);
-    showToast('가져오기 실패');
+    toast('가져오기 실패');
   }
 }
 
@@ -4634,7 +4634,19 @@ async function schedWorkWeekSave() {
     workWeekSaveTimer = setTimeout(async () => {
       try {
         const key = workWeekKey(workWeekOffset);
-        await sbRPC('upsert_work_note_fixed', { p_fixed_key: key, p_week: workWeekData });
+        const r = await fetch(SBU+'/rest/v1/work_notes?fixed_key=eq.'+key, {
+          method:'PATCH',
+          headers:{...H,'Content-Type':'application/json','Prefer':'return=minimal'},
+          body: JSON.stringify({ week: workWeekData })
+        });
+        if(r.status===404||r.status===406||(await r.clone().json())?.length===0){
+          // 행 없으면 INSERT
+          await fetch(SBU+'/rest/v1/work_notes', {
+            method:'POST',
+            headers:{...H,'Content-Type':'application/json','Prefer':'return=minimal'},
+            body: JSON.stringify({ fixed_key: key, note_date: '2099-01-01', week: workWeekData, urgent:[], big_picture:[], memo:'' })
+          });
+        }
       } catch(e) { console.error('주간 저장 실패', e); }
       resolve();
     }, 500);
@@ -4792,34 +4804,34 @@ async function importYesterday() {
   try {
     const yd = workDateStr(-1);
     const rows = await sbGet(`work_notes?note_date=eq.${yd}&select=*`);
-    if (!rows || rows.length === 0) { showToast('어제 기록이 없어요'); return; }
+    if (!rows || rows.length === 0) { toast('어제 기록이 없어요'); return; }
     const undone = (rows[0].urgent || []).filter(it => !it.done);
-    if (undone.length === 0) { showToast('어제 미완료 항목이 없어요'); return; }
+    if (undone.length === 0) { toast('어제 미완료 항목이 없어요'); return; }
     const existing = new Set(workData.urgent.map(it => it.text));
     const toAdd = undone.filter(it => !existing.has(it.text));
-    if (toAdd.length === 0) { showToast('이미 모두 추가되어 있어요'); return; }
+    if (toAdd.length === 0) { toast('이미 모두 추가되어 있어요'); return; }
     workData.urgent = [...workData.urgent, ...toAdd];
     renderWorkSection('urgent');
     schedWorkSave();
-    showToast(`${undone.length}개 항목을 가져왔어요`);
-  } catch(e) { console.error('어제 가져오기 실패', e); showToast('가져오기 실패'); }
+    toast(`${undone.length}개 항목을 가져왔어요`);
+  } catch(e) { console.error('어제 가져오기 실패', e); toast('가져오기 실패'); }
 }
 
 async function importPrevWeek() {
   try {
     const prevWkKey = workWeekKey(workWeekOffset - 1);
     const rows = await sbGet(`work_notes?fixed_key=eq.${prevWkKey}&select=*`);
-    if (!rows || rows.length === 0) { showToast('지난주 기록이 없어요'); return; }
+    if (!rows || rows.length === 0) { toast('지난주 기록이 없어요'); return; }
     const undone = (rows[0].week || rows[0].this_week || []).filter(it => !it.done);
-    if (undone.length === 0) { showToast('지난주 미완료 항목이 없어요'); return; }
+    if (undone.length === 0) { toast('지난주 미완료 항목이 없어요'); return; }
     const existing = new Set(workWeekData.map(it => it.text));
     const toAdd = undone.filter(it => !existing.has(it.text));
-    if (toAdd.length === 0) { showToast('이미 모두 추가되어 있어요'); return; }
+    if (toAdd.length === 0) { toast('이미 모두 추가되어 있어요'); return; }
     workWeekData = [...workWeekData, ...toAdd];
     renderWorkWeekList();
     await schedWorkWeekSave();
-    showToast(`${toAdd.length}개 항목을 가져왔어요`);
-  } catch(e) { console.error('지난주 가져오기 실패', e); showToast('가져오기 실패'); }
+    toast(`${toAdd.length}개 항목을 가져왔어요`);
+  } catch(e) { console.error('지난주 가져오기 실패', e); toast('가져오기 실패'); }
 }
 
 async function loadWorkNotes() {
@@ -4875,12 +4887,12 @@ async function importWorkToGoal(type) {
   try {
     const ds = workDateStr(0);
     const rows = await sbGet(`work_notes?note_date=eq.${ds}&select=*`);
-    if (!rows || rows.length === 0) { showToast('오늘 업무 노트가 없어요'); return; }
+    if (!rows || rows.length === 0) { toast('오늘 업무 노트가 없어요'); return; }
     const r = rows[0];
     const srcKey = type === 'mo' ? 'this_week' : 'urgent';
     const items = r[srcKey] || [];
     const undone = items.filter(it => !it.done);
-    if (undone.length === 0) { showToast('미완료 업무 항목이 없어요'); return; }
+    if (undone.length === 0) { toast('미완료 업무 항목이 없어요'); return; }
     const existing = (goalsData[type] || []).map(g => g.text);
     let added = 0;
     undone.forEach(it => {
@@ -4889,13 +4901,13 @@ async function importWorkToGoal(type) {
         added++;
       }
     });
-    if (added === 0) { showToast('이미 모두 추가되어 있어요'); return; }
+    if (added === 0) { toast('이미 모두 추가되어 있어요'); return; }
     renderGoalList(type);
     await saveGoals(true);
-    showToast(`${added}개 항목을 가져왔어요`);
+    toast(`${added}개 항목을 가져왔어요`);
   } catch(e) {
     console.error('업무 가져오기 실패', e);
-    showToast('가져오기 실패');
+    toast('가져오기 실패');
   }
 }
 
@@ -4909,11 +4921,11 @@ async function importPrevGoal(type) {
       prevKey = goalKeys(goalWkOffset - 1, goalMoOffset).main;
     }
     const rows = await sbGet(`goals?goal_key=eq.${prevKey}&select=*`);
-    if (!rows || rows.length === 0) { showToast('이전 기간 목표가 없어요'); return; }
+    if (!rows || rows.length === 0) { toast('이전 기간 목표가 없어요'); return; }
     const r = rows[0];
     const srcItems = type === 'mo' ? (r.month_goals || []) : (r.week_goals || []);
     const undone = srcItems.filter(it => !it.done);
-    if (undone.length === 0) { showToast('미완료 목표 항목이 없어요'); return; }
+    if (undone.length === 0) { toast('미완료 목표 항목이 없어요'); return; }
     const existing = (goalsData[type] || []).map(g => g.text);
     let added = 0;
     undone.forEach(it => {
@@ -4922,13 +4934,13 @@ async function importPrevGoal(type) {
         added++;
       }
     });
-    if (added === 0) { showToast('이미 모두 추가되어 있어요'); return; }
+    if (added === 0) { toast('이미 모두 추가되어 있어요'); return; }
     renderGoalList(type);
     await saveGoals(true);
-    showToast(`${added}개 항목을 가져왔어요`);
+    toast(`${added}개 항목을 가져왔어요`);
   } catch(e) {
     console.error('이전 목표 가져오기 실패', e);
-    showToast('가져오기 실패');
+    toast('가져오기 실패');
   }
 }
 
