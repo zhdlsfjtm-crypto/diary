@@ -4634,19 +4634,7 @@ async function schedWorkWeekSave() {
     workWeekSaveTimer = setTimeout(async () => {
       try {
         const key = workWeekKey(workWeekOffset);
-        const r = await fetch(SBU+'/rest/v1/work_notes?fixed_key=eq.'+key, {
-          method:'PATCH',
-          headers:{...H,'Content-Type':'application/json','Prefer':'return=minimal'},
-          body: JSON.stringify({ week: workWeekData })
-        });
-        if(r.status===404||r.status===406||(await r.clone().json())?.length===0){
-          // 행 없으면 INSERT
-          await fetch(SBU+'/rest/v1/work_notes', {
-            method:'POST',
-            headers:{...H,'Content-Type':'application/json','Prefer':'return=minimal'},
-            body: JSON.stringify({ fixed_key: key, note_date: '2099-01-01', week: workWeekData, urgent:[], big_picture:[], memo:'' })
-          });
-        }
+        await sbRPC('upsert_work_note_fixed', { p_fixed_key: key, p_week: workWeekData });
       } catch(e) { console.error('주간 저장 실패', e); }
       resolve();
     }, 500);
