@@ -473,7 +473,7 @@ html,body{height:100%;font-family:'Pretendard',sans-serif;background:var(--bg);c
 .work-item-check.checked::after{content:'✓';color:#fff;font-size:11px;font-weight:700;}
 .work-item-text{flex:1;font-size:14px;color:var(--ink);font-family:'Pretendard',sans-serif;line-height:1.4;word-break:break-all;}
 .work-item.done .work-item-text{text-decoration:line-through;color:var(--ink3);}
-.work-item-del{font-size:14px;color:var(--ink3);cursor:pointer;padding:2px 4px;opacity:0;transition:opacity .15s;}
+.work-item-del{font-size:14px;color:var(--ink3);cursor:pointer;padding:2px 4px;opacity:0.5;transition:opacity .15s;}
 .work-item:hover .work-item-del{opacity:1;}
 .work-add-row{padding:4px 0;}
 .work-add-inp{width:100%;border:none;border-bottom:1px solid var(--line);background:transparent;font-size:14px;color:var(--ink);padding:6px 4px;outline:none;font-family:'Pretendard',sans-serif;}
@@ -4792,7 +4792,10 @@ async function importYesterday() {
     if (!rows || rows.length === 0) { showToast('어제 기록이 없어요'); return; }
     const undone = (rows[0].urgent || []).filter(it => !it.done);
     if (undone.length === 0) { showToast('어제 미완료 항목이 없어요'); return; }
-    workData.urgent = [...workData.urgent, ...undone];
+    const existing = new Set(workData.urgent.map(it => it.text));
+    const toAdd = undone.filter(it => !existing.has(it.text));
+    if (toAdd.length === 0) { showToast('이미 모두 추가되어 있어요'); return; }
+    workData.urgent = [...workData.urgent, ...toAdd];
     renderWorkSection('urgent');
     schedWorkSave();
     showToast(`${undone.length}개 항목을 가져왔어요`);
